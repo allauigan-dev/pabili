@@ -57,6 +57,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Store & Reseller Cards**: Redesigned to match the horizontal layout of Order cards.
 - **Uniform Layouts**: Standardized `InvoicesPage`, `PaymentsPage`, and their respective cards to match the new compact design.
 
+### Added
+- **Customizable Quick Actions**: Implemented configurable quick actions on the dashboard with persistence using `useLocalStorage`.
+- **Meta Tag Update**: Replaced deprecated `apple-mobile-web-app-capable` with `mobile-web-app-capable` in `index.html`.
+
 ### Deprecated
 - N/A
 
