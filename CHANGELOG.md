@@ -61,6 +61,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Customizable Quick Actions**: Implemented configurable quick actions on the dashboard with persistence using `useLocalStorage`.
 - **Meta Tag Update**: Replaced deprecated `apple-mobile-web-app-capable` with `mobile-web-app-capable` in `index.html`.
 
+### Fixed
+- **Build & Deploy**: Resolved TypeScript errors in `ResellerForm` and `InvoiceForm` to ensure successful build.
+- **Project Configuration**: Excluded `src/server` from client build in `tsconfig.app.json` to prevent type conflicts.
+- **Server Deployment**: Updated `wrangler.jsonc` with new D1 database ID (`pabili-db`) and configured migrations directory.
+- **Type Definitions**: Regenerated `worker-configuration.d.ts` to include correct `Env` bindings for DB and BUCKET.
+
 ### Deprecated
 - N/A
 

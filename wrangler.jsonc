@@ -25,7 +25,8 @@
 		{
 			"binding": "DB",
 			"database_name": "pabili-db",
-			"database_id": "<your-database-id>"
+			"migrations_dir": "drizzle",
+			"database_id": "b1b88b8c-71f8-4d47-8044-074186508982"
 		}
 	],
 	/**

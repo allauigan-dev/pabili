@@ -67,10 +67,10 @@ export const ResellerForm: React.FC = () => {
             result = await createAction(formData);
         }
 
-        if (result.success) {
+        if (result) {
             navigate('/resellers');
         } else {
-            setLocalError(result.error || 'Failed to save reseller');
+            // Error is handled by the hook and will be returned via the 'error' prop
         }
     };
 
@@ -151,7 +151,7 @@ export const ResellerForm: React.FC = () => {
                                             type="email"
                                             className="pl-10"
                                             placeholder="partner@example.com"
-                                            value={formData.resellerEmail}
+                                            value={formData.resellerEmail || ''}
                                             onChange={handleChange}
                                             required
                                         />
@@ -167,7 +167,7 @@ export const ResellerForm: React.FC = () => {
                                             name="resellerPhone"
                                             className="pl-10"
                                             placeholder="+63 912 345 6789"
-                                            value={formData.resellerPhone}
+                                            value={formData.resellerPhone || ''}
                                             onChange={handleChange}
                                             required
                                         />

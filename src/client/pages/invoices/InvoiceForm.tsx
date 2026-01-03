@@ -47,7 +47,7 @@ export const InvoiceForm: React.FC = () => {
     const { createAction, updateAction, loading: mutationLoading, error } = useInvoiceMutations();
 
     const [formData, setFormData] = useState<CreateInvoiceDto>({
-        invoiceStatus: 'pending',
+        invoiceStatus: 'draft',
         invoiceTotal: 0,
         resellerId: 0,
         orderIds: [],
@@ -205,7 +205,7 @@ export const InvoiceForm: React.FC = () => {
                                         <SelectValue placeholder="Select status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="pending">Pending Payment</SelectItem>
+                                        <SelectItem value="draft">Pending Payment (Draft)</SelectItem>
                                         <SelectItem value="paid">Paid Full</SelectItem>
                                     </SelectContent>
                                 </Select>
