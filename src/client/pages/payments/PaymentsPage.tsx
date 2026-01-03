@@ -9,15 +9,7 @@ import {
 import { usePayments, usePaymentMutations } from '@/hooks/usePayments';
 import { PaymentCard } from './PaymentCard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/index';
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card } from '@/components/ui/card';
-import {
-    Tabs,
-    TabsList,
-    TabsTrigger
-} from '@/components/ui/tabs';
 
 export const PaymentsPage: React.FC = () => {
     const navigate = useNavigate();
@@ -49,92 +41,107 @@ export const PaymentsPage: React.FC = () => {
         return matchesSearch && matchesStatus;
     });
 
-    return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Payments</h1>
-                    <p className="text-muted-foreground mt-1">Track and verify payments from your resellers.</p>
-                </div>
-                <Button
-                    onClick={() => navigate('/payments/new')}
-                    className="shadow-lg hover:shadow-primary/25 transition-all w-full sm:w-auto"
-                >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Record Payment
-                </Button>
-            </div>
+    const statusList = ['all', 'pending', 'confirmed', 'rejected'];
 
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="relative w-full md:max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search by reseller or reference..."
-                        className="pl-10"
+    return (
+        <div className="relative pb-24 min-h-screen -mx-2 -my-1 px-4 pt-2 md:mx-0 md:my-0 md:px-0">
+            {/* Sticky Header */}
+            <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm -mx-4 px-4 pt-4 pb-2 md:mx-0 md:px-0 transition-all">
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight">Payments</h1>
+                    <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
+                            <RefreshCcw className="h-5 w-5 text-muted-foreground" />
+                        </Button>
+                    </div>
+                </div>
+
+                {/* Search Bar */}
+                <div className="relative mb-4">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <input
+                        className="block w-full pl-10 pr-3 h-12 border-none rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm ring-1 ring-border focus:outline-none focus:ring-2 focus:ring-primary sm:text-sm transition-shadow text-foreground placeholder:text-muted-foreground"
+                        placeholder="Search payments, reference..."
+                        type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
 
-                <Tabs defaultValue="all" className="w-full md:w-auto" onValueChange={setStatusFilter}>
-                    <TabsList className="grid w-full grid-cols-4 md:w-[400px]">
-                        <TabsTrigger value="all">All</TabsTrigger>
-                        <TabsTrigger value="pending">Pending</TabsTrigger>
-                        <TabsTrigger value="confirmed">Confirmed</TabsTrigger>
-                        <TabsTrigger value="rejected">Rejected</TabsTrigger>
-                    </TabsList>
-                </Tabs>
+                {/* Filter Tabs */}
+                <div className="flex space-x-3 overflow-x-auto no-scrollbar pb-2 mask-linear">
+                    {statusList.map((f) => {
+                        const count = payments?.filter(p => f === 'all' ? true : p.paymentStatus === f).length || 0;
+                        const isActive = statusFilter === f;
 
-                <div className="flex items-center gap-2 ml-auto">
-                    <Button variant="outline" size="icon" onClick={refetch}>
-                        <RefreshCcw className="h-4 w-4" />
-                    </Button>
+                        return (
+                            <button
+                                key={f}
+                                onClick={() => setStatusFilter(f)}
+                                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${isActive
+                                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                                    : 'bg-surface-light dark:bg-surface-dark text-muted-foreground border border-border hover:bg-secondary'
+                                    }`}
+                            >
+                                <span className="capitalize">{f}</span>
+                                {isActive && (
+                                    <span className="bg-white/20 text-current text-[10px] px-1.5 py-0.5 rounded-full">
+                                        {count}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
-            </div>
+            </header>
 
-            {loading ? (
-                <div className="grid grid-cols-1 gap-4">
-                    {[1, 2, 3].map(i => (
-                        <Card key={i} className="p-0 overflow-hidden flex flex-col sm:flex-row h-auto sm:h-32">
-                            <Skeleton className="w-full sm:w-48 h-48 sm:h-full shrink-0" />
-                            <div className="p-6 flex-1 space-y-3">
-                                <div className="flex justify-between">
-                                    <Skeleton className="h-5 w-32" />
-                                    <Skeleton className="h-5 w-20 rounded-full" />
-                                </div>
-                                <Skeleton className="h-8 w-40" />
-                            </div>
-                        </Card>
-                    ))}
-                </div>
-            ) : error ? (
-                <div className="bg-destructive/10 text-destructive p-8 rounded-xl border border-destructive/20 text-center">
-                    <p className="font-medium mb-4">{error}</p>
-                    <Button variant="outline" onClick={refetch}>Retry</Button>
-                </div>
-            ) : filteredPayments && filteredPayments.length > 0 ? (
-                <div className="grid grid-cols-1 gap-4">
-                    {filteredPayments.map((payment) => (
+            {/* Main Content */}
+            <main className="space-y-4 pt-2">
+                {loading ? (
+                    <div className="space-y-4">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 h-32 animate-pulse" />
+                        ))}
+                    </div>
+                ) : error ? (
+                    <div className="p-8 text-center bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft border border-border/50">
+                        <p className="text-destructive mb-4">{error}</p>
+                        <Button onClick={refetch}>Retry</Button>
+                    </div>
+                ) : filteredPayments && filteredPayments.length > 0 ? (
+                    filteredPayments.map((payment) => (
                         <PaymentCard
                             key={payment.id}
                             payment={payment}
                             onDelete={handleDelete}
                             onConfirm={handleConfirm}
                         />
-                    ))}
-                </div>
-            ) : (
-                <EmptyState
-                    title={searchQuery ? "No matching payments" : "No payments found"}
-                    description={searchQuery
-                        ? `We couldn't find any payments matching "${searchQuery}".`
-                        : "You haven't recorded any payments yet. Log a payment from a reseller to track their balance!"
-                    }
-                    actionLabel={!searchQuery ? "Record Payment" : undefined}
-                    onAction={() => navigate('/payments/new')}
-                    icon={<PlusCircle className="h-10 w-10 opacity-40" />}
-                />
-            )}
+                    ))
+                ) : (
+                    <EmptyState
+                        title={searchQuery ? "No matching payments" : "No payments found"}
+                        description={searchQuery
+                            ? `We couldn't find any payments matching "${searchQuery}".`
+                            : "You haven't recorded any payments yet."
+                        }
+                        actionLabel={!searchQuery ? "Record Payment" : undefined}
+                        onAction={() => navigate('/payments/new')}
+                        icon={<PlusCircle className="h-10 w-10 opacity-40" />}
+                    />
+                )}
+            </main>
+
+            {/* Floating Action Button */}
+            <div className="fixed bottom-24 right-4 z-40">
+                <Button
+                    onClick={() => navigate('/payments/new')}
+                    className="w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-fab hover:bg-primary-dark transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center p-0"
+                >
+                    <Plus className="h-8 w-8" />
+                </Button>
+            </div>
         </div>
     );
 };

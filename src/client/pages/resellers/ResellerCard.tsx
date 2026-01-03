@@ -7,10 +7,9 @@ import {
     Edit,
     Trash2
 } from 'lucide-react';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useResellerBalance } from '@/hooks/useResellers';
-import { cn, formatCurrency } from '@/lib/utils';
+import { formatCurrency } from '@/lib/utils';
 import type { Reseller } from '@/lib/types';
 
 interface ResellerCardProps {
@@ -23,76 +22,82 @@ export const ResellerCard: React.FC<ResellerCardProps> = ({ reseller, onDelete }
     const { data: balance, loading: loadingBalance } = useResellerBalance(reseller.id);
 
     const outstandingBalance = balance ? balance.totalOrders - balance.totalPayments : 0;
+    const hasBalance = outstandingBalance > 0;
+
+    // Status Logic
+    const statusColor = hasBalance ? 'bg-amber-400' : 'bg-emerald-500';
+    const statusBadge = hasBalance ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800';
+    const statusLabel = hasBalance ? 'OWING' : 'GOOD';
 
     return (
-        <Card className="overflow-hidden group hover:shadow-xl transition-all duration-300 border-none bg-gradient-to-br from-card to-secondary/30">
-            <CardContent className="p-6">
-                <div className="flex items-start gap-4 mb-6">
-                    <div className="relative">
-                        <div className="h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center text-primary border-4 border-background shadow-sm">
-                            <User className="h-8 w-8" />
-                        </div>
-                        <div className="absolute -bottom-1 -right-1 h-6 w-6 rounded-full bg-emerald-500 border-2 border-background flex items-center justify-center shadow-sm">
-                            <div className="h-2 w-2 rounded-full bg-white animate-pulse" />
-                        </div>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                        <h3 className="font-bold text-xl truncate tracking-tight">{reseller.resellerName}</h3>
-                        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                            <Mail className="h-3 w-3" />
-                            <span className="truncate">{reseller.resellerEmail}</span>
-                        </div>
-                    </div>
+        <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4">
+            {/* Status Strip */}
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${statusColor} rounded-l-2xl`}></div>
+
+            <div className="flex gap-4">
+                {/* Icon/Image Section */}
+                <div className="flex-shrink-0 w-20 h-20 bg-secondary/30 rounded-xl overflow-hidden border border-border/50 relative flex items-center justify-center">
+                    <span className={`absolute top-0 right-0 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md z-10 uppercase ${statusBadge}`}>
+                        {statusLabel}
+                    </span>
+                    {reseller.resellerPhoto ? (
+                        <img
+                            src={reseller.resellerPhoto}
+                            alt={reseller.resellerName}
+                            className="w-full h-full object-cover"
+                        />
+                    ) : (
+                        <User className="h-8 w-8 text-muted-foreground" />
+                    )}
                 </div>
 
-                <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="p-3 rounded-xl bg-background/50 border border-border/50">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Due Balance</p>
-                        <p className={cn(
-                            "text-sm font-bold",
-                            outstandingBalance > 0 ? "text-amber-500" : "text-emerald-500"
-                        )}>
-                            {loadingBalance ? "..." : formatCurrency(outstandingBalance)}
-                        </p>
+                {/* Content Section */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                    <div className="flex justify-between items-start">
+                        <div className="min-w-0 pr-2">
+                            <h3 className="text-base font-bold text-foreground truncate">{reseller.resellerName}</h3>
+                            <div className="flex flex-col gap-1 mt-1">
+                                <div className="flex items-center text-xs text-muted-foreground">
+                                    <Mail className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />
+                                    <span className="truncate">{reseller.resellerEmail || 'No email'}</span>
+                                </div>
+                                {reseller.resellerPhone && (
+                                    <div className="flex items-center text-xs text-muted-foreground">
+                                        <Phone className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />
+                                        <span className="truncate">{reseller.resellerPhone}</span>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                        <div className="flex flex-col items-end">
+                            <p className={`font-bold text-base whitespace-nowrap ${hasBalance ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                {loadingBalance ? '...' : formatCurrency(outstandingBalance)}
+                            </p>
+                            <span className="text-[9px] text-muted-foreground uppercase font-medium">Due</span>
+                        </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-background/50 border border-border/50">
-                        <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Total Orders</p>
-                        <p className="text-sm font-bold">
-                            {loadingBalance ? "..." : (balance?.totalOrders || 0) / 1000 >= 1 ? `${((balance?.totalOrders || 0) / 1000).toFixed(1)}k` : formatCurrency(balance?.totalOrders || 0)}
-                        </p>
+
+                    <div className="flex justify-end items-center mt-3 gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                            onClick={() => navigate(`/resellers/${reseller.id}/edit`)}
+                        >
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                            onClick={() => onDelete(reseller.id)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
                     </div>
                 </div>
-
-                <div className="space-y-2">
-                    <div className="flex items-center gap-3 text-sm text-muted-foreground">
-                        <Phone className="h-4 w-4 text-primary/60" />
-                        <span>{reseller.resellerPhone}</span>
-                    </div>
-                </div>
-            </CardContent>
-
-            <CardFooter className="p-4 bg-muted/20 flex gap-2">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-1 text-xs hover:bg-background h-9"
-                    onClick={() => navigate(`/resellers/${reseller.id}/edit`)}
-                >
-                    <Edit className="mr-2 h-3.5 w-3.5" />
-                    Edit
-                </Button>
-                <div className="w-px h-6 bg-border self-center" />
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-1 text-xs text-destructive hover:bg-destructive/10 h-9"
-                    onClick={() => onDelete(reseller.id)}
-                >
-                    <Trash2 className="mr-2 h-3.5 w-3.5" />
-                    Delete
-                </Button>
-            </CardFooter>
-        </Card>
+            </div>
+        </div>
     );
 };
 

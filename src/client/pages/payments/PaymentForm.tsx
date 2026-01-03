@@ -73,8 +73,13 @@ export const PaymentForm: React.FC = () => {
         const { name, value, type } = e.target;
         setFormData(prev => ({
             ...prev,
-            [name]: type === 'number' ? Number(value) : value,
+            [name]: type === 'number' ? (value === '' ? 0 : Number(value)) : value,
         }));
+    };
+
+    // Helper to display number inputs - shows empty string instead of 0
+    const displayNumber = (value: number | undefined) => {
+        return value === 0 || value === undefined ? '' : value;
     };
 
     const handleSelectChange = (name: string, value: string) => {
@@ -116,11 +121,11 @@ export const PaymentForm: React.FC = () => {
             result = await createAction(formData);
         }
 
-        if (result.success) {
+        // useMutation execute returns T | null - null means error (error is set via hook's error state)
+        if (result) {
             navigate('/payments');
-        } else {
-            setLocalError(result.error || 'Failed to save payment record');
         }
+        // If result is null, the error was already set by the mutation hook
     };
 
     if (isEdit && loadingPayment) {
@@ -200,7 +205,7 @@ export const PaymentForm: React.FC = () => {
                                             type="number"
                                             step="0.01"
                                             className="pl-7"
-                                            value={formData.paymentAmount}
+                                            value={displayNumber(formData.paymentAmount)}
                                             onChange={handleChange}
                                             required
                                         />
@@ -250,7 +255,7 @@ export const PaymentForm: React.FC = () => {
                                             name="paymentReference"
                                             className="pl-10"
                                             placeholder="Optional"
-                                            value={formData.paymentReference}
+                                            value={formData.paymentReference || ''}
                                             onChange={handleChange}
                                         />
                                     </div>

@@ -3,14 +3,15 @@ import { useNavigate } from 'react-router-dom';
 import {
     Search,
     RefreshCcw,
-    UserPlus
+    UserPlus,
+
 } from 'lucide-react';
 import { useResellers, useResellerMutations } from '@/hooks/useResellers';
 import { ResellerCard } from './ResellerCard';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmptyState } from '@/components/index';
-import { Skeleton } from '@/components/ui/skeleton';
+// Skeleton is replaced by custom div pulse
 
 export const ResellersPage: React.FC = () => {
     const navigate = useNavigate();
@@ -27,80 +28,76 @@ export const ResellersPage: React.FC = () => {
 
     const filteredResellers = resellers?.filter(r =>
         r.resellerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        r.resellerEmail.toLowerCase().includes(searchQuery.toLowerCase())
+        (r.resellerEmail && r.resellerEmail.toLowerCase().includes(searchQuery.toLowerCase()))
     );
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Resellers</h1>
-                    <p className="text-muted-foreground mt-1">Your network of business partners.</p>
+        <div className="relative pb-24 min-h-screen -mx-2 -my-1 px-4 pt-2 md:mx-0 md:my-0 md:px-0">
+            <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm -mx-4 px-4 pt-4 pb-2 md:mx-0 md:px-0 transition-all">
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight">Resellers</h1>
+                    <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
+                            <RefreshCcw className="h-5 w-5 text-muted-foreground" />
+                        </Button>
+                    </div>
                 </div>
+
+                <div className="relative mb-2">
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                            <Search className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                        <Input
+                            placeholder="Search resellers..."
+                            className="block w-full pl-10 pr-3 h-12 border-none rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm ring-1 ring-border focus:outline-none focus:ring-2 focus:ring-primary sm:text-sm transition-shadow text-foreground placeholder:text-muted-foreground"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                        />
+                    </div>
+                </div>
+            </header>
+
+            <main className="space-y-4 pt-2">
+                {loading ? (
+                    <div className="space-y-4">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 h-32 animate-pulse" />
+                        ))}
+                    </div>
+                ) : error ? (
+                    <div className="bg-destructive/10 text-destructive p-8 rounded-xl border border-destructive/20 text-center">
+                        <p className="font-medium mb-4">{error}</p>
+                        <Button variant="outline" onClick={refetch}>Retry</Button>
+                    </div>
+                ) : filteredResellers && filteredResellers.length > 0 ? (
+                    <div className="space-y-4">
+                        {filteredResellers.map((reseller) => (
+                            <ResellerCard key={reseller.id} reseller={reseller} onDelete={handleDelete} />
+                        ))}
+                    </div>
+                ) : (
+                    <EmptyState
+                        title={searchQuery ? "No matching resellers" : "No resellers found"}
+                        description={searchQuery
+                            ? `We couldn't find any resellers matching "${searchQuery}".`
+                            : "You haven't added any resellers yet. Build your network by adding your first reseller!"
+                        }
+                        actionLabel={!searchQuery ? "Add Reseller" : undefined}
+                        onAction={() => navigate('/resellers/new')}
+                    />
+                )}
+            </main>
+
+            {/* Floating Action Button */}
+            <div className="fixed bottom-24 right-4 z-40">
                 <Button
                     onClick={() => navigate('/resellers/new')}
-                    className="shadow-lg hover:shadow-primary/25 transition-all w-full sm:w-auto"
+                    className="w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-fab hover:bg-primary-dark transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center p-0"
                 >
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add Reseller
+                    <UserPlus className="h-6 w-6" />
                 </Button>
             </div>
-
-            <div className="flex gap-4">
-                <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                        placeholder="Search resellers by name or email..."
-                        className="pl-10"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                    />
-                </div>
-                <Button variant="outline" onClick={refetch} size="icon" className="shrink-0">
-                    <RefreshCcw className="h-4 w-4" />
-                </Button>
-            </div>
-
-            {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {[1, 2, 3].map(i => (
-                        <div key={i} className="bg-card rounded-xl p-6 space-y-4 border shadow-sm">
-                            <div className="flex items-center gap-4">
-                                <Skeleton className="h-16 w-16 rounded-full" />
-                                <div className="space-y-2">
-                                    <Skeleton className="h-5 w-32" />
-                                    <Skeleton className="h-4 w-24" />
-                                </div>
-                            </div>
-                            <div className="grid grid-cols-2 gap-4 mt-6">
-                                <Skeleton className="h-14 rounded-xl" />
-                                <Skeleton className="h-14 rounded-xl" />
-                            </div>
-                        </div>
-                    ))}
-                </div>
-            ) : error ? (
-                <div className="bg-destructive/10 text-destructive p-8 rounded-xl border border-destructive/20 text-center">
-                    <p className="font-medium mb-4">{error}</p>
-                    <Button variant="outline" onClick={refetch}>Retry</Button>
-                </div>
-            ) : filteredResellers && filteredResellers.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredResellers.map((reseller) => (
-                        <ResellerCard key={reseller.id} reseller={reseller} onDelete={handleDelete} />
-                    ))}
-                </div>
-            ) : (
-                <EmptyState
-                    title={searchQuery ? "No matching resellers" : "No resellers found"}
-                    description={searchQuery
-                        ? `We couldn't find any resellers matching "${searchQuery}".`
-                        : "You haven't added any resellers yet. Build your network by adding your first reseller!"
-                    }
-                    actionLabel={!searchQuery ? "Add Reseller" : undefined}
-                    onAction={() => navigate('/resellers/new')}
-                />
-            )}
         </div>
     );
 };

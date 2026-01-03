@@ -32,6 +32,9 @@ export interface Order {
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
+    // Joined fields frequently returned by API
+    storeName: string;
+    resellerName: string;
 }
 
 export interface Store {

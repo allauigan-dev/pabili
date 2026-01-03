@@ -6,7 +6,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, desc, and, isNull } from 'drizzle-orm';
-import { createDb, orders } from '../db';
+import { createDb, orders, stores, resellers } from '../db';
 
 const app = new Hono<{ Bindings: Env }>();
 
@@ -44,8 +44,33 @@ app.get('/', async (c) => {
 
     try {
         const allOrders = await db
-            .select()
+            .select({
+                id: orders.id,
+                orderNumber: orders.orderNumber,
+                userId: orders.userId,
+                orderName: orders.orderName,
+                orderDescription: orders.orderDescription,
+                orderQuantity: orders.orderQuantity,
+                orderImage: orders.orderImage,
+                orderPrice: orders.orderPrice,
+                orderFee: orders.orderFee,
+                orderResellerPrice: orders.orderResellerPrice,
+                orderTotal: orders.orderTotal,
+                orderResellerTotal: orders.orderResellerTotal,
+                orderStatus: orders.orderStatus,
+                orderDate: orders.orderDate,
+                storeId: orders.storeId,
+                resellerId: orders.resellerId,
+                invoiceId: orders.invoiceId,
+                createdAt: orders.createdAt,
+                updatedAt: orders.updatedAt,
+                deletedAt: orders.deletedAt,
+                storeName: stores.storeName,
+                resellerName: resellers.resellerName,
+            })
             .from(orders)
+            .leftJoin(stores, eq(orders.storeId, stores.id))
+            .leftJoin(resellers, eq(orders.resellerId, resellers.id))
             .where(isNull(orders.deletedAt))
             .orderBy(desc(orders.createdAt));
 
@@ -67,8 +92,33 @@ app.get('/:id', async (c) => {
 
     try {
         const [order] = await db
-            .select()
+            .select({
+                id: orders.id,
+                orderNumber: orders.orderNumber,
+                userId: orders.userId,
+                orderName: orders.orderName,
+                orderDescription: orders.orderDescription,
+                orderQuantity: orders.orderQuantity,
+                orderImage: orders.orderImage,
+                orderPrice: orders.orderPrice,
+                orderFee: orders.orderFee,
+                orderResellerPrice: orders.orderResellerPrice,
+                orderTotal: orders.orderTotal,
+                orderResellerTotal: orders.orderResellerTotal,
+                orderStatus: orders.orderStatus,
+                orderDate: orders.orderDate,
+                storeId: orders.storeId,
+                resellerId: orders.resellerId,
+                invoiceId: orders.invoiceId,
+                createdAt: orders.createdAt,
+                updatedAt: orders.updatedAt,
+                deletedAt: orders.deletedAt,
+                storeName: stores.storeName,
+                resellerName: resellers.resellerName,
+            })
             .from(orders)
+            .leftJoin(stores, eq(orders.storeId, stores.id))
+            .leftJoin(resellers, eq(orders.resellerId, resellers.id))
             .where(and(eq(orders.id, id), isNull(orders.deletedAt)));
 
         if (!order) {

@@ -7,9 +7,8 @@ import {
     Edit,
     Trash2
 } from 'lucide-react';
-import { Card, CardContent, CardFooter } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+
 import type { Store } from '@/lib/types';
 
 interface StoreCardProps {
@@ -20,60 +19,66 @@ interface StoreCardProps {
 export const StoreCard: React.FC<StoreCardProps> = ({ store, onDelete }) => {
     const navigate = useNavigate();
 
+    const isActive = store.storeStatus === 'active';
+    const statusColor = isActive ? 'bg-emerald-500' : 'bg-slate-400';
+    const statusBadge = isActive ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-800';
+
     return (
-        <Card className="overflow-hidden group hover:shadow-lg transition-all duration-300 border-none bg-gradient-to-br from-card to-secondary/20">
-            <CardContent className="p-6">
-                <div className="flex items-start justify-between mb-4">
-                    <div className="flex items-center gap-4">
-                        <div className="h-14 w-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-all duration-300 shadow-inner">
-                            <StoreIcon className="h-7 w-7" />
-                        </div>
-                        <div>
-                            <h3 className="font-bold text-xl tracking-tight leading-none mb-1">{store.storeName}</h3>
-                            <Badge variant={store.storeStatus === 'active' ? 'default' : 'secondary'} className="text-[10px] h-5 px-1.5 uppercase tracking-wider">
-                                {store.storeStatus}
-                            </Badge>
+        <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4">
+            {/* Status Strip */}
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${statusColor} rounded-l-2xl`}></div>
+
+            <div className="flex gap-4">
+                {/* Icon/Image Section */}
+                <div className="flex-shrink-0 w-20 h-20 bg-secondary/30 rounded-xl overflow-hidden border border-border/50 relative flex items-center justify-center">
+                    <span className={`absolute top-0 right-0 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md z-10 uppercase ${statusBadge}`}>
+                        {store.storeStatus}
+                    </span>
+                    <StoreIcon className={`h-8 w-8 ${isActive ? 'text-primary' : 'text-muted-foreground'}`} />
+                </div>
+
+                {/* Content Section */}
+                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                    <div className="flex justify-between items-start">
+                        <div className="min-w-0 pr-2">
+                            <h3 className="text-base font-bold text-foreground truncate">{store.storeName}</h3>
+                            <div className="flex flex-col gap-1 mt-1">
+                                {store.storeAddress && (
+                                    <div className="flex items-center text-xs text-muted-foreground">
+                                        <MapPin className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />
+                                        <span className="truncate">{store.storeAddress}</span>
+                                    </div>
+                                )}
+                                {store.storePhone && (
+                                    <div className="flex items-center text-xs text-muted-foreground">
+                                        <Phone className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />
+                                        <span className="truncate">{store.storePhone}</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
-                </div>
 
-                <div className="space-y-3 mt-6">
-                    {store.storeLocation && (
-                        <div className="flex items-start gap-3 text-sm text-muted-foreground group/item">
-                            <MapPin className="h-4 w-4 mt-0.5 text-primary/70 group-hover/item:text-primary transition-colors" />
-                            <span className="leading-tight">{store.storeLocation}</span>
-                        </div>
-                    )}
-                    {store.storeContact && (
-                        <div className="flex items-center gap-3 text-sm text-muted-foreground group/item">
-                            <Phone className="h-4 w-4 text-primary/70 group-hover/item:text-primary transition-colors" />
-                            <span>{store.storeContact}</span>
-                        </div>
-                    )}
+                    <div className="flex justify-end items-center mt-3 gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                            onClick={() => navigate(`/stores/${store.id}/edit`)}
+                        >
+                            <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                            onClick={() => onDelete(store.id)}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
                 </div>
-            </CardContent>
-
-            <CardFooter className="p-4 bg-secondary/10 flex gap-2">
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-1 text-xs hover:bg-background h-9"
-                    onClick={() => navigate(`/stores/${store.id}/edit`)}
-                >
-                    <Edit className="mr-2 h-3.5 w-3.5" />
-                    Edit
-                </Button>
-                <div className="w-px h-6 bg-border self-center" />
-                <Button
-                    variant="ghost"
-                    size="sm"
-                    className="flex-1 text-xs text-destructive hover:bg-destructive/10 hover:text-destructive h-9"
-                    onClick={() => onDelete(store.id)}
-                >
-                    <Trash2 className="mr-2 h-3.5 w-3.5" />
-                    Delete
-                </Button>
-            </CardFooter>
-        </Card>
+            </div>
+        </div>
     );
 };

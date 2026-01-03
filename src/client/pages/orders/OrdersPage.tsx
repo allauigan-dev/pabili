@@ -1,19 +1,16 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus,
     Search,
+    Bell,
     RefreshCcw,
 } from 'lucide-react';
 import { useOrders, useOrderMutations } from '@/hooks/useOrders';
 import { OrderCard } from './OrderCard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { EmptyState } from '@/components/index';
-import { Badge } from '@/components/ui/badge';
-// Dropdown menu components removed as they were unused
-import { Skeleton } from '@/components/ui/skeleton';
-import { Card, CardContent } from '@/components/ui/card';
+
 
 export const OrdersPage: React.FC = () => {
     const navigate = useNavigate();
@@ -40,94 +37,98 @@ export const OrdersPage: React.FC = () => {
     const statusList = ['all', 'pending', 'bought', 'packed', 'delivered'];
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">Orders</h1>
-                    <p className="text-muted-foreground mt-1">Manage and track your pasabuy orders.</p>
+        <div className="relative pb-24 min-h-screen -mx-2 -my-1 px-4 pt-2 md:mx-0 md:my-0 md:px-0">
+            {/* Sticky Header */}
+            <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm -mx-4 px-4 pt-4 pb-2 md:mx-0 md:px-0 transition-all">
+                <div className="flex items-center justify-between mb-4">
+                    <h1 className="text-2xl font-bold text-foreground tracking-tight">Orders</h1>
+                    <div className="flex gap-2">
+                        <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
+                            <RefreshCcw className="h-5 w-5 text-muted-foreground" />
+                        </Button>
+                        <Button variant="ghost" size="icon" className="rounded-full hover:bg-secondary">
+                            <Bell className="h-6 w-6 text-muted-foreground" />
+                        </Button>
+                    </div>
                 </div>
-                <Button
-                    onClick={() => navigate('/orders/new')}
-                    className="shadow-lg hover:shadow-primary/25 transition-all w-full sm:w-auto"
-                >
-                    <Plus className="mr-2 h-4 w-4" />
-                    New Order
-                </Button>
-            </div>
 
-            <div className="flex flex-col md:flex-row gap-4 items-center">
-                <div className="relative w-full md:max-w-sm">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
+                {/* Search Bar */}
+                <div className="relative mb-4">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Search className="h-5 w-5 text-muted-foreground" />
+                    </div>
+                    <input
+                        className="block w-full pl-10 pr-3 h-12 border-none rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm ring-1 ring-border focus:outline-none focus:ring-2 focus:ring-primary sm:text-sm transition-shadow text-foreground placeholder:text-muted-foreground"
                         placeholder="Search orders, resellers, stores..."
-                        className="pl-10"
+                        type="text"
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
-                <div className="flex items-center gap-2 overflow-x-auto pb-1 w-full no-scrollbar">
-                    {statusList.map((f) => (
-                        <Button
-                            key={f}
-                            variant={filter === f ? 'default' : 'secondary'}
-                            size="sm"
-                            onClick={() => setFilter(f)}
-                            className="capitalize shrink-0 h-9"
-                        >
-                            {f}
-                            {filter === f && orders && (
-                                <Badge variant="secondary" className="ml-2 h-5 min-w-[20px] px-1 bg-background/20">
-                                    {orders.filter(o => f === 'all' ? true : o.orderStatus === f).length}
-                                </Badge>
-                            )}
-                        </Button>
-                    ))}
-                    <div className="ml-auto flex items-center gap-2">
-                        <Button variant="ghost" size="icon" onClick={refetch} className="shrink-0">
-                            <RefreshCcw className="h-4 w-4" />
-                        </Button>
-                    </div>
-                </div>
-            </div>
 
-            {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {[1, 2, 3, 4, 5, 6].map(i => (
-                        <div key={i} className="space-y-3">
-                            <Skeleton className="h-48 w-full rounded-xl" />
-                            <div className="space-y-2">
-                                <Skeleton className="h-4 w-3/4" />
-                                <Skeleton className="h-4 w-1/2" />
-                            </div>
-                        </div>
-                    ))}
+                {/* Filter Tabs */}
+                <div className="flex space-x-3 overflow-x-auto no-scrollbar pb-2 mask-linear">
+                    {statusList.map((f) => {
+                        const count = orders?.filter(o => f === 'all' ? true : o.orderStatus === f).length || 0;
+                        const isActive = filter === f;
+
+                        return (
+                            <button
+                                key={f}
+                                onClick={() => setFilter(f)}
+                                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${isActive
+                                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
+                                    : 'bg-surface-light dark:bg-surface-dark text-muted-foreground border border-border hover:bg-secondary'
+                                    }`}
+                            >
+                                <span className="capitalize">{f}</span>
+                                {isActive && (
+                                    <span className="bg-white/20 text-current text-[10px] px-1.5 py-0.5 rounded-full">
+                                        {count}
+                                    </span>
+                                )}
+                            </button>
+                        );
+                    })}
                 </div>
-            ) : error ? (
-                <Card className="border-destructive/50 bg-destructive/5">
-                    <CardContent className="flex flex-col items-center justify-center py-10 gap-4">
-                        <p className="text-destructive font-medium">{error}</p>
-                        <Button variant="outline" onClick={refetch}>Retry</Button>
-                    </CardContent>
-                </Card>
-            ) : filteredOrders && filteredOrders.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {filteredOrders.map((order) => (
+            </header>
+
+            {/* Main Content */}
+            <main className="space-y-4 pt-2">
+                {loading ? (
+                    <div className="space-y-4">
+                        {[1, 2, 3].map(i => (
+                            <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 h-32 animate-pulse" />
+                        ))}
+                    </div>
+                ) : error ? (
+                    <div className="p-8 text-center bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft border border-border/50">
+                        <p className="text-destructive mb-4">{error}</p>
+                        <Button onClick={refetch}>Retry</Button>
+                    </div>
+                ) : filteredOrders && filteredOrders.length > 0 ? (
+                    filteredOrders.map((order) => (
                         <OrderCard key={order.id} order={order} onDelete={handleDelete} />
-                    ))}
-                </div>
-            ) : (
-                <EmptyState
-                    title={searchQuery ? "No matching orders" : "No orders found"}
-                    description={searchQuery
-                        ? `We couldn't find any orders matching "${searchQuery}".`
-                        : filter === 'all'
-                            ? "You haven't created any orders yet. Start by adding your first order!"
-                            : `No orders match the "${filter}" status.`
-                    }
-                    actionLabel={!searchQuery && filter === 'all' ? "Create Order" : undefined}
-                    onAction={() => navigate('/orders/new')}
-                />
-            )}
+                    ))
+                ) : (
+                    <div className="flex flex-col items-center justify-center py-20 opacity-60">
+                        <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mb-4">
+                            <Search className="h-10 w-10 text-muted-foreground" />
+                        </div>
+                        <p className="text-lg font-medium">No orders found</p>
+                    </div>
+                )}
+            </main>
+
+            {/* Floating Action Button */}
+            <div className="fixed bottom-24 right-4 z-40">
+                <Button
+                    onClick={() => navigate('/orders/new')}
+                    className="w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-fab hover:bg-primary-dark transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center p-0"
+                >
+                    <Plus className="h-8 w-8" />
+                </Button>
+            </div>
         </div>
     );
 };

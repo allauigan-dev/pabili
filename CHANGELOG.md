@@ -43,6 +43,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - API validation errors in Order Form by aligning frontend/backend field names
 - React rendering errors when displaying API validation messages
 - NaN API requests in entity forms by checking for valid IDs before fetching
+- Input placeholder deletion issue in forms
+- Dropdown menu layout issue in `Select` component
+
+### Changed
+- **Redesigned Order Form**: Complete visual overhaul of "Create New Order" page with premium UI, custom file upload, and improved layout.
+- **Theme Update**: Introduced new color palette (Violet/Gray) and updated design tokens in `theme.css`.
+- **Order Cards**: Refined layout to be more compact, allowing 8+ cards per screen.
+- **Store & Reseller Cards**: Redesigned to match the horizontal layout of Order cards.
+- **Uniform Layouts**: Standardized `InvoicesPage`, `PaymentsPage`, and their respective cards to match the new compact design.
 
 ### Deprecated
 - N/A

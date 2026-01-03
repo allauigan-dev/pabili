@@ -5,106 +5,162 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
-  --background: 0 0% 100%;
-  --foreground: 240 10% 4%;
+  --background: 210 20% 98%;
+  /* #F3F4F6 (Gray-100) */
+  --foreground: 220 39% 11%;
+  /* #111827 (Gray-900) - Text Main Light */
+
   --card: 0 0% 100%;
-  --card-foreground: 240 10% 4%;
+  /* #FFFFFF (Surface Light) */
+  --card-foreground: 220 39% 11%;
+
   --popover: 0 0% 100%;
-  --popover-foreground: 240 10% 4%;
+  --popover-foreground: 220 39% 11%;
+
   --primary: 262 83% 58%;
-  --primary-foreground: 0 0% 98%;
-  --secondary: 240 5% 96%;
-  --secondary-foreground: 240 6% 10%;
-  --muted: 240 5% 96%;
-  --muted-foreground: 240 4% 46%;
-  --accent: 240 5% 96%;
-  --accent-foreground: 240 6% 10%;
+  /* #7C3AED (Violet-600) */
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 220 13% 91%;
+  /* #E5E7EB (Border Light / Gray-200) can be used as secondary/border */
+  --secondary-foreground: 220 39% 11%;
+
+  --muted: 220 13% 91%;
+  /* Using Gray-200 for muted backgrounds */
+  --muted-foreground: 220 13% 46%;
+  /* #6B7280 (Gray-500) - Text Sub Light */
+
+  --accent: 210 20% 98%;
+  --accent-foreground: 220 39% 11%;
+
   --destructive: 0 84% 60%;
   --destructive-foreground: 0 0% 98%;
-  --border: 240 6% 90%;
-  --input: 240 6% 90%;
+
+  --border: 220 13% 91%;
+  /* #E5E7EB (Border Light) */
+  --input: 220 13% 91%;
   --ring: 262 83% 58%;
-  --radius: 0.75rem;
+
+  --radius: 0.5rem;
+  /* 8px as per design (rounded-2xl is for cards, but base radius seems smaller usually, keeping 0.5rem as default) */
 }
 
 .dark {
-  --background: 240 10% 4%;
-  --foreground: 0 0% 98%;
-  --card: 240 10% 7%;
-  --card-foreground: 0 0% 98%;
-  --popover: 240 10% 4%;
-  --popover-foreground: 0 0% 98%;
-  --primary: 262 83% 70%;
-  --primary-foreground: 240 6% 10%;
-  --secondary: 240 4% 16%;
-  --secondary-foreground: 0 0% 98%;
-  --muted: 240 4% 16%;
-  --muted-foreground: 240 5% 65%;
-  --accent: 240 4% 16%;
-  --accent-foreground: 0 0% 98%;
+  --background: 220 39% 11%;
+  /* #111827 (Background Dark) */
+  --foreground: 210 20% 98%;
+  /* #F9FAFB (Text Main Dark) */
+
+  --card: 220 26% 17%;
+  /* #1F2937 (Surface Dark) */
+  --card-foreground: 210 20% 98%;
+
+  --popover: 220 26% 17%;
+  --popover-foreground: 210 20% 98%;
+
+  --primary: 262 83% 58%;
+  --primary-foreground: 0 0% 100%;
+
+  --secondary: 215 19% 27%;
+  /* #374151 (Border Dark / Gray-700) */
+  --secondary-foreground: 210 20% 98%;
+
+  --muted: 215 19% 27%;
+  --muted-foreground: 218 11% 65%;
+  /* #9CA3AF (Text Sub Dark) */
+
+  --accent: 215 19% 27%;
+  --accent-foreground: 210 20% 98%;
+
   --destructive: 0 63% 60%;
   --destructive-foreground: 0 0% 98%;
-  --border: 240 4% 16%;
-  --input: 240 4% 16%;
-  --ring: 262 83% 70%;
+
+  --border: 215 19% 27%;
+  /* #374151 (Border Dark) */
+  --input: 215 19% 27%;
+  --ring: 262 83% 58%;
 }
 
-@theme {
-  --font-sans: "Inter", system-ui, -apple-system, sans-serif;
+--font-sans: "Inter",
+system-ui,
+-apple-system,
+sans-serif;
+--font-display: "Inter",
+system-ui,
+-apple-system,
+sans-serif;
 
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
+--color-border: hsl(var(--border));
+--color-input: hsl(var(--input));
+--color-ring: hsl(var(--ring));
+--color-background: hsl(var(--background));
+--color-foreground: hsl(var(--foreground));
 
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
+--color-primary: hsl(var(--primary));
+--color-primary-foreground: hsl(var(--primary-foreground));
+--color-primary-dark: #651FFF;
 
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
+--color-secondary: hsl(var(--secondary));
+--color-secondary-foreground: hsl(var(--secondary-foreground));
 
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
+--color-destructive: hsl(var(--destructive));
+--color-destructive-foreground: hsl(var(--destructive-foreground));
 
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
+--color-muted: hsl(var(--muted));
+--color-muted-foreground: hsl(var(--muted-foreground));
 
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
+--color-accent: hsl(var(--accent));
+--color-accent-foreground: hsl(var(--accent-foreground));
 
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
+--color-popover: hsl(var(--popover));
+--color-popover-foreground: hsl(var(--popover-foreground));
 
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
+--color-card: hsl(var(--card));
+--color-card-foreground: hsl(var(--card-foreground));
 
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
+--color-surface-light: #FFFFFF;
+--color-surface-dark: #1E1E1E;
 
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
+--radius-lg: var(--radius);
+--radius-md: calc(var(--radius) - 2px);
+--radius-sm: calc(var(--radius) - 4px);
+--radius-xl: 16px;
+--radius-2xl: 20px;
 
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
+--shadow-soft: 0 4px 20px -2px rgba(0, 0, 0, 0.05);
+--shadow-fab: 0 10px 25px -5px rgba(124, 77, 255, 0.4);
 
-    to {
-      height: var(--radix-accordion-content-height);
-    }
+--animate-accordion-down: accordion-down 0.2s ease-out;
+--animate-accordion-up: accordion-up 0.2s ease-out;
+
+@keyframes accordion-down {
+  from {
+    height: 0;
   }
 
-  @keyframes accordion-up {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
-
-    to {
-      height: 0;
-    }
+  to {
+    height: var(--radix-accordion-content-height);
   }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+
+  to {
+    height: 0;
+  }
+}
+}
+
+@utility no-scrollbar {
+  &::-webkit-scrollbar {
+    display: none;
+  }
+
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
 
 @layer base {
