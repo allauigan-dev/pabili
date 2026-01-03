@@ -9,7 +9,8 @@ export function useResellers() {
 
 export function useReseller(id: number) {
     const fetcher = useCallback(() => resellersApi.get(id), [id]);
-    return useApi<Reseller>(fetcher, [id]);
+    const isValidId = !isNaN(id) && id > 0;
+    return useApi<Reseller>(fetcher, [id], isValidId);
 }
 
 export function useResellerMutations() {
@@ -24,4 +25,10 @@ export function useResellerMutations() {
         loading: create.loading || update.loading || remove.loading,
         error: create.error || update.error || remove.error
     };
+}
+
+export function useResellerBalance(id: number) {
+    const fetcher = useCallback(() => resellersApi.getBalance(id), [id]);
+    const isValidId = !isNaN(id) && id > 0;
+    return useApi<{ totalOrders: number; totalPayments: number; balance: number }>(fetcher, [id], isValidId);
 }

@@ -1,179 +1,243 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Input, Select, Spinner } from '../../components';
-import { uploadApi } from '../../lib/api';
-import { useStore, useStoreMutations } from '../../hooks/useStores';
-import type { CreateStoreDto } from '../../lib/types';
+import {
+    ArrowLeft,
+    Save,
+    Store as StoreIcon,
+    MapPin,
+    Phone,
+    Loader2,
+    AlertCircle,
+    Building2,
+    Info
+} from 'lucide-react';
+import { useStore, useStoreMutations } from '@/hooks/useStores';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Card,
+    CardContent,
+    CardDescription,
+    CardFooter,
+    CardHeader,
+    CardTitle,
+} from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { CreateStoreDto } from '@/lib/types';
 
 export const StoreForm: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
-    const isEdit = !!id;
+    const { id } = useParams();
     const navigate = useNavigate();
+    const isEdit = !!id;
 
-    const { data: store, loading: storeLoading } = useStore(isEdit ? parseInt(id!) : 0);
-    const { createAction, updateAction, loading: mutationLoading } = useStoreMutations();
+    const { data: store, loading: loadingStore } = useStore(Number(id));
+    const { createAction, updateAction, loading: mutationLoading, error } = useStoreMutations();
 
     const [formData, setFormData] = useState<CreateStoreDto>({
         storeName: '',
         storeAddress: '',
         storePhone: '',
-        storeEmail: '',
-        storeDescription: '',
         storeStatus: 'active',
-        storeLogo: '',
     });
 
-    const [logoFile, setLogoFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string>('');
-    const [isUploading, setIsUploading] = useState(false);
+    const [localError, setLocalError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (store) {
+        if (isEdit && store) {
             setFormData({
                 storeName: store.storeName,
                 storeAddress: store.storeAddress || '',
                 storePhone: store.storePhone || '',
-                storeEmail: store.storeEmail || '',
-                storeDescription: store.storeDescription || '',
                 storeStatus: store.storeStatus,
-                storeLogo: store.storeLogo || '',
             });
-            if (store.storeLogo) setPreviewUrl(store.storeLogo);
         }
-    }, [store]);
+    }, [isEdit, store]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setLogoFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
-        }
+    const handleStatusChange = (value: string) => {
+        setFormData(prev => ({ ...prev, storeStatus: value as 'active' | 'inactive' }));
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLocalError(null);
 
-        let logoUrl = formData.storeLogo;
-
-        if (logoFile) {
-            setIsUploading(true);
-            const uploadRes = await uploadApi.upload(logoFile);
-            if (uploadRes.success && uploadRes.data) {
-                logoUrl = uploadRes.data.url;
-            } else {
-                alert('Logo upload failed: ' + uploadRes.error);
-                setIsUploading(false);
-                return;
-            }
-            setIsUploading(false);
-        }
-
-        const finalData = { ...formData, storeLogo: logoUrl };
-
+        let result;
         if (isEdit) {
-            await updateAction({ id: parseInt(id!), data: finalData });
+            result = await updateAction({ id: Number(id), data: formData });
         } else {
-            await createAction(finalData);
+            result = await createAction(formData);
         }
 
-        navigate('/stores');
+        if (result) {
+            navigate('/stores');
+        } else {
+            setLocalError('Failed to save store. Please check the information and try again.');
+        }
     };
 
-    if (storeLoading) return <Spinner className="py-20" />;
+    if (isEdit && loadingStore) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground">Loading store data...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-                    ← Back
+        <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center justify-between">
+                <Button variant="ghost" onClick={() => navigate('/stores')} className="gap-2 -ml-2">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Stores
                 </Button>
-                <h1 className="text-2xl font-bold">{isEdit ? 'Edit Store' : 'New Store'}</h1>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6 bg-[var(--surface)] p-6 rounded-xl border border-[var(--border)] shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2">
-                        <Input
-                            label="Store Name"
-                            name="storeName"
-                            value={formData.storeName}
-                            onChange={handleChange}
-                            required
-                            placeholder="e.g. Starbucks SM Aura"
-                        />
-                    </div>
+            <div className="space-y-1">
+                <h1 className="text-3xl font-bold tracking-tight">
+                    {isEdit ? 'Edit Store' : 'Add New Store'}
+                </h1>
+                <p className="text-muted-foreground">
+                    {isEdit ? 'Update your shopping location details.' : 'Register a new store for your pasabuy orders.'}
+                </p>
+            </div>
 
-                    <div className="md:col-span-2">
-                        <Input
-                            label="Address"
-                            name="storeAddress"
-                            value={formData.storeAddress || ''}
-                            onChange={handleChange}
-                            placeholder="Complete address"
-                        />
-                    </div>
+            {(error || localError) && (
+                <Alert variant="destructive" className="animate-in head-shake duration-300">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Action failed</AlertTitle>
+                    <AlertDescription>{error || localError}</AlertDescription>
+                </Alert>
+            )}
 
-                    <Input
-                        label="Phone Number"
-                        name="storePhone"
-                        value={formData.storePhone || ''}
-                        onChange={handleChange}
-                        placeholder="e.g. 09171234567"
-                    />
-
-                    <Input
-                        label="Email Address"
-                        type="email"
-                        name="storeEmail"
-                        value={formData.storeEmail || ''}
-                        onChange={handleChange}
-                        placeholder="store@example.com"
-                    />
-
-                    <Select
-                        label="Status"
-                        name="storeStatus"
-                        value={formData.storeStatus}
-                        onChange={handleChange}
-                        options={[
-                            { value: 'active', label: 'Active' },
-                            { value: 'inactive', label: 'Inactive' }
-                        ]}
-                    />
-
-                    <div className="md:col-span-2">
-                        <label className="text-sm font-medium text-[var(--text-secondary)] mb-2 block">Store Logo</label>
-                        <div className="flex items-center gap-6">
-                            <div className="w-20 h-20 bg-[var(--surface-hover)] rounded-full border-2 border-dashed border-[var(--border)] flex items-center justify-center overflow-hidden">
-                                {previewUrl ? (
-                                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="text-2xl">🏪</span>
-                                )}
+            <form onSubmit={handleSubmit}>
+                <Card className="border-none shadow-xl bg-gradient-to-br from-card to-secondary/30 overflow-hidden">
+                    <CardHeader className="border-b bg-muted/30 pb-6">
+                        <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                                <Building2 className="h-6 w-6" />
                             </div>
-                            <input
-                                type="file"
-                                accept="image/*"
-                                onChange={handleLogoChange}
-                                className="text-sm text-[var(--text-secondary)] file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[var(--primary-light)] file:text-[var(--primary)] hover:file:bg-[var(--primary-hover)] file:transition-colors"
-                            />
+                            <div>
+                                <CardTitle>Store Information</CardTitle>
+                                <CardDescription>Basic details about the shopping center or shop.</CardDescription>
+                            </div>
                         </div>
-                    </div>
-                </div>
+                    </CardHeader>
+                    <CardContent className="p-8 space-y-6">
+                        <div className="grid grid-cols-1 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="storeName" className="font-semibold">Store Name</Label>
+                                <div className="relative">
+                                    <StoreIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="storeName"
+                                        name="storeName"
+                                        className="pl-10"
+                                        placeholder="e.g. SM Megamall, Costco, IKEA"
+                                        value={formData.storeName}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+                            </div>
 
-                <div className="flex justify-end gap-3 pt-4">
-                    <Button variant="ghost" type="button" onClick={() => navigate(-1)} disabled={isUploading || mutationLoading}>
-                        Cancel
-                    </Button>
-                    <Button variant="primary" type="submit" isLoading={isUploading || mutationLoading}>
-                        {isEdit ? 'Update Store' : 'Create Store'}
-                    </Button>
-                </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="storeAddress" className="font-semibold">Location</Label>
+                                <div className="relative">
+                                    <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="storeAddress"
+                                        name="storeAddress"
+                                        className="pl-10"
+                                        placeholder="City, Mall wing, or full address"
+                                        value={formData.storeAddress || ''}
+                                        onChange={handleChange}
+                                    />
+                                </div>
+                            </div>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="storePhone" className="font-semibold">Contact Info</Label>
+                                    <div className="relative">
+                                        <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            id="storePhone"
+                                            name="storePhone"
+                                            className="pl-10"
+                                            placeholder="Phone or social media"
+                                            value={formData.storePhone || ''}
+                                            onChange={handleChange}
+                                        />
+                                    </div>
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="storeStatus" className="font-semibold">Status</Label>
+                                    <Select
+                                        value={formData.storeStatus}
+                                        onValueChange={handleStatusChange}
+                                    >
+                                        <SelectTrigger id="storeStatus" className="bg-background">
+                                            <SelectValue placeholder="Select status" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="active">Active</SelectItem>
+                                            <SelectItem value="inactive">Inactive</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <Alert className="bg-primary/5 border-primary/20 text-xs py-3">
+                            <Info className="h-4 w-4 text-primary" />
+                            <AlertDescription>
+                                Active stores are shown by default in your order creation forms.
+                            </AlertDescription>
+                        </Alert>
+                    </CardContent>
+                    <CardFooter className="p-8 pt-0 flex flex-col sm:flex-row gap-4">
+                        <Button
+                            type="submit"
+                            className="w-full sm:flex-1 h-11"
+                            disabled={mutationLoading}
+                        >
+                            {mutationLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    {isEdit ? 'Update Store' : 'Add Store'}
+                                </>
+                            )}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="w-full sm:w-auto h-11"
+                            onClick={() => navigate('/stores')}
+                            disabled={mutationLoading}
+                        >
+                            Cancel
+                        </Button>
+                    </CardFooter>
+                </Card>
             </form>
         </div>
     );

@@ -9,7 +9,8 @@ export function useOrders() {
 
 export function useOrder(id: number) {
     const fetcher = useCallback(() => ordersApi.get(id), [id]);
-    return useApi<Order>(fetcher, [id]);
+    const isValidId = !isNaN(id) && id > 0;
+    return useApi<Order>(fetcher, [id], isValidId);
 }
 
 export function useOrderMutations() {

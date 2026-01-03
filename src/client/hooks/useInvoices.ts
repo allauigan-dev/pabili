@@ -9,7 +9,8 @@ export function useInvoices() {
 
 export function useInvoice(id: number) {
     const fetcher = useCallback(() => invoicesApi.get(id), [id]);
-    return useApi<Invoice>(fetcher, [id]);
+    const isValidId = !isNaN(id) && id > 0;
+    return useApi<Invoice>(fetcher, [id], isValidId);
 }
 
 export function useInvoiceMutations() {

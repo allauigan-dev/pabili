@@ -12,6 +12,12 @@
 		}
 	],
 	"compilerOptions": {
+		"baseUrl": ".",
+		"paths": {
+			"@/*": [
+				"./src/client/*"
+			]
+		},
 		"types": [
 			"./worker-configuration.d.ts"
 		]

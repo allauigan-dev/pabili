@@ -6,13 +6,15 @@ import type { ApiResponse } from '../lib/types';
  */
 export function useApi<T>(
     fetcher: () => Promise<ApiResponse<T>>,
-    deps: any[] = []
+    deps: any[] = [],
+    enabled: boolean = true
 ) {
     const [data, setData] = useState<T | null>(null);
-    const [loading, setLoading] = useState<boolean>(true);
+    const [loading, setLoading] = useState<boolean>(enabled);
     const [error, setError] = useState<string | null>(null);
 
     const execute = useCallback(async () => {
+        if (!enabled) return;
         setLoading(true);
         setError(null);
         try {
@@ -27,11 +29,11 @@ export function useApi<T>(
         } finally {
             setLoading(false);
         }
-    }, [fetcher]);
+    }, [fetcher, enabled]);
 
     useEffect(() => {
         execute();
-    }, deps);
+    }, [execute, ...deps]);
 
     return { data, loading, error, refetch: execute, setData };
 }

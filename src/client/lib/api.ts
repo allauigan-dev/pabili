@@ -5,10 +5,17 @@ import type { ApiResponse, Order, Store, Reseller, Payment, Invoice, CreateOrder
  */
 async function fetchApi<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
     try {
+        // Don't set Content-Type for FormData - browser will set it automatically
+        // with the correct multipart boundary
+        const isFormData = options?.body instanceof FormData;
+        const headers: Record<string, string> = isFormData
+            ? {}
+            : { 'Content-Type': 'application/json' };
+
         const response = await fetch(url, {
             ...options,
             headers: {
-                'Content-Type': 'application/json',
+                ...headers,
                 ...options?.headers,
             },
         });
@@ -16,9 +23,21 @@ async function fetchApi<T>(url: string, options?: RequestInit): Promise<ApiRespo
         const data = await response.json();
 
         if (!response.ok) {
+            // Handle validation errors that return an object with issues
+            let errorMessage: string;
+            if (typeof data.error === 'string') {
+                errorMessage = data.error;
+            } else if (data.error?.issues) {
+                // Zod validation error - extract the first issue message
+                errorMessage = data.error.issues[0]?.message || 'Validation failed';
+            } else if (data.error) {
+                errorMessage = JSON.stringify(data.error);
+            } else {
+                errorMessage = `HTTP error! status: ${response.status}`;
+            }
             return {
                 success: false,
-                error: data.error || `HTTP error! status: ${response.status}`,
+                error: errorMessage,
             };
         }
 

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Header } from './Header';
 import { Sidebar } from './Sidebar';
 import { BottomNav } from './BottomNav';
 
@@ -9,16 +8,12 @@ interface LayoutProps {
 
 export const Layout: React.FC<LayoutProps> = ({ children }) => {
     return (
-        <div className="app-layout">
-            <Header />
+        <div className="min-h-screen bg-background flex flex-col md:flex-row">
+            <Sidebar />
 
-            <div className="app-main-wrapper">
-                <Sidebar />
-
-                <main className="app-main">
-                    <div className="app-container">
-                        {children}
-                    </div>
+            <div className="flex-1 flex flex-col md:ml-64 mb-16 md:mb-0">
+                <main className="flex-1 p-4 md:p-8 max-w-7xl mx-auto w-full">
+                    {children}
                 </main>
             </div>
 

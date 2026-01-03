@@ -1,6 +1,6 @@
 import type { ReactElement } from 'react'
 import { render, type RenderOptions } from '@testing-library/react'
-import { BrowserRouter } from 'react-router-dom'
+import { MemoryRouter } from 'react-router-dom'
 
 // Custom render function that wraps components with necessary providers
 function customRender(
@@ -8,7 +8,7 @@ function customRender(
     options?: Omit<RenderOptions, 'wrapper'>
 ) {
     return render(ui, {
-        wrapper: ({ children }) => <BrowserRouter>{children}</BrowserRouter>,
+        wrapper: ({ children }) => <MemoryRouter>{children}</MemoryRouter>,
         ...options,
     })
 }

@@ -1,193 +1,210 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { Button, Input, Select, Spinner } from '../../components';
-import { useReseller, useResellerMutations } from '../../hooks/useResellers';
-import { uploadApi } from '../../lib/api';
-import type { CreateResellerDto } from '../../lib/types';
+import {
+    ArrowLeft,
+    Save,
+    User,
+    Mail,
+    Phone,
+    Loader2,
+    AlertCircle,
+    UserPlus
+} from 'lucide-react';
+import { useReseller, useResellerMutations } from '@/hooks/useResellers';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    CardDescription,
+    CardFooter
+} from '@/components/ui/card';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import type { CreateResellerDto } from '@/lib/types';
 
 export const ResellerForm: React.FC = () => {
-    const { id } = useParams<{ id: string }>();
-    const isEdit = !!id;
+    const { id } = useParams();
     const navigate = useNavigate();
+    const isEdit = !!id;
 
-    const { data: reseller, loading: resellerLoading } = useReseller(isEdit ? parseInt(id!) : 0);
-    const { createAction, updateAction, loading: mutationLoading } = useResellerMutations();
+    const { data: reseller, loading: loadingReseller } = useReseller(Number(id));
+    const { createAction, updateAction, loading: mutationLoading, error } = useResellerMutations();
 
     const [formData, setFormData] = useState<CreateResellerDto>({
         resellerName: '',
-        resellerPhone: '',
         resellerEmail: '',
-        resellerAddress: '',
-        resellerStatus: 'active',
-        resellerPhoto: '',
-        resellerDescription: '',
+        resellerPhone: '',
     });
 
-    const [photoFile, setPhotoFile] = useState<File | null>(null);
-    const [previewUrl, setPreviewUrl] = useState<string>('');
-    const [isUploading, setIsUploading] = useState(false);
+    const [localError, setLocalError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (reseller) {
+        if (isEdit && reseller) {
             setFormData({
                 resellerName: reseller.resellerName,
-                resellerPhone: reseller.resellerPhone || '',
-                resellerEmail: reseller.resellerEmail || '',
-                resellerAddress: reseller.resellerAddress || '',
-                resellerStatus: reseller.resellerStatus,
-                resellerPhoto: reseller.resellerPhoto || '',
-                resellerDescription: reseller.resellerDescription || '',
+                resellerEmail: reseller.resellerEmail,
+                resellerPhone: reseller.resellerPhone,
             });
-            if (reseller.resellerPhoto) setPreviewUrl(reseller.resellerPhoto);
         }
-    }, [reseller]);
+    }, [isEdit, reseller]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
         setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handlePhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (file) {
-            setPhotoFile(file);
-            setPreviewUrl(URL.createObjectURL(file));
-        }
-    };
-
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLocalError(null);
 
-        let photoUrl = formData.resellerPhoto;
-
-        if (photoFile) {
-            setIsUploading(true);
-            const uploadRes = await uploadApi.upload(photoFile);
-            if (uploadRes.success && uploadRes.data) {
-                photoUrl = uploadRes.data.url;
-            } else {
-                alert('Photo upload failed: ' + uploadRes.error);
-                setIsUploading(false);
-                return;
-            }
-            setIsUploading(false);
-        }
-
-        const finalData = { ...formData, resellerPhoto: photoUrl };
-
+        let result;
         if (isEdit) {
-            await updateAction({ id: parseInt(id!), data: finalData });
+            result = await updateAction({ id: Number(id), data: formData });
         } else {
-            await createAction(finalData);
+            result = await createAction(formData);
         }
 
-        navigate('/resellers');
+        if (result.success) {
+            navigate('/resellers');
+        } else {
+            setLocalError(result.error || 'Failed to save reseller');
+        }
     };
 
-    if (resellerLoading) return <Spinner className="py-20" />;
+    if (isEdit && loadingReseller) {
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                <p className="text-muted-foreground animate-pulse">Loading reseller data...</p>
+            </div>
+        );
+    }
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6">
-            <div className="flex items-center gap-4">
-                <Button variant="ghost" size="sm" onClick={() => navigate(-1)}>
-                    ← Back
+        <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="flex items-center justify-between">
+                <Button variant="ghost" onClick={() => navigate('/resellers')} className="gap-2 -ml-2">
+                    <ArrowLeft className="h-4 w-4" />
+                    Back to Resellers
                 </Button>
-                <h1 className="text-2xl font-bold">{isEdit ? 'Edit Reseller' : 'New Reseller'}</h1>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6 bg-[var(--surface)] p-6 rounded-xl border border-[var(--border)] shadow-sm">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="md:col-span-2 text-center pb-4">
-                        <div className="relative inline-block">
-                            <div className="w-24 h-24 bg-[var(--primary-light)] rounded-full border-2 border-[var(--primary)] flex items-center justify-center overflow-hidden mx-auto mb-2">
-                                {previewUrl ? (
-                                    <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
-                                ) : (
-                                    <span className="text-4xl text-[var(--primary)] font-bold">
-                                        {formData.resellerName ? formData.resellerName.charAt(0) : '?'}
-                                    </span>
-                                )}
+            <div className="space-y-1">
+                <h1 className="text-3xl font-bold tracking-tight">
+                    {isEdit ? 'Edit Reseller' : 'Enroll New Reseller'}
+                </h1>
+                <p className="text-muted-foreground">
+                    {isEdit ? 'Update profile information for this business partner.' : 'Onboard a new reseller to your pasabuy network.'}
+                </p>
+            </div>
+
+            {(error || localError) && (
+                <Alert variant="destructive">
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>Error</AlertTitle>
+                    <AlertDescription>{error || localError}</AlertDescription>
+                </Alert>
+            )}
+
+            <form onSubmit={handleSubmit}>
+                <Card className="border-none shadow-xl bg-gradient-to-br from-card to-secondary/30">
+                    <CardHeader className="border-b bg-muted/40 pb-6">
+                        <div className="flex items-center gap-4">
+                            <div className="h-12 w-12 rounded-full bg-primary/20 flex items-center justify-center text-primary border-2 border-background shadow-inner">
+                                <UserPlus className="h-6 w-6" />
                             </div>
-                            <label className="absolute bottom-0 right-0 bg-[var(--primary)] text-white p-1.5 rounded-full cursor-pointer shadow-lg hover:bg-[var(--primary-hover)] transition-colors">
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
-                                </svg>
-                                <input type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                            </label>
+                            <div>
+                                <CardTitle>Partner Profile</CardTitle>
+                                <CardDescription>Contact information for communication and billing.</CardDescription>
+                            </div>
                         </div>
-                        <p className="text-xs text-[var(--text-muted)] mt-2">Upload profile photo</p>
-                    </div>
+                    </CardHeader>
+                    <CardContent className="p-8 space-y-6">
+                        <div className="grid grid-cols-1 gap-6">
+                            <div className="space-y-2">
+                                <Label htmlFor="resellerName">Full Name / Business Name</Label>
+                                <div className="relative">
+                                    <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                    <Input
+                                        id="resellerName"
+                                        name="resellerName"
+                                        className="pl-10"
+                                        placeholder="e.g. Maria Clara, Zen Shippers"
+                                        value={formData.resellerName}
+                                        onChange={handleChange}
+                                        required
+                                    />
+                                </div>
+                            </div>
 
-                    <div className="md:col-span-2">
-                        <Input
-                            label="Full Name"
-                            name="resellerName"
-                            value={formData.resellerName}
-                            onChange={handleChange}
-                            required
-                            placeholder="John Doe"
-                        />
-                    </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="resellerEmail">Email Address</Label>
+                                    <div className="relative">
+                                        <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            id="resellerEmail"
+                                            name="resellerEmail"
+                                            type="email"
+                                            className="pl-10"
+                                            placeholder="partner@example.com"
+                                            value={formData.resellerEmail}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+                                </div>
 
-                    <Input
-                        label="Phone Number"
-                        name="resellerPhone"
-                        value={formData.resellerPhone || ''}
-                        onChange={handleChange}
-                        placeholder="09171234567"
-                    />
-
-                    <Input
-                        label="Email Address"
-                        type="email"
-                        name="resellerEmail"
-                        value={formData.resellerEmail || ''}
-                        onChange={handleChange}
-                        placeholder="reseller@example.com"
-                    />
-
-                    <div className="md:col-span-2">
-                        <Input
-                            label="Home Address"
-                            name="resellerAddress"
-                            value={formData.resellerAddress || ''}
-                            onChange={handleChange}
-                            placeholder="Full home address"
-                        />
-                    </div>
-
-                    <Select
-                        label="Status"
-                        name="resellerStatus"
-                        value={formData.resellerStatus}
-                        onChange={handleChange}
-                        options={[
-                            { value: 'active', label: 'Active' },
-                            { value: 'inactive', label: 'Inactive' }
-                        ]}
-                    />
-
-                    <div className="md:col-span-2">
-                        <label className="text-sm font-medium text-[var(--text-secondary)] mb-1 block">Description / Notes</label>
-                        <textarea
-                            name="resellerDescription"
-                            value={formData.resellerDescription || ''}
-                            onChange={handleChange}
-                            className="w-full rounded-md border border-[var(--border)] bg-[var(--surface)] px-4 py-2 focus:ring-2 focus:ring-[var(--primary)] focus:border-transparent outline-none h-24"
-                            placeholder="Notes about the reseller partnership"
-                        />
-                    </div>
-                </div>
-
-                <div className="flex justify-end gap-3 pt-4">
-                    <Button variant="ghost" type="button" onClick={() => navigate(-1)} disabled={isUploading || mutationLoading}>
-                        Cancel
-                    </Button>
-                    <Button variant="primary" type="submit" isLoading={isUploading || mutationLoading}>
-                        {isEdit ? 'Update Reseller' : 'Create Reseller'}
-                    </Button>
-                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="resellerPhone">Phone Number</Label>
+                                    <div className="relative">
+                                        <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            id="resellerPhone"
+                                            name="resellerPhone"
+                                            className="pl-10"
+                                            placeholder="+63 912 345 6789"
+                                            value={formData.resellerPhone}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </CardContent>
+                    <CardFooter className="p-8 pt-0 flex flex-col sm:flex-row gap-3">
+                        <Button
+                            type="submit"
+                            className="w-full sm:flex-1 h-11 shadow-lg shadow-primary/20"
+                            disabled={mutationLoading}
+                        >
+                            {mutationLoading ? (
+                                <>
+                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                <>
+                                    <Save className="mr-2 h-4 w-4" />
+                                    {isEdit ? 'Update Profile' : 'Enroll Partner'}
+                                </>
+                            )}
+                        </Button>
+                        <Button
+                            type="button"
+                            variant="ghost"
+                            className="w-full sm:w-auto h-11"
+                            onClick={() => navigate('/resellers')}
+                            disabled={mutationLoading}
+                        >
+                            Cancel
+                        </Button>
+                    </CardFooter>
+                </Card>
             </form>
         </div>
     );

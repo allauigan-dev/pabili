@@ -9,7 +9,8 @@ export function usePayments() {
 
 export function usePayment(id: number) {
     const fetcher = useCallback(() => paymentsApi.get(id), [id]);
-    return useApi<Payment>(fetcher, [id]);
+    const isValidId = !isNaN(id) && id > 0;
+    return useApi<Payment>(fetcher, [id], isValidId);
 }
 
 export function usePaymentMutations() {

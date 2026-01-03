@@ -9,7 +9,8 @@ export function useStores() {
 
 export function useStore(id: number) {
     const fetcher = useCallback(() => storesApi.get(id), [id]);
-    return useApi<Store>(fetcher, [id]);
+    const isValidId = !isNaN(id) && id > 0;
+    return useApi<Store>(fetcher, [id], isValidId);
 }
 
 export function useStoreMutations() {

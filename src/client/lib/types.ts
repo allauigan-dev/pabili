@@ -77,6 +77,9 @@ export interface Payment {
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
+    // Joined fields frequently returned by API
+    resellerName?: string;
+    confirmedAt?: string | null;
 }
 
 export interface Invoice {
@@ -92,6 +95,9 @@ export interface Invoice {
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
+    // Joined fields frequently returned by API
+    resellerName?: string;
+    orderIds?: number[];
 }
 
 export interface ImageMetadata {

@@ -44,6 +44,15 @@ app.post('/', async (c) => {
             }, 400);
         }
 
+        // Check if R2 bucket is available
+        if (!c.env.BUCKET) {
+            console.error('R2 bucket not configured. Create it with: wrangler r2 bucket create pabili-uploads');
+            return c.json({
+                success: false,
+                error: 'File storage not configured. Please configure R2 bucket.'
+            }, 503);
+        }
+
         const filename = generateFilename(file.name);
         const key = `${folder}/${filename}`;
 
