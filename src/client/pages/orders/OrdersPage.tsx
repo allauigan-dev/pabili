@@ -7,23 +7,45 @@ import {
     Bell,
     RefreshCcw,
 } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useOrders, useOrderMutations } from '@/hooks/useOrders';
 import { OrderCard } from './OrderCard';
 import { Button } from '@/components/ui/button';
+import type { OrderStatus } from '@/lib/types';
 
 
 export const OrdersPage: React.FC = () => {
     const navigate = useNavigate();
     const { data: orders, loading, error, refetch } = useOrders();
-    const { deleteAction } = useOrderMutations();
+    const { deleteAction, updateStatusAction } = useOrderMutations();
     const [filter, setFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
+    const [deleteId, setDeleteId] = useState<number | null>(null);
 
-    const handleDelete = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this order?')) {
-            await deleteAction(id);
+    const handleDeleteClick = (id: number) => {
+        setDeleteId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (deleteId) {
+            await deleteAction(deleteId);
+            setDeleteId(null);
             refetch();
         }
+    };
+
+    const handleStatusChange = async (id: number, status: OrderStatus) => {
+        await updateStatusAction({ id, status });
+        refetch();
     };
 
     const filteredOrders = orders?.filter(o => {
@@ -34,7 +56,7 @@ export const OrdersPage: React.FC = () => {
         return matchesFilter && matchesSearch;
     });
 
-    const statusList = ['all', 'pending', 'bought', 'packed', 'delivered'];
+    const statusList = ['all', 'pending', 'bought', 'packed', 'delivered', 'cancelled', 'no_stock'];
 
     return (
         <div className="relative pb-24 min-h-screen -mx-2 -my-1 px-4 pt-2 md:mx-0 md:my-0 md:px-0">
@@ -108,7 +130,12 @@ export const OrdersPage: React.FC = () => {
                     </div>
                 ) : filteredOrders && filteredOrders.length > 0 ? (
                     filteredOrders.map((order) => (
-                        <OrderCard key={order.id} order={order} onDelete={handleDelete} />
+                        <OrderCard
+                            key={order.id}
+                            order={order}
+                            onDelete={handleDeleteClick}
+                            onStatusChange={handleStatusChange}
+                        />
                     ))
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 opacity-60">
@@ -129,6 +156,23 @@ export const OrdersPage: React.FC = () => {
                     <Plus className="h-8 w-8" />
                 </Button>
             </div>
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This action cannot be undone. This will permanently delete the order.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

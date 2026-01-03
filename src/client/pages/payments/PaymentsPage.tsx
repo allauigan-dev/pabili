@@ -6,6 +6,16 @@ import {
     RefreshCcw,
     PlusCircle
 } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { usePayments, usePaymentMutations } from '@/hooks/usePayments';
 import { PaymentCard } from './PaymentCard';
 import { Button } from '@/components/ui/button';
@@ -17,10 +27,16 @@ export const PaymentsPage: React.FC = () => {
     const { deleteAction, confirmAction } = usePaymentMutations();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
+    const [deleteId, setDeleteId] = useState<number | null>(null);
 
-    const handleDelete = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this payment?')) {
-            await deleteAction(id);
+    const handleDeleteClick = (id: number) => {
+        setDeleteId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (deleteId) {
+            await deleteAction(deleteId);
+            setDeleteId(null);
             refetch();
         }
     };
@@ -115,7 +131,7 @@ export const PaymentsPage: React.FC = () => {
                         <PaymentCard
                             key={payment.id}
                             payment={payment}
-                            onDelete={handleDelete}
+                            onDelete={handleDeleteClick}
                             onConfirm={handleConfirm}
                         />
                     ))
@@ -142,6 +158,23 @@ export const PaymentsPage: React.FC = () => {
                     <Plus className="h-8 w-8" />
                 </Button>
             </div>
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Payment?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this payment? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

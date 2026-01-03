@@ -382,12 +382,11 @@ export const OrderForm: React.FC = () => {
                                     className="w-full rounded-xl border-border bg-background text-foreground focus:ring-2 focus:ring-primary focus:border-primary appearance-none py-3 pl-4 pr-10 border outline-none transition-all"
                                 >
                                     <option value="pending">Pending</option>
-                                    <option value="processing">Processing</option>
                                     <option value="bought">Bought</option>
                                     <option value="packed">Packed</option>
                                     <option value="delivered">Delivered</option>
                                     <option value="cancelled">Cancelled</option>
-                                    <option value="paid">Paid</option>
+                                    <option value="no_stock">No Stock</option>
                                 </select>
                                 <ChevronDown className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-5 w-5 pointer-events-none" />
                             </div>

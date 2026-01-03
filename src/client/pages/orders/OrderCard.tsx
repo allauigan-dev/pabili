@@ -4,7 +4,8 @@ import {
     Trash2,
     Edit,
     Calendar,
-    User
+    User,
+    CheckCircle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,14 +15,15 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { formatCurrency } from '@/lib/utils';
-import type { Order } from '@/lib/types';
+import type { Order, OrderStatus } from '@/lib/types';
 
 interface OrderCardProps {
     order: Order;
     onDelete: (id: number) => void;
+    onStatusChange: (id: number, status: OrderStatus) => void;
 }
 
-export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete }) => {
+export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusChange }) => {
     const navigate = useNavigate();
 
     const statusConfig = {
@@ -45,9 +47,40 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete }) => {
             badge: 'bg-emerald-100 text-emerald-800',
             label: 'DELIVERED'
         },
+        cancelled: {
+            bar: 'bg-red-500',
+            badge: 'bg-red-100 text-red-800',
+            label: 'CANCELLED'
+        },
+        no_stock: {
+            bar: 'bg-gray-500',
+            badge: 'bg-gray-100 text-gray-800',
+            label: 'NO STOCK'
+        }
     };
 
     const status = statusConfig[order.orderStatus as keyof typeof statusConfig] || statusConfig.pending;
+    const [open, setOpen] = React.useState(false);
+
+    // Filter valid next statuses based on current status
+    const getValidNextStatuses = (currentStatus: string) => {
+        const flow: Record<string, string[]> = {
+            pending: ['bought', 'cancelled', 'no_stock'],
+            bought: ['packed', 'cancelled'],
+            packed: ['delivered'],
+            delivered: [], // Terminal state
+            cancelled: [], // Terminal state
+            no_stock: ['pending'] // Can retry if stock comes back? Or logic says terminal. Let's allow pending correction.
+        };
+        return flow[currentStatus] || [];
+    };
+
+    const validStatuses = getValidNextStatuses(order.orderStatus);
+
+    const handleStatusSelect = (newStatus: string) => {
+        onStatusChange(order.id, newStatus as OrderStatus);
+        setOpen(false);
+    };
 
     return (
         <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4">
@@ -110,6 +143,38 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete }) => {
                     </div>
 
                     <div className="flex justify-end items-center mt-3 gap-2">
+                        {validStatuses.length > 0 && (
+                            <Dialog open={open} onOpenChange={setOpen}>
+                                <DialogTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                                    >
+                                        <CheckCircle className="h-4 w-4" />
+                                    </Button>
+                                </DialogTrigger>
+                                <DialogContent className="sm:max-w-md">
+                                    <DialogTitle>Update Status</DialogTitle>
+                                    <div className="grid gap-2 py-4">
+                                        {validStatuses.map((key) => {
+                                            const config = statusConfig[key as keyof typeof statusConfig];
+                                            return (
+                                                <Button
+                                                    key={key}
+                                                    variant="outline"
+                                                    className="w-full justify-start hover:bg-secondary"
+                                                    onClick={() => handleStatusSelect(key)}
+                                                >
+                                                    <div className={`w-3 h-3 rounded-full mr-2 ${config.bar.replace('w-1', '')}`} />
+                                                    {config.label}
+                                                </Button>
+                                            );
+                                        })}
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        )}
                         <Button
                             variant="ghost"
                             size="icon"

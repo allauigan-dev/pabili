@@ -6,6 +6,16 @@ import {
     UserPlus,
 
 } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useResellers, useResellerMutations } from '@/hooks/useResellers';
 import { ResellerCard } from './ResellerCard';
 import { Button } from '@/components/ui/button';
@@ -18,10 +28,16 @@ export const ResellersPage: React.FC = () => {
     const { data: resellers, loading, error, refetch } = useResellers();
     const { deleteAction } = useResellerMutations();
     const [searchQuery, setSearchQuery] = useState('');
+    const [deleteId, setDeleteId] = useState<number | null>(null);
 
-    const handleDelete = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this reseller?')) {
-            await deleteAction(id);
+    const handleDeleteClick = (id: number) => {
+        setDeleteId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (deleteId) {
+            await deleteAction(deleteId);
+            setDeleteId(null);
             refetch();
         }
     };
@@ -73,7 +89,7 @@ export const ResellersPage: React.FC = () => {
                 ) : filteredResellers && filteredResellers.length > 0 ? (
                     <div className="space-y-4">
                         {filteredResellers.map((reseller) => (
-                            <ResellerCard key={reseller.id} reseller={reseller} onDelete={handleDelete} />
+                            <ResellerCard key={reseller.id} reseller={reseller} onDelete={handleDeleteClick} />
                         ))}
                     </div>
                 ) : (
@@ -98,6 +114,23 @@ export const ResellersPage: React.FC = () => {
                     <UserPlus className="h-6 w-6" />
                 </Button>
             </div>
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Reseller?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this reseller? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };

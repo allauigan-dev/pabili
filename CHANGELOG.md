@@ -45,6 +45,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - NaN API requests in entity forms by checking for valid IDs before fetching
 - Input placeholder deletion issue in forms
 - Dropdown menu layout issue in `Select` component
+- Fixed `OrderForm` status options to match database schema (removed invalid statuses, added `no_stock`)
+
+### Added
+- **Order Status Management**: Added quick status update button on Order Cards with valid status transition logic.
 
 ### Changed
 - **Redesigned Order Form**: Complete visual overhaul of "Create New Order" page with premium UI, custom file upload, and improved layout.

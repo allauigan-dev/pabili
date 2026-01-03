@@ -5,6 +5,16 @@ import {
     Search,
     RefreshCcw,
 } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useStores, useStoreMutations } from '@/hooks/useStores';
 import { StoreCard } from './StoreCard';
 import { Button } from '@/components/ui/button';
@@ -17,10 +27,16 @@ export const StoresPage: React.FC = () => {
     const { data: stores, loading, error, refetch } = useStores();
     const { deleteAction } = useStoreMutations();
     const [searchQuery, setSearchQuery] = useState('');
+    const [deleteId, setDeleteId] = useState<number | null>(null);
 
-    const handleDelete = async (id: number) => {
-        if (window.confirm('Are you sure you want to delete this store?')) {
-            await deleteAction(id);
+    const handleDeleteClick = (id: number) => {
+        setDeleteId(id);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (deleteId) {
+            await deleteAction(deleteId);
+            setDeleteId(null);
             refetch();
         }
     };
@@ -72,7 +88,7 @@ export const StoresPage: React.FC = () => {
                 ) : filteredStores && filteredStores.length > 0 ? (
                     <div className="space-y-4">
                         {filteredStores.map((store) => (
-                            <StoreCard key={store.id} store={store} onDelete={handleDelete} />
+                            <StoreCard key={store.id} store={store} onDelete={handleDeleteClick} />
                         ))}
                     </div>
                 ) : (
@@ -97,6 +113,23 @@ export const StoresPage: React.FC = () => {
                     <Plus className="h-8 w-8" />
                 </Button>
             </div>
+
+            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete Store?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Are you sure you want to delete this store? This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                            Delete
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 };
