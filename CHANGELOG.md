@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Feature Roadmap** (`ROADMAP.md`): Comprehensive 7-phase SaaS feature roadmap tailored to pasabuy business model
+- **Phase Documentation** (`docs/`): Implementation plans and task checklists for all 7 development phases:
+  - Phase 1: Multi-Tenancy & Authentication
+  - Phase 2: Admin/Owner Experience Improvements
+  - Phase 3: UI/UX Improvements
+  - Phase 4: Communication & Notifications
+  - Phase 5: Billing & Subscription (SaaS Monetization)
+  - Phase 6: Advanced Features (Reports, Inventory, Reseller Portal)
+  - Phase 7: Localization & Philippine Market
 - Initial project scaffolding with React + Vite
 - Project specification document (`spec.md`)
 - Development and agent rules configuration
