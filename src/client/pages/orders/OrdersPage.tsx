@@ -20,6 +20,7 @@ import {
 import { useOrders, useOrderMutations } from '@/hooks/useOrders';
 import { OrderCard } from './OrderCard';
 import { Button } from '@/components/ui/button';
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 import type { OrderStatus } from '@/lib/types';
 
 
@@ -148,14 +149,10 @@ export const OrdersPage: React.FC = () => {
             </main>
 
             {/* Floating Action Button */}
-            <div className="fixed bottom-24 right-4 z-40">
-                <Button
-                    onClick={() => navigate('/orders/new')}
-                    className="w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-fab hover:bg-primary-dark transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center p-0"
-                >
-                    <Plus className="h-8 w-8" />
-                </Button>
-            </div>
+            <FloatingActionButton
+                onClick={() => navigate('/orders/new')}
+                icon={<Plus className="h-8 w-8" />}
+            />
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent>

@@ -14,6 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sticky Header Cutoff**: Resolved issue where mobile headers were being clipped by refactoring the global layout and unified padding strategy.
 
 ### Added
+- **Global FAB**: Implemented a global Floating Action Button with "Scroll to Top" functionality and dynamic positioning.
+- **Image Gallery Refinements**: Added swipe validation, glassmorphism UI, and dot indicators to the Image Gallery.
+- **Swipe Navigation**: Enabled horizontal swipe navigation between main tabs on mobile.
+
+### Fixed
+- **FAB Positioning**: Resolved issue where FAB was trapped in stacking context and overlapped with Bottom Navigation by using React Portals and adjusting z-index/margins.
+- **Gesture Conflicts**: Fixed conflict between Image Gallery swipe and global page navigation.
+
+### Added
 - **Order Management: Multiple Images**:
     - Added support for up to 5 images per order.
     - Implemented a multi-upload grid in `OrderForm` with thumbnail previews and delete capability.

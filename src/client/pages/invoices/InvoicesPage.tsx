@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Plus,
     Search,
     RefreshCcw,
     Receipt
@@ -19,6 +18,7 @@ import {
 import { useInvoices, useInvoiceMutations } from '@/hooks/useInvoices';
 import { InvoiceCard } from './InvoiceCard';
 import { Button } from '@/components/ui/button';
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 import { EmptyState } from '@/components/index';
 
 export const InvoicesPage: React.FC = () => {
@@ -141,14 +141,9 @@ export const InvoicesPage: React.FC = () => {
             </main>
 
             {/* Floating Action Button */}
-            <div className="fixed bottom-24 right-4 z-40">
-                <Button
-                    onClick={() => navigate('/invoices/new')}
-                    className="w-14 h-14 bg-primary text-primary-foreground rounded-full shadow-fab hover:bg-primary-dark transition-all transform hover:scale-105 active:scale-95 flex items-center justify-center p-0"
-                >
-                    <Plus className="h-8 w-8" />
-                </Button>
-            </div>
+            <FloatingActionButton
+                onClick={() => navigate('/invoices/new')}
+            />
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent>
