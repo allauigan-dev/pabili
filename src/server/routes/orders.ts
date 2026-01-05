@@ -25,6 +25,7 @@ const createOrderSchema = z.object({
     orderDescription: z.string().optional(),
     orderQuantity: z.number().int().positive().default(1),
     orderImage: z.string().optional(),
+    orderImages: z.array(z.string()).optional(),
     orderPrice: z.number().positive('Price must be positive'),
     orderFee: z.number().nonnegative().default(0),
     orderResellerPrice: z.number().positive('Reseller price must be positive'),
@@ -62,6 +63,7 @@ app.get('/', async (c) => {
                 orderDescription: orders.orderDescription,
                 orderQuantity: orders.orderQuantity,
                 orderImage: orders.orderImage,
+                orderImages: orders.orderImages,
                 orderPrice: orders.orderPrice,
                 orderFee: orders.orderFee,
                 orderResellerPrice: orders.orderResellerPrice,
@@ -87,7 +89,12 @@ app.get('/', async (c) => {
             ))
             .orderBy(desc(orders.createdAt));
 
-        return c.json({ success: true, data: allOrders });
+        const ordersWithParsedImages = allOrders.map(order => ({
+            ...order,
+            orderImages: order.orderImages ? JSON.parse(order.orderImages as string) : []
+        }));
+
+        return c.json({ success: true, data: ordersWithParsedImages });
     } catch (error) {
         console.error('Error fetching orders:', error);
         return c.json({ success: false, error: 'Failed to fetch orders' }, 500);
@@ -114,6 +121,7 @@ app.get('/:id', async (c) => {
                 orderDescription: orders.orderDescription,
                 orderQuantity: orders.orderQuantity,
                 orderImage: orders.orderImage,
+                orderImages: orders.orderImages,
                 orderPrice: orders.orderPrice,
                 orderFee: orders.orderFee,
                 orderResellerPrice: orders.orderResellerPrice,
@@ -143,7 +151,12 @@ app.get('/:id', async (c) => {
             return c.json({ success: false, error: 'Order not found' }, 404);
         }
 
-        return c.json({ success: true, data: order });
+        const orderWithParsedImages = {
+            ...order,
+            orderImages: order.orderImages ? JSON.parse(order.orderImages as string) : []
+        };
+
+        return c.json({ success: true, data: orderWithParsedImages });
     } catch (error) {
         console.error('Error fetching order:', error);
         return c.json({ success: false, error: 'Failed to fetch order' }, 500);
@@ -165,6 +178,7 @@ app.post('/', zValidator('json', createOrderSchema), async (c) => {
             .insert(orders)
             .values({
                 ...data,
+                orderImages: data.orderImages ? JSON.stringify(data.orderImages) : null,
                 organizationId,
                 orderNumber: generateOrderNumber(),
                 orderTotal,
@@ -172,7 +186,12 @@ app.post('/', zValidator('json', createOrderSchema), async (c) => {
             })
             .returning();
 
-        return c.json({ success: true, data: newOrder }, 201);
+        const orderWithParsedImages = {
+            ...newOrder,
+            orderImages: newOrder.orderImages ? JSON.parse(newOrder.orderImages as string) : []
+        };
+
+        return c.json({ success: true, data: orderWithParsedImages }, 201);
     } catch (error) {
         console.error('Error creating order:', error);
         return c.json({ success: false, error: 'Failed to create order' }, 500);
@@ -217,7 +236,10 @@ app.put('/:id', zValidator('json', updateOrderSchema), async (c) => {
 
         const [updatedOrder] = await db
             .update(orders)
-            .set(updateData)
+            .set({
+                ...updateData,
+                orderImages: data.orderImages ? JSON.stringify(data.orderImages) : undefined,
+            })
             .where(and(
                 eq(orders.id, id),
                 eq(orders.organizationId, organizationId),
@@ -229,7 +251,12 @@ app.put('/:id', zValidator('json', updateOrderSchema), async (c) => {
             return c.json({ success: false, error: 'Order not found' }, 404);
         }
 
-        return c.json({ success: true, data: updatedOrder });
+        const orderWithParsedImages = {
+            ...updatedOrder,
+            orderImages: updatedOrder.orderImages ? JSON.parse(updatedOrder.orderImages as string) : []
+        };
+
+        return c.json({ success: true, data: orderWithParsedImages });
     } catch (error) {
         console.error('Error updating order:', error);
         return c.json({ success: false, error: 'Failed to update order' }, 500);

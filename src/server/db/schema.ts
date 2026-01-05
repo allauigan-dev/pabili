@@ -189,6 +189,7 @@ export const orders = sqliteTable('orders', {
     orderDescription: text('order_description'),
     orderQuantity: integer('order_quantity').notNull().default(1),
     orderImage: text('order_image'),
+    orderImages: text('order_images'), // JSON array of strings
 
     // Pricing
     orderPrice: real('order_price').notNull(),         // Cost per unit

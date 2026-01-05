@@ -19,6 +19,7 @@ export interface Order {
     orderDescription?: string | null;
     orderQuantity: number;
     orderImage?: string | null;
+    orderImages?: string[] | null;
     orderPrice: number;
     orderFee: number;
     orderResellerPrice: number;
@@ -140,6 +141,7 @@ export interface CreateOrderDto extends Partial<Omit<Order, 'id' | 'orderNumber'
     orderResellerPrice: number;
     storeId: number;
     resellerId: number;
+    orderImages?: string[];
 }
 
 export interface CreateStoreDto extends Partial<Omit<Store, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>> {

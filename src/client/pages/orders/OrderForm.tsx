@@ -20,6 +20,9 @@ import { Combobox } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { CreateOrderDto, OrderStatus } from '@/lib/types';
 
+const MAX_IMAGES = 5;
+
+
 export const OrderForm: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -39,6 +42,7 @@ export const OrderForm: React.FC = () => {
         orderFee: 0,
         orderResellerPrice: 0,
         orderImage: '',
+        orderImages: [],
         storeId: 0,
         resellerId: 0,
     });
@@ -57,6 +61,7 @@ export const OrderForm: React.FC = () => {
                 orderFee: order.orderFee,
                 orderResellerPrice: order.orderResellerPrice,
                 orderImage: order.orderImage || '',
+                orderImages: order.orderImages || [],
                 storeId: order.storeId,
                 resellerId: order.resellerId,
             });
@@ -76,19 +81,58 @@ export const OrderForm: React.FC = () => {
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const file = e.target.files?.[0];
-        if (!file) return;
+        const files = Array.from(e.target.files || []);
+        if (files.length === 0) return;
 
+        const currentImages = formData.orderImages || [];
+        const remaining = MAX_IMAGES - currentImages.length;
+
+        if (remaining <= 0) {
+            setLocalError(`Maximum of ${MAX_IMAGES} images allowed`);
+            return;
+        }
+
+        const filesToUpload = files.slice(0, remaining);
         setUploading(true);
         setLocalError(null);
-        const result = await uploadApi.upload(file);
+
+        const uploadPromises = filesToUpload.map(file => uploadApi.upload(file));
+        const results = await Promise.all(uploadPromises);
+
         setUploading(false);
 
-        if (result.success && result.data) {
-            setFormData(prev => ({ ...prev, orderImage: result.data!.url }));
-        } else {
-            setLocalError(result.error || 'Failed to upload image');
+        const newImages = [...currentImages];
+        let hasError = false;
+
+        results.forEach(result => {
+            if (result.success && result.data) {
+                newImages.push(result.data.url);
+            } else {
+                hasError = true;
+            }
+        });
+
+        if (hasError) {
+            setLocalError('Some images failed to upload');
         }
+
+        setFormData(prev => ({
+            ...prev,
+            orderImages: newImages,
+            // Keep first image as primary for backwards compatibility
+            orderImage: newImages.length > 0 ? newImages[0] : ''
+        }));
+    };
+
+    const removeImage = (index: number) => {
+        setFormData(prev => {
+            const newImages = (prev.orderImages || []).filter((_, i) => i !== index);
+            return {
+                ...prev,
+                orderImages: newImages,
+                orderImage: newImages.length > 0 ? newImages[0] : ''
+            };
+        });
     };
 
     const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
@@ -175,49 +219,64 @@ export const OrderForm: React.FC = () => {
                                 <h3 className="text-xl font-bold text-foreground tracking-tight">Item Photo</h3>
                             </div>
 
-                            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-border/60 rounded-2xl hover:border-primary/50 transition-colors cursor-pointer group bg-secondary/20 relative overflow-hidden min-h-[240px]">
-                                {formData.orderImage ? (
-                                    <div className="relative w-full aspect-video">
-                                        <img
-                                            src={formData.orderImage}
-                                            alt="Order"
-                                            className="w-full h-full object-cover rounded-xl"
-                                        />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-3">
-                                            <button
-                                                type="button"
-                                                onClick={(e) => { e.stopPropagation(); setFormData(prev => ({ ...prev, orderImage: '' })); }}
-                                                className="p-2 bg-destructive text-destructive-foreground rounded-full hover:scale-110 transition-transform"
-                                            >
-                                                <Trash2 className="h-5 w-5" />
-                                            </button>
-                                            <p className="text-white font-bold text-sm">Click to change</p>
-                                        </div>
-                                    </div>
-                                ) : (
-                                    <div className="space-y-2 text-center my-auto">
-                                        <div className="p-4 rounded-full bg-background/50 inline-block mb-2 group-hover:scale-110 transition-transform">
-                                            <Upload className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
-                                        </div>
-                                        <div className="flex text-sm text-muted-foreground justify-center">
-                                            <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-bold text-primary hover:text-primary-dark transition-colors">
-                                                <span>Upload an image</span>
-                                            </label>
-                                        </div>
-                                        <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-60">
-                                            PNG, JPG up to 10MB
-                                        </p>
+                            <div className="space-y-4">
+                                {/* Current Images Grid */}
+                                {(formData.orderImages && formData.orderImages.length > 0) && (
+                                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mb-4">
+                                        {formData.orderImages.map((img, index) => (
+                                            <div key={index} className="relative aspect-square group rounded-2xl overflow-hidden border border-border/50 animate-in fade-in zoom-in duration-300">
+                                                <img
+                                                    src={img}
+                                                    alt={`Order ${index + 1}`}
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => removeImage(index)}
+                                                        className="p-2 bg-destructive text-destructive-foreground rounded-full hover:scale-110 transition-transform shadow-lg"
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                                {index === 0 && (
+                                                    <span className="absolute top-2 left-2 bg-primary text-primary-foreground text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-sm">
+                                                        Primary
+                                                    </span>
+                                                )}
+                                            </div>
+                                        ))}
                                     </div>
                                 )}
-                                <input
-                                    id="file-upload"
-                                    name="file-upload"
-                                    type="file"
-                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                                    onChange={handleFileUpload}
-                                    accept="image/*"
-                                    disabled={uploading}
-                                />
+
+                                {/* Upload Zone */}
+                                {(formData.orderImages?.length || 0) < MAX_IMAGES && (
+                                    <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-border/60 rounded-2xl hover:border-primary/50 transition-colors cursor-pointer group bg-secondary/20 relative overflow-hidden min-h-[160px]">
+                                        <div className="space-y-2 text-center my-auto">
+                                            <div className="p-4 rounded-full bg-background/50 inline-block mb-2 group-hover:scale-110 transition-transform">
+                                                <Upload className="h-8 w-8 text-muted-foreground group-hover:text-primary transition-colors" />
+                                            </div>
+                                            <div className="flex text-sm text-muted-foreground justify-center">
+                                                <label htmlFor="file-upload" className="relative cursor-pointer rounded-md font-bold text-primary hover:text-primary-dark transition-colors">
+                                                    <span>Upload images</span>
+                                                </label>
+                                            </div>
+                                            <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-60">
+                                                {(formData.orderImages?.length || 0)} / {MAX_IMAGES} images • PNG, JPG up to 10MB
+                                            </p>
+                                        </div>
+                                        <input
+                                            id="file-upload"
+                                            name="file-upload"
+                                            type="file"
+                                            className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                            onChange={handleFileUpload}
+                                            accept="image/*"
+                                            multiple
+                                            disabled={uploading}
+                                        />
+                                    </div>
+                                )}
                             </div>
                             {uploading && (
                                 <div className="mt-4 flex items-center justify-center gap-3 text-sm text-primary font-bold animate-pulse">

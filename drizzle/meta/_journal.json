@@ -15,6 +15,13 @@
       "when": 1767576768721,
       "tag": "0001_simple_lightspeed",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1767595782924,
+      "tag": "0002_happy_owl",
+      "breakpoints": true
     }
   ]
 }

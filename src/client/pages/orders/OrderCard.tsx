@@ -16,6 +16,8 @@ import {
 } from '@/components/ui/dialog';
 import { formatCurrency } from '@/lib/utils';
 import type { Order, OrderStatus } from '@/lib/types';
+import { ImageGallery } from '@/components/ui/ImageGallery';
+
 
 interface OrderCardProps {
     order: Order;
@@ -61,6 +63,15 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
 
     const status = statusConfig[order.orderStatus as keyof typeof statusConfig] || statusConfig.pending;
     const [open, setOpen] = React.useState(false);
+    const [galleryOpen, setGalleryOpen] = React.useState(false);
+
+    // Get images array (handle both single and multiple formats)
+    const images = order.orderImages && order.orderImages.length > 0
+        ? order.orderImages
+        : order.orderImage
+            ? [order.orderImage]
+            : [];
+
 
     // Filter valid next statuses based on current status
     const getValidNextStatuses = (currentStatus: string) => {
@@ -94,29 +105,31 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
                         {status.label}
                     </span>
 
-                    {order.orderImage ? (
-                        <Dialog>
-                            <DialogTrigger asChild>
+                    {images.length > 0 ? (
+                        <>
+                            <div className="w-full h-full cursor-zoom-in" onClick={() => setGalleryOpen(true)}>
                                 <img
-                                    src={order.orderImage}
+                                    src={images[0]}
                                     alt={order.orderName}
-                                    className="w-full h-full object-cover cursor-zoom-in"
+                                    className="w-full h-full object-cover"
                                 />
-                            </DialogTrigger>
-                            <DialogContent className="max-w-[95vw] sm:max-w-[90vw] h-auto max-h-[90vh] p-1 border-none bg-transparent shadow-none">
-                                <DialogTitle className="sr-only">{order.orderName}</DialogTitle>
-                                <div className="relative w-full h-full flex items-center justify-center">
-                                    <img
-                                        src={order.orderImage}
-                                        alt={order.orderName}
-                                        className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
-                                    />
-                                </div>
-                            </DialogContent>
-                        </Dialog>
+                                {images.length > 1 && (
+                                    <div className="absolute bottom-1 right-1 bg-black/60 backdrop-blur-sm text-white text-[9px] font-black px-1.5 py-0.5 rounded-md flex items-center gap-1 shadow-sm">
+                                        <span>+{images.length - 1}</span>
+                                    </div>
+                                )}
+                            </div>
+
+                            <ImageGallery
+                                images={images}
+                                open={galleryOpen}
+                                onOpenChange={setGalleryOpen}
+                                title={order.orderName}
+                            />
+                        </>
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-secondary/30">
-                            <span className="text-xs text-muted-foreground text-center px-1 font-medium">NO IMAGE</span>
+                            <span className="text-xs text-muted-foreground text-center px-1 font-medium uppercase tracking-tighter">NO IMAGE</span>
                         </div>
                     )}
                 </div>

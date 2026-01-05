@@ -14,6 +14,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Sticky Header Cutoff**: Resolved issue where mobile headers were being clipped by refactoring the global layout and unified padding strategy.
 
 ### Added
+- **Order Management: Multiple Images**:
+    - Added support for up to 5 images per order.
+    - Implemented a multi-upload grid in `OrderForm` with thumbnail previews and delete capability.
+    - Created a premium `ImageGallery` modal with mobile swipe gestures, keyboard navigation, and dot indicators.
+    - Added an image count badge to `OrderCard` for quick visual reference.
+
+### Added
 - **UI/UX: Unified Premium Form Design**:
     - Implemented a consistent, mobile-first sticky header across all entity forms (`OrderForm`, `StoreForm`, `ResellerForm`, `PaymentForm`, `InvoiceForm`).
     - Added high-density typography and premium CSS glassmorphism effects to form headers.
