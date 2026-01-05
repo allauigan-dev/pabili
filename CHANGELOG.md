@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Production Auth**: Fixed 500 errors on production auth endpoints by enabling environment-aware secure cookies (automatically enabled for HTTPS).
+- **TypeScript Build**: Fixed type-only imports for `AppEnv` across all server route files to resolve build warnings.
+- **LoginPage**: Removed unused `isPending` variable to fix TypeScript warning.
+
 ### Added
 - **Phase 1: Multi-Tenancy & Authentication (Better Auth Integration)**:
   - Integrated **Better Auth** with Google and Facebook social login providers.

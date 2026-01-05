@@ -19,7 +19,7 @@ import filesRoutes from './routes/files';
 import { authMiddleware } from './middleware/auth';
 import { getAuth } from './lib/auth';
 
-import { AppEnv } from './types';
+import type { AppEnv } from './types';
 
 const app = new Hono<AppEnv>();
 

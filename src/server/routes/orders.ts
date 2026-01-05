@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { eq, desc, and, isNull } from 'drizzle-orm';
 import { createDb, orders, stores, resellers } from '../db';
 
-import { AppEnv } from '../types';
+import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
 import { requireOrganization } from '../middleware/organization';
 

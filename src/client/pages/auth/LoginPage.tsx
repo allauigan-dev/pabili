@@ -4,7 +4,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import React from "react";
 
 export function LoginPage() {
-    const { data: session, isPending } = useSession();
+    const { data: session } = useSession();
     const navigate = useNavigate();
 
     React.useEffect(() => {

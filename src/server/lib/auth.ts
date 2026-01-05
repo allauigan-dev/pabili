@@ -7,7 +7,9 @@ import { createDb } from "../db";
 
 export const getAuth = (env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTER_AUTH_URL: string; GOOGLE_CLIENT_ID: string; GOOGLE_CLIENT_SECRET: string; FACEBOOK_CLIENT_ID: string; FACEBOOK_CLIENT_SECRET: string }) => {
     const db = createDb(env.DB);
-    console.log("[Auth Config] BETTER_AUTH_URL:", env.BETTER_AUTH_URL);
+    const isProduction = env.BETTER_AUTH_URL?.startsWith("https://");
+    console.log("[Auth Config] BETTER_AUTH_URL:", env.BETTER_AUTH_URL, "isProduction:", isProduction);
+
     return betterAuth({
         baseURL: env.BETTER_AUTH_URL,
         secret: env.BETTER_AUTH_SECRET,
@@ -47,11 +49,12 @@ export const getAuth = (env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
         ],
 
         advanced: {
-            useSecureCookies: false, // Help with local dev issues
+            useSecureCookies: isProduction, // Use secure cookies for HTTPS
             defaultCookieAttributes: {
                 sameSite: "lax", // Required for OAuth redirects
                 httpOnly: true,
                 path: "/",
+                secure: isProduction, // Secure flag for HTTPS
             },
         },
     });
