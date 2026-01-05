@@ -8,9 +8,18 @@ import { z } from 'zod';
 import { eq, desc, and, isNull, sum } from 'drizzle-orm';
 import { createDb, resellers, orders, payments } from '../db';
 
-const app = new Hono<{ Bindings: Env }>();
+import { AppEnv } from '../types';
+import { requireAuth } from '../middleware/auth';
+import { requireOrganization } from '../middleware/organization';
+
+const app = new Hono<AppEnv>();
+
+// Apply middlewares to all routes
+app.use('*', requireAuth);
+app.use('*', requireOrganization);
 
 // Validation schemas
+// ... (rest same)
 const createResellerSchema = z.object({
     resellerName: z.string().min(1, 'Reseller name is required'),
     resellerAddress: z.string().optional(),
@@ -26,12 +35,16 @@ const updateResellerSchema = createResellerSchema.partial();
 // GET /api/resellers - List all resellers
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
 
     try {
         const allResellers = await db
             .select()
             .from(resellers)
-            .where(isNull(resellers.deletedAt))
+            .where(and(
+                eq(resellers.organizationId, organizationId),
+                isNull(resellers.deletedAt)
+            ))
             .orderBy(desc(resellers.createdAt));
 
         return c.json({ success: true, data: allResellers });
@@ -45,6 +58,7 @@ app.get('/', async (c) => {
 app.get('/:id', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid reseller ID' }, 400);
@@ -54,7 +68,11 @@ app.get('/:id', async (c) => {
         const [reseller] = await db
             .select()
             .from(resellers)
-            .where(and(eq(resellers.id, id), isNull(resellers.deletedAt)));
+            .where(and(
+                eq(resellers.id, id),
+                eq(resellers.organizationId, organizationId),
+                isNull(resellers.deletedAt)
+            ));
 
         if (!reseller) {
             return c.json({ success: false, error: 'Reseller not found' }, 404);
@@ -71,6 +89,7 @@ app.get('/:id', async (c) => {
 app.get('/:id/orders', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid reseller ID' }, 400);
@@ -80,7 +99,11 @@ app.get('/:id/orders', async (c) => {
         const resellerOrders = await db
             .select()
             .from(orders)
-            .where(and(eq(orders.resellerId, id), isNull(orders.deletedAt)))
+            .where(and(
+                eq(orders.resellerId, id),
+                eq(orders.organizationId, organizationId),
+                isNull(orders.deletedAt)
+            ))
             .orderBy(desc(orders.createdAt));
 
         return c.json({ success: true, data: resellerOrders });
@@ -94,6 +117,7 @@ app.get('/:id/orders', async (c) => {
 app.get('/:id/balance', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid reseller ID' }, 400);
@@ -106,6 +130,7 @@ app.get('/:id/balance', async (c) => {
             .from(orders)
             .where(and(
                 eq(orders.resellerId, id),
+                eq(orders.organizationId, organizationId),
                 isNull(orders.deletedAt)
             ));
 
@@ -115,6 +140,7 @@ app.get('/:id/balance', async (c) => {
             .from(payments)
             .where(and(
                 eq(payments.resellerId, id),
+                eq(payments.organizationId, organizationId),
                 eq(payments.paymentStatus, 'confirmed'),
                 isNull(payments.deletedAt)
             ));
@@ -141,11 +167,15 @@ app.get('/:id/balance', async (c) => {
 app.post('/', zValidator('json', createResellerSchema), async (c) => {
     const db = createDb(c.env.DB);
     const data = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     try {
         const [newReseller] = await db
             .insert(resellers)
-            .values(data)
+            .values({
+                ...data,
+                organizationId
+            })
             .returning();
 
         return c.json({ success: true, data: newReseller }, 201);
@@ -160,6 +190,7 @@ app.put('/:id', zValidator('json', updateResellerSchema), async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
     const data = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid reseller ID' }, 400);
@@ -169,7 +200,11 @@ app.put('/:id', zValidator('json', updateResellerSchema), async (c) => {
         const [updatedReseller] = await db
             .update(resellers)
             .set({ ...data, updatedAt: new Date().toISOString() })
-            .where(and(eq(resellers.id, id), isNull(resellers.deletedAt)))
+            .where(and(
+                eq(resellers.id, id),
+                eq(resellers.organizationId, organizationId),
+                isNull(resellers.deletedAt)
+            ))
             .returning();
 
         if (!updatedReseller) {
@@ -187,6 +222,7 @@ app.put('/:id', zValidator('json', updateResellerSchema), async (c) => {
 app.delete('/:id', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid reseller ID' }, 400);
@@ -196,7 +232,11 @@ app.delete('/:id', async (c) => {
         const [deletedReseller] = await db
             .update(resellers)
             .set({ deletedAt: new Date().toISOString() })
-            .where(and(eq(resellers.id, id), isNull(resellers.deletedAt)))
+            .where(and(
+                eq(resellers.id, id),
+                eq(resellers.organizationId, organizationId),
+                isNull(resellers.deletedAt)
+            ))
             .returning();
 
         if (!deletedReseller) {

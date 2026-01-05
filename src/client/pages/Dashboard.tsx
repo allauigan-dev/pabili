@@ -26,12 +26,17 @@ import { useOrders } from '@/hooks/useOrders';
 import { useStores } from '@/hooks/useStores';
 import { useResellers } from '@/hooks/useResellers';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
+import { useSession } from '@/lib/auth-client';
 
 export const Dashboard: React.FC = () => {
     const navigate = useNavigate();
+    const { data: session } = useSession();
     const { data: orders } = useOrders();
     const { data: stores } = useStores();
     const { data: resellers } = useResellers();
+
+    // Get user's first name for greeting
+    const userName = session?.user?.name?.split(' ')[0] || 'there';
 
     // Calculate stats
     const stats = {
@@ -80,7 +85,7 @@ export const Dashboard: React.FC = () => {
                         <h1 className="text-2xl font-bold flex items-center gap-2">
                             Mabuhay! <span className="text-2xl">🇵🇭</span>
                         </h1>
-                        <p className="text-sm text-muted-foreground mt-1">Welcome back, Admin</p>
+                        <p className="text-sm text-muted-foreground mt-1">Welcome back, {userName}</p>
                     </div>
                     <div className="text-xs font-semibold text-muted-foreground tracking-wider uppercase">
                         {new Date().toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' })}

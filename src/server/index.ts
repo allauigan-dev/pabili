@@ -14,12 +14,26 @@ import resellersRoutes from './routes/resellers';
 import paymentsRoutes from './routes/payments';
 import invoicesRoutes from './routes/invoices';
 import uploadRoutes from './routes/upload';
+import filesRoutes from './routes/files';
 
-const app = new Hono<{ Bindings: Env }>();
+import { authMiddleware } from './middleware/auth';
+import { getAuth } from './lib/auth';
+
+import { AppEnv } from './types';
+
+const app = new Hono<AppEnv>();
 
 // Middleware
 app.use('*', logger());
 app.use('*', cors());
+app.use('*', authMiddleware);
+
+// Mount Better Auth handler
+app.on(['POST', 'GET'], '/api/auth/*', async (c) => {
+    console.log(`[BetterAuth] ${c.req.method} ${c.req.url}`);
+    const auth = getAuth(c.env);
+    return auth.handler(c.req.raw);
+});
 
 // Health check
 app.get('/api/health', (c) => {
@@ -37,6 +51,7 @@ app.route('/api/resellers', resellersRoutes);
 app.route('/api/payments', paymentsRoutes);
 app.route('/api/invoices', invoicesRoutes);
 app.route('/api/upload', uploadRoutes);
+app.route('/files', filesRoutes);
 
 // 404 handler for API routes
 app.notFound((c) => {

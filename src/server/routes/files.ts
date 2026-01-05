@@ -1,18 +1,26 @@
-/**
- * File Serving API Routes (R2)
- * Serves files uploaded to R2 storage
- */
-
 import { Hono } from 'hono';
+import { AppEnv } from '../types';
+import { requireAuth } from '../middleware/auth';
+import { requireOrganization } from '../middleware/organization';
 
-const app = new Hono<{ Bindings: Env }>().basePath('/files');
+const app = new Hono<AppEnv>();
+
+// Apply middlewares
+app.use('*', requireAuth);
+app.use('*', requireOrganization);
 
 // GET /files/:key - Serve file from R2
 app.get('/:key{.+}', async (c) => {
     const key = c.req.param('key');
+    const organizationId = c.get('organizationId');
 
     if (!key) {
         return c.json({ success: false, error: 'No key provided' }, 400);
+    }
+
+    // Ensure the key belongs to the organization
+    if (!key.startsWith(`orgs/${organizationId}/`)) {
+        return c.json({ success: false, error: 'Forbidden' }, 403);
     }
 
     try {
@@ -29,12 +37,12 @@ app.get('/:key{.+}', async (c) => {
         }
 
         const headers = new Headers();
-        object.writeHttpMetadata(headers);
+        object.writeHttpMetadata(headers as any);
         headers.set('etag', object.httpEtag);
         headers.set('cache-control', 'public, max-age=31536000'); // 1 year cache
 
-        return new Response(object.body, {
-            headers,
+        return new Response(object.body as any, {
+            headers: headers as any,
         });
     } catch (error) {
         console.error('Error serving file:', error);

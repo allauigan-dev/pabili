@@ -8,7 +8,15 @@ import { z } from 'zod';
 import { eq, desc, and, isNull } from 'drizzle-orm';
 import { createDb, invoices } from '../db';
 
-const app = new Hono<{ Bindings: Env }>();
+import { AppEnv } from '../types';
+import { requireAuth } from '../middleware/auth';
+import { requireOrganization } from '../middleware/organization';
+
+const app = new Hono<AppEnv>();
+
+// Apply middlewares to all routes
+app.use('*', requireAuth);
+app.use('*', requireOrganization);
 
 // Generate invoice number
 function generateInvoiceNumber() {
@@ -20,6 +28,7 @@ function generateInvoiceNumber() {
 }
 
 // Validation schemas
+// ... (rest same)
 const createInvoiceSchema = z.object({
     invoiceTotal: z.number().nonnegative().default(0),
     invoicePaid: z.number().nonnegative().default(0),
@@ -38,12 +47,16 @@ const updateStatusSchema = z.object({
 // GET /api/invoices - List all invoices
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
 
     try {
         const allInvoices = await db
             .select()
             .from(invoices)
-            .where(isNull(invoices.deletedAt))
+            .where(and(
+                eq(invoices.organizationId, organizationId),
+                isNull(invoices.deletedAt)
+            ))
             .orderBy(desc(invoices.createdAt));
 
         return c.json({ success: true, data: allInvoices });
@@ -57,6 +70,7 @@ app.get('/', async (c) => {
 app.get('/:id', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid invoice ID' }, 400);
@@ -66,7 +80,11 @@ app.get('/:id', async (c) => {
         const [invoice] = await db
             .select()
             .from(invoices)
-            .where(and(eq(invoices.id, id), isNull(invoices.deletedAt)));
+            .where(and(
+                eq(invoices.id, id),
+                eq(invoices.organizationId, organizationId),
+                isNull(invoices.deletedAt)
+            ));
 
         if (!invoice) {
             return c.json({ success: false, error: 'Invoice not found' }, 404);
@@ -92,12 +110,14 @@ app.get('/:id/pdf', async (c) => {
 app.post('/', zValidator('json', createInvoiceSchema), async (c) => {
     const db = createDb(c.env.DB);
     const data = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     try {
         const [newInvoice] = await db
             .insert(invoices)
             .values({
                 ...data,
+                organizationId,
                 invoiceNumber: generateInvoiceNumber(),
             })
             .returning();
@@ -114,6 +134,7 @@ app.put('/:id', zValidator('json', updateInvoiceSchema), async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
     const data = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid invoice ID' }, 400);
@@ -123,7 +144,11 @@ app.put('/:id', zValidator('json', updateInvoiceSchema), async (c) => {
         const [updatedInvoice] = await db
             .update(invoices)
             .set({ ...data, updatedAt: new Date().toISOString() })
-            .where(and(eq(invoices.id, id), isNull(invoices.deletedAt)))
+            .where(and(
+                eq(invoices.id, id),
+                eq(invoices.organizationId, organizationId),
+                isNull(invoices.deletedAt)
+            ))
             .returning();
 
         if (!updatedInvoice) {
@@ -142,6 +167,7 @@ app.patch('/:id/status', zValidator('json', updateStatusSchema), async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
     const { status } = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid invoice ID' }, 400);
@@ -151,7 +177,11 @@ app.patch('/:id/status', zValidator('json', updateStatusSchema), async (c) => {
         const [updatedInvoice] = await db
             .update(invoices)
             .set({ invoiceStatus: status, updatedAt: new Date().toISOString() })
-            .where(and(eq(invoices.id, id), isNull(invoices.deletedAt)))
+            .where(and(
+                eq(invoices.id, id),
+                eq(invoices.organizationId, organizationId),
+                isNull(invoices.deletedAt)
+            ))
             .returning();
 
         if (!updatedInvoice) {
@@ -169,6 +199,7 @@ app.patch('/:id/status', zValidator('json', updateStatusSchema), async (c) => {
 app.delete('/:id', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid invoice ID' }, 400);
@@ -178,7 +209,11 @@ app.delete('/:id', async (c) => {
         const [deletedInvoice] = await db
             .update(invoices)
             .set({ deletedAt: new Date().toISOString() })
-            .where(and(eq(invoices.id, id), isNull(invoices.deletedAt)))
+            .where(and(
+                eq(invoices.id, id),
+                eq(invoices.organizationId, organizationId),
+                isNull(invoices.deletedAt)
+            ))
             .returning();
 
         if (!deletedInvoice) {

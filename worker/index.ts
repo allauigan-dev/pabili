@@ -4,7 +4,6 @@
  */
 
 import api from '../src/server';
-import files from '../src/server/routes/files';
 
 export default {
   async fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -15,9 +14,9 @@ export default {
       return api.fetch(request, env, ctx);
     }
 
-    // Handle file serving routes from R2
+    // Handle file serving routes from R2 (goes through main API for auth)
     if (url.pathname.startsWith('/files/')) {
-      return files.fetch(request, env, ctx);
+      return api.fetch(request, env, ctx);
     }
 
     // Return 404 for other non-asset requests
@@ -25,3 +24,4 @@ export default {
     return new Response(null, { status: 404 });
   },
 } satisfies ExportedHandler<Env>;
+

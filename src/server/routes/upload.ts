@@ -4,9 +4,18 @@
 
 import { Hono } from 'hono';
 
-const app = new Hono<{ Bindings: Env }>();
+import { AppEnv } from '../types';
+import { requireAuth } from '../middleware/auth';
+import { requireOrganization } from '../middleware/organization';
+
+const app = new Hono<AppEnv>();
+
+// Apply middlewares
+app.use('*', requireAuth);
+app.use('*', requireOrganization);
 
 // Allowed file types
+// ... (rest same)
 const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
 const MAX_FILE_SIZE = 10 * 1024 * 1024; // 10MB
 
@@ -19,10 +28,14 @@ function generateFilename(originalName: string): string {
 
 // POST /api/upload - Upload file to R2
 app.post('/', async (c) => {
+    const organizationId = c.get('organizationId');
     try {
         const formData = await c.req.formData();
         const file = formData.get('file') as File | null;
-        const folder = formData.get('folder') as string || 'temp';
+        let folder = formData.get('folder') as string || 'temp';
+
+        // Enforce organization isolation in storage path
+        folder = `orgs/${organizationId}/${folder}`;
 
         if (!file) {
             return c.json({ success: false, error: 'No file provided' }, 400);
@@ -57,10 +70,13 @@ app.post('/', async (c) => {
         const key = `${folder}/${filename}`;
 
         // Upload to R2
-        await c.env.BUCKET.put(key, file.stream(), {
+        await c.env.BUCKET.put(key, file.stream() as any, {
             httpMetadata: {
                 contentType: file.type,
             },
+            customMetadata: {
+                organizationId
+            }
         });
 
         // TODO: Generate proper public URL based on your R2 configuration
@@ -85,9 +101,15 @@ app.post('/', async (c) => {
 // DELETE /api/upload/:key - Delete file from R2
 app.delete('/:key{.+}', async (c) => {
     const key = c.req.param('key');
+    const organizationId = c.get('organizationId');
 
     if (!key) {
         return c.json({ success: false, error: 'No key provided' }, 400);
+    }
+
+    // Ensure the key belongs to the organization
+    if (!key.startsWith(`orgs/${organizationId}/`)) {
+        return c.json({ success: false, error: 'Forbidden' }, 403);
     }
 
     try {
@@ -107,3 +129,4 @@ app.delete('/:key{.+}', async (c) => {
 });
 
 export default app;
+

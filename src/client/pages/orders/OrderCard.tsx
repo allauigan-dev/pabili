@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     Trash2,
     Edit,
-    Calendar,
+    Store,
     User,
     CheckCircle
 } from 'lucide-react';
@@ -122,75 +122,80 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
                 </div>
 
                 {/* Content Section */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
                     <div className="flex justify-between items-start">
+                        {/* Left Side: Info */}
                         <div className="min-w-0 pr-2">
                             <h3 className="text-base font-bold text-foreground truncate">{order.orderName}</h3>
-                            <div className="flex items-center text-xs text-muted-foreground mt-1 space-x-3">
-                                <span className="flex items-center truncate">
+                            <div className="flex flex-col mt-1">
+                                <span className="flex items-center text-xs text-muted-foreground truncate">
                                     <User className="h-3.5 w-3.5 mr-1 opacity-70" />
                                     {order.resellerName}
                                 </span>
-                                <span className="flex items-center">
-                                    <Calendar className="h-3.5 w-3.5 mr-1 opacity-70" />
-                                    {order.createdAt ? new Date(order.createdAt).toLocaleDateString() : 'N/A'}
+                                <span className="flex items-center text-[10px] text-muted-foreground/80 mt-0.5 truncate uppercase tracking-wider font-medium">
+                                    <Store className="h-3 w-3 mr-1 opacity-70" />
+                                    {order.storeName}
                                 </span>
                             </div>
                         </div>
-                        <p className="text-primary font-bold text-base whitespace-nowrap">
-                            {formatCurrency(order.orderResellerTotal ?? 0)}
-                        </p>
-                    </div>
 
-                    <div className="flex justify-end items-center mt-3 gap-2">
-                        {validStatuses.length > 0 && (
-                            <Dialog open={open} onOpenChange={setOpen}>
-                                <DialogTrigger asChild>
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                                    >
-                                        <CheckCircle className="h-4 w-4" />
-                                    </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-md">
-                                    <DialogTitle>Update Status</DialogTitle>
-                                    <div className="grid gap-2 py-4">
-                                        {validStatuses.map((key) => {
-                                            const config = statusConfig[key as keyof typeof statusConfig];
-                                            return (
-                                                <Button
-                                                    key={key}
-                                                    variant="outline"
-                                                    className="w-full justify-start hover:bg-secondary"
-                                                    onClick={() => handleStatusSelect(key)}
-                                                >
-                                                    <div className={`w-3 h-3 rounded-full mr-2 ${config.bar.replace('w-1', '')}`} />
-                                                    {config.label}
-                                                </Button>
-                                            );
-                                        })}
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                        )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                            onClick={() => navigate(`/orders/${order.id}/edit`)}
-                        >
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={() => onDelete(order.id)}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                        {/* Right Side: Price and Actions */}
+                        <div className="flex flex-col items-end">
+                            <p className="text-primary font-bold text-base whitespace-nowrap">
+                                {formatCurrency(order.orderResellerTotal ?? 0)}
+                            </p>
+
+                            <div className="flex items-center mt-2 space-x-0.5">
+                                {validStatuses.length > 0 && (
+                                    <Dialog open={open} onOpenChange={setOpen}>
+                                        <DialogTrigger asChild>
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                                            >
+                                                <CheckCircle className="h-4 w-4" />
+                                            </Button>
+                                        </DialogTrigger>
+                                        <DialogContent className="sm:max-w-md">
+                                            <DialogTitle>Update Status</DialogTitle>
+                                            <div className="grid gap-2 py-4">
+                                                {validStatuses.map((key) => {
+                                                    const config = statusConfig[key as keyof typeof statusConfig];
+                                                    return (
+                                                        <Button
+                                                            key={key}
+                                                            variant="outline"
+                                                            className="w-full justify-start hover:bg-secondary"
+                                                            onClick={() => handleStatusSelect(key)}
+                                                        >
+                                                            <div className={`w-3 h-3 rounded-full mr-2 ${config.bar}`} />
+                                                            {config.label}
+                                                        </Button>
+                                                    );
+                                                })}
+                                            </div>
+                                        </DialogContent>
+                                    </Dialog>
+                                )}
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                                    onClick={() => navigate(`/orders/${order.id}/edit`)}
+                                >
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                                    onClick={() => onDelete(order.id)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

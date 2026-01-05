@@ -78,7 +78,39 @@ Pabili is a PWA-based order management system for pasabuy (buy-on-behalf) busine
 
 ```bash
 # Development
-npm run dev          # Start dev server
+> [!IMPORTANT]
+> You must apply migrations to the local D1 database before running the dev server for the first time, otherwise you'll get "no such table" errors.
+
+### Full Database Setup (For New Projects)
+
+If you're setting up the project from scratch, follow these additional steps:
+
+1. Create a D1 database:
+```bash
+wrangler d1 create pabili-db
+```
+
+2. Update `wrangler.jsonc` with your database ID
+
+3. Create an R2 bucket:
+```bash
+wrangler r2 bucket create pabili-uploads
+```
+
+4. Generate migrations from schema (if schema changes):
+```bash
+npm run db:generate
+```
+
+5. Apply migrations:
+```bash
+# For local development
+npx wrangler d1 migrations apply pabili-db --local
+
+# For production
+npm run db:migrate
+```
+
 
 # Testing
 npm test             # Run tests in watch mode

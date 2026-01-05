@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 1: Multi-Tenancy & Authentication (Better Auth Integration)**:
+  - Integrated **Better Auth** with Google and Facebook social login providers.
+  - Implemented multi-tenant data isolation using the Better Auth **Organization plugin**.
+  - Added `organization_id` to all business tables (`stores`, `resellers`, `orders`, `invoices`, `payments`, `images`) for secure data partitioning.
+  - Created server-side middlewares (`requireAuth`, `requireOrganization`) to enforce access control.
+  - Developed a custom **Organization Onboarding** flow for new users.
+  - Integrated **Organization Switcher** and **OrgGuard** for seamless tenant management.
+  - Updated all API routes to filter data by active organization.
+  - **API Documentation**: Created `docs/API.md` for backend endpoint reference.
+  - **Mobile UI Refinements**:
+    - Improved Sidebar responsiveness with mobile-friendly organization switcher and settings.
+    - Fixed Header and BottomNav positioning for true mobile-first experience.
+    - Refined `OrderCard` layout: removed date, added store name, and relocated action buttons for better density.
 - **Feature Roadmap** (`ROADMAP.md`): Comprehensive 7-phase SaaS feature roadmap tailored to pasabuy business model
 - **Phase Documentation** (`docs/`): Implementation plans and task checklists for all 7 development phases:
   - Phase 1: Multi-Tenancy & Authentication
@@ -46,7 +59,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Database Setup**: Fixed "no such table: orders" error by documenting required local D1 migration step
 
 ### Changed
-- **README.md**: Improved dev setup documentation with clear Quick Start section and local D1 migration instructions
+- **README.md**: Improved dev setup documentation with clear Quick Start section and local D1 migration instructions.
+- **Agent Guidelines**: Added clear instructions for resetting local D1 database and R2 storage in `.agent/rules.md` and `.agent/workflows/dev.md`.
 
 ### Fixed
 - Navigation bug in `InvoiceCard` where ID template literal was escaped

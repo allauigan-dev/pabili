@@ -39,6 +39,16 @@ npx drizzle-kit push
 npx wrangler d1 migrations apply pabili-db --remote
 ```
 
+## Resetting Local Data
+
+// turbo
+7. Reset local D1 database (deletes all local data and re-applies migrations):
+```bash
+rm -rf .wrangler/state/v3/d1 && npx wrangler d1 migrations apply pabili-db --local
+```
+
+> **Note**: This only affects local development data. Production data is unaffected.
+
 ## Deployment
 
 7. Build and deploy to Cloudflare Workers:

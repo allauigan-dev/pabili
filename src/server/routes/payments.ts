@@ -8,9 +8,18 @@ import { z } from 'zod';
 import { eq, desc, and, isNull } from 'drizzle-orm';
 import { createDb, payments } from '../db';
 
-const app = new Hono<{ Bindings: Env }>();
+import { AppEnv } from '../types';
+import { requireAuth } from '../middleware/auth';
+import { requireOrganization } from '../middleware/organization';
+
+const app = new Hono<AppEnv>();
+
+// Apply middlewares to all routes
+app.use('*', requireAuth);
+app.use('*', requireOrganization);
 
 // Validation schemas
+// ... (rest same)
 const createPaymentSchema = z.object({
     paymentAmount: z.number().positive('Amount must be positive'),
     paymentMethod: z.enum(['cash', 'gcash', 'paymaya', 'bank_transfer', 'other']).default('cash'),
@@ -26,12 +35,16 @@ const updatePaymentSchema = createPaymentSchema.partial();
 // GET /api/payments - List all payments
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
 
     try {
         const allPayments = await db
             .select()
             .from(payments)
-            .where(isNull(payments.deletedAt))
+            .where(and(
+                eq(payments.organizationId, organizationId),
+                isNull(payments.deletedAt)
+            ))
             .orderBy(desc(payments.createdAt));
 
         return c.json({ success: true, data: allPayments });
@@ -45,6 +58,7 @@ app.get('/', async (c) => {
 app.get('/:id', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid payment ID' }, 400);
@@ -54,7 +68,11 @@ app.get('/:id', async (c) => {
         const [payment] = await db
             .select()
             .from(payments)
-            .where(and(eq(payments.id, id), isNull(payments.deletedAt)));
+            .where(and(
+                eq(payments.id, id),
+                eq(payments.organizationId, organizationId),
+                isNull(payments.deletedAt)
+            ));
 
         if (!payment) {
             return c.json({ success: false, error: 'Payment not found' }, 404);
@@ -71,11 +89,15 @@ app.get('/:id', async (c) => {
 app.post('/', zValidator('json', createPaymentSchema), async (c) => {
     const db = createDb(c.env.DB);
     const data = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     try {
         const [newPayment] = await db
             .insert(payments)
-            .values(data)
+            .values({
+                ...data,
+                organizationId
+            })
             .returning();
 
         return c.json({ success: true, data: newPayment }, 201);
@@ -90,6 +112,7 @@ app.put('/:id', zValidator('json', updatePaymentSchema), async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
     const data = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid payment ID' }, 400);
@@ -99,7 +122,11 @@ app.put('/:id', zValidator('json', updatePaymentSchema), async (c) => {
         const [updatedPayment] = await db
             .update(payments)
             .set({ ...data, updatedAt: new Date().toISOString() })
-            .where(and(eq(payments.id, id), isNull(payments.deletedAt)))
+            .where(and(
+                eq(payments.id, id),
+                eq(payments.organizationId, organizationId),
+                isNull(payments.deletedAt)
+            ))
             .returning();
 
         if (!updatedPayment) {
@@ -117,6 +144,7 @@ app.put('/:id', zValidator('json', updatePaymentSchema), async (c) => {
 app.patch('/:id/confirm', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid payment ID' }, 400);
@@ -126,7 +154,11 @@ app.patch('/:id/confirm', async (c) => {
         const [confirmedPayment] = await db
             .update(payments)
             .set({ paymentStatus: 'confirmed', updatedAt: new Date().toISOString() })
-            .where(and(eq(payments.id, id), isNull(payments.deletedAt)))
+            .where(and(
+                eq(payments.id, id),
+                eq(payments.organizationId, organizationId),
+                isNull(payments.deletedAt)
+            ))
             .returning();
 
         if (!confirmedPayment) {
@@ -144,6 +176,7 @@ app.patch('/:id/confirm', async (c) => {
 app.delete('/:id', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid payment ID' }, 400);
@@ -153,7 +186,11 @@ app.delete('/:id', async (c) => {
         const [deletedPayment] = await db
             .update(payments)
             .set({ deletedAt: new Date().toISOString() })
-            .where(and(eq(payments.id, id), isNull(payments.deletedAt)))
+            .where(and(
+                eq(payments.id, id),
+                eq(payments.organizationId, organizationId),
+                isNull(payments.deletedAt)
+            ))
             .returning();
 
         if (!deletedPayment) {

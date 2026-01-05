@@ -86,6 +86,9 @@ npx drizzle-kit generate    # Generate migrations
 npx drizzle-kit push        # Apply migrations locally
 npx wrangler d1 migrations apply pabili-db --remote  # Apply to production
 
+# Reset Local Data (deletes all local D1 data and re-applies migrations)
+rm -rf .wrangler/state/v3/d1 && npx wrangler d1 migrations apply pabili-db --local
+
 # Deployment
 npm run deploy       # Deploy to Cloudflare Workers
 ```

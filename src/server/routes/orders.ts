@@ -8,9 +8,18 @@ import { z } from 'zod';
 import { eq, desc, and, isNull } from 'drizzle-orm';
 import { createDb, orders, stores, resellers } from '../db';
 
-const app = new Hono<{ Bindings: Env }>();
+import { AppEnv } from '../types';
+import { requireAuth } from '../middleware/auth';
+import { requireOrganization } from '../middleware/organization';
+
+const app = new Hono<AppEnv>();
+
+// Apply middlewares to all routes
+app.use('*', requireAuth);
+app.use('*', requireOrganization);
 
 // Validation schemas
+// ... (rest of schemas same)
 const createOrderSchema = z.object({
     orderName: z.string().min(1, 'Order name is required'),
     orderDescription: z.string().optional(),
@@ -41,6 +50,7 @@ function generateOrderNumber() {
 // GET /api/orders - List all orders
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
 
     try {
         const allOrders = await db
@@ -71,7 +81,10 @@ app.get('/', async (c) => {
             .from(orders)
             .leftJoin(stores, eq(orders.storeId, stores.id))
             .leftJoin(resellers, eq(orders.resellerId, resellers.id))
-            .where(isNull(orders.deletedAt))
+            .where(and(
+                eq(orders.organizationId, organizationId),
+                isNull(orders.deletedAt)
+            ))
             .orderBy(desc(orders.createdAt));
 
         return c.json({ success: true, data: allOrders });
@@ -85,6 +98,7 @@ app.get('/', async (c) => {
 app.get('/:id', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid order ID' }, 400);
@@ -119,7 +133,11 @@ app.get('/:id', async (c) => {
             .from(orders)
             .leftJoin(stores, eq(orders.storeId, stores.id))
             .leftJoin(resellers, eq(orders.resellerId, resellers.id))
-            .where(and(eq(orders.id, id), isNull(orders.deletedAt)));
+            .where(and(
+                eq(orders.id, id),
+                eq(orders.organizationId, organizationId),
+                isNull(orders.deletedAt)
+            ));
 
         if (!order) {
             return c.json({ success: false, error: 'Order not found' }, 404);
@@ -136,6 +154,7 @@ app.get('/:id', async (c) => {
 app.post('/', zValidator('json', createOrderSchema), async (c) => {
     const db = createDb(c.env.DB);
     const data = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     try {
         // Calculate totals
@@ -146,6 +165,7 @@ app.post('/', zValidator('json', createOrderSchema), async (c) => {
             .insert(orders)
             .values({
                 ...data,
+                organizationId,
                 orderNumber: generateOrderNumber(),
                 orderTotal,
                 orderResellerTotal,
@@ -164,6 +184,7 @@ app.put('/:id', zValidator('json', updateOrderSchema), async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
     const data = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid order ID' }, 400);
@@ -175,7 +196,14 @@ app.put('/:id', zValidator('json', updateOrderSchema), async (c) => {
 
         if (data.orderQuantity !== undefined || data.orderPrice !== undefined || data.orderFee !== undefined) {
             // Need to fetch current values to recalculate
-            const [current] = await db.select().from(orders).where(eq(orders.id, id));
+            const [current] = await db
+                .select()
+                .from(orders)
+                .where(and(
+                    eq(orders.id, id),
+                    eq(orders.organizationId, organizationId)
+                ));
+
             if (current) {
                 const qty = data.orderQuantity ?? current.orderQuantity;
                 const price = data.orderPrice ?? current.orderPrice;
@@ -190,7 +218,11 @@ app.put('/:id', zValidator('json', updateOrderSchema), async (c) => {
         const [updatedOrder] = await db
             .update(orders)
             .set(updateData)
-            .where(and(eq(orders.id, id), isNull(orders.deletedAt)))
+            .where(and(
+                eq(orders.id, id),
+                eq(orders.organizationId, organizationId),
+                isNull(orders.deletedAt)
+            ))
             .returning();
 
         if (!updatedOrder) {
@@ -209,6 +241,7 @@ app.patch('/:id/status', zValidator('json', updateStatusSchema), async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
     const { status } = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid order ID' }, 400);
@@ -218,7 +251,11 @@ app.patch('/:id/status', zValidator('json', updateStatusSchema), async (c) => {
         const [updatedOrder] = await db
             .update(orders)
             .set({ orderStatus: status, updatedAt: new Date().toISOString() })
-            .where(and(eq(orders.id, id), isNull(orders.deletedAt)))
+            .where(and(
+                eq(orders.id, id),
+                eq(orders.organizationId, organizationId),
+                isNull(orders.deletedAt)
+            ))
             .returning();
 
         if (!updatedOrder) {
@@ -236,6 +273,7 @@ app.patch('/:id/status', zValidator('json', updateStatusSchema), async (c) => {
 app.delete('/:id', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid order ID' }, 400);
@@ -245,7 +283,11 @@ app.delete('/:id', async (c) => {
         const [deletedOrder] = await db
             .update(orders)
             .set({ deletedAt: new Date().toISOString() })
-            .where(and(eq(orders.id, id), isNull(orders.deletedAt)))
+            .where(and(
+                eq(orders.id, id),
+                eq(orders.organizationId, organizationId),
+                isNull(orders.deletedAt)
+            ))
             .returning();
 
         if (!deletedOrder) {

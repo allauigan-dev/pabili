@@ -8,9 +8,18 @@ import { z } from 'zod';
 import { eq, desc, and, isNull } from 'drizzle-orm';
 import { createDb, stores } from '../db';
 
-const app = new Hono<{ Bindings: Env }>();
+import { AppEnv } from '../types';
+import { requireAuth } from '../middleware/auth';
+import { requireOrganization } from '../middleware/organization';
+
+const app = new Hono<AppEnv>();
+
+// Apply middlewares to all routes
+app.use('*', requireAuth);
+app.use('*', requireOrganization);
 
 // Validation schemas
+// ... (rest same)
 const createStoreSchema = z.object({
     storeName: z.string().min(1, 'Store name is required'),
     storeAddress: z.string().optional(),
@@ -27,12 +36,16 @@ const updateStoreSchema = createStoreSchema.partial();
 // GET /api/stores - List all stores
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
 
     try {
         const allStores = await db
             .select()
             .from(stores)
-            .where(isNull(stores.deletedAt))
+            .where(and(
+                eq(stores.organizationId, organizationId),
+                isNull(stores.deletedAt)
+            ))
             .orderBy(desc(stores.createdAt));
 
         return c.json({ success: true, data: allStores });
@@ -46,6 +59,7 @@ app.get('/', async (c) => {
 app.get('/:id', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid store ID' }, 400);
@@ -55,7 +69,11 @@ app.get('/:id', async (c) => {
         const [store] = await db
             .select()
             .from(stores)
-            .where(and(eq(stores.id, id), isNull(stores.deletedAt)));
+            .where(and(
+                eq(stores.id, id),
+                eq(stores.organizationId, organizationId),
+                isNull(stores.deletedAt)
+            ));
 
         if (!store) {
             return c.json({ success: false, error: 'Store not found' }, 404);
@@ -72,11 +90,15 @@ app.get('/:id', async (c) => {
 app.post('/', zValidator('json', createStoreSchema), async (c) => {
     const db = createDb(c.env.DB);
     const data = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     try {
         const [newStore] = await db
             .insert(stores)
-            .values(data)
+            .values({
+                ...data,
+                organizationId
+            })
             .returning();
 
         return c.json({ success: true, data: newStore }, 201);
@@ -91,6 +113,7 @@ app.put('/:id', zValidator('json', updateStoreSchema), async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
     const data = c.req.valid('json');
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid store ID' }, 400);
@@ -100,7 +123,11 @@ app.put('/:id', zValidator('json', updateStoreSchema), async (c) => {
         const [updatedStore] = await db
             .update(stores)
             .set({ ...data, updatedAt: new Date().toISOString() })
-            .where(and(eq(stores.id, id), isNull(stores.deletedAt)))
+            .where(and(
+                eq(stores.id, id),
+                eq(stores.organizationId, organizationId),
+                isNull(stores.deletedAt)
+            ))
             .returning();
 
         if (!updatedStore) {
@@ -118,6 +145,7 @@ app.put('/:id', zValidator('json', updateStoreSchema), async (c) => {
 app.delete('/:id', async (c) => {
     const db = createDb(c.env.DB);
     const id = parseInt(c.req.param('id'));
+    const organizationId = c.get('organizationId');
 
     if (isNaN(id)) {
         return c.json({ success: false, error: 'Invalid store ID' }, 400);
@@ -127,7 +155,11 @@ app.delete('/:id', async (c) => {
         const [deletedStore] = await db
             .update(stores)
             .set({ deletedAt: new Date().toISOString() })
-            .where(and(eq(stores.id, id), isNull(stores.deletedAt)))
+            .where(and(
+                eq(stores.id, id),
+                eq(stores.organizationId, organizationId),
+                isNull(stores.deletedAt)
+            ))
             .returning();
 
         if (!deletedStore) {
