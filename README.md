@@ -18,17 +18,25 @@ A PWA-based order management system for pasabuy (buy-on-behalf) businesses, desi
 - npm
 - Cloudflare account (for D1 and R2)
 
-### Installation
+### Quick Start (Local Development)
 
 ```bash
 # Install dependencies
 npm install
 
+# Apply database migrations locally (required before first run)
+npx wrangler d1 migrations apply pabili-db --local
+
 # Start development server
 npm run dev
 ```
 
-### Database Setup
+> [!IMPORTANT]
+> You must apply migrations to the local D1 database before running the dev server for the first time, otherwise you'll get "no such table" errors.
+
+### Full Database Setup (For New Projects)
+
+If you're setting up the project from scratch, follow these additional steps:
 
 1. Create a D1 database:
 ```bash
@@ -42,10 +50,18 @@ wrangler d1 create pabili-db
 wrangler r2 bucket create pabili-uploads
 ```
 
-4. Generate and apply migrations:
+4. Generate migrations from schema (if schema changes):
 ```bash
 npm run db:generate
-npm run db:push
+```
+
+5. Apply migrations:
+```bash
+# For local development
+npx wrangler d1 migrations apply pabili-db --local
+
+# For production
+npm run db:migrate
 ```
 
 ### Deployment

@@ -43,6 +43,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Updated TypeScript configuration for better path resolution
 
 ### Fixed
+- **Database Setup**: Fixed "no such table: orders" error by documenting required local D1 migration step
+
+### Changed
+- **README.md**: Improved dev setup documentation with clear Quick Start section and local D1 migration instructions
+
+### Fixed
 - Navigation bug in `InvoiceCard` where ID template literal was escaped
 - Numerous TypeScript type mismatches and unused variable warnings
 - Badge variant type safety issues in multiple components
