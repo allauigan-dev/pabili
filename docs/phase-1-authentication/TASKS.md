@@ -30,7 +30,7 @@
 - [x] Mount auth handler at `/api/auth/*` in `src/server/index.ts`
 - [x] Create `src/server/middleware/auth.ts` with session middleware
 - [x] Create `requireAuth` middleware for protected routes
-- [ ] Test auth endpoints with REST client
+- [x] Test auth endpoints (verified via browser and production deployment)
 
 ---
 
@@ -97,29 +97,31 @@
 - [x] Prompt for business name to create organization
 - [x] Auto-assign "owner" role to organization creator
 
-### Invite System
+### Invite System (Deferred)
 - [ ] Create team management UI at `src/client/pages/settings/TeamPage.tsx`
 - [ ] Implement invite modal with email input
 - [ ] Display pending invitations
 - [ ] Handle invite acceptance flow
+
+> **Note:** Member invitations are deferred to a future phase. Current focus is on single-owner organizations.
 
 ---
 
 ## 1.7 Testing
 
 ### Authentication Tests
-- [ ] Test Google OAuth flow (web browser)
-- [ ] Test Facebook OAuth flow (web browser)
-- [ ] Test session persistence across page reloads
-- [ ] Test sign out flow
+- [x] Test Google OAuth flow (web browser)
+- [x] Test Facebook OAuth flow (web browser)
+- [x] Test session persistence across page reloads
+- [x] Test sign out flow
 
 ### Multi-Tenancy Tests
-- [ ] Verify data isolation between organizations
-- [ ] Test organization switching
-- [ ] Verify new records include `organization_id`
+- [x] Verify data isolation between organizations
+- [x] Test organization switching
+- [x] Verify new records include `organization_id`
 
 ### Permission Tests
-- [ ] Test owner permissions
-- [ ] Test admin permissions
-- [ ] Test member permissions
-- [ ] Verify unauthorized access is blocked
+- [ ] Test owner permissions (requires requireRole middleware)
+- [ ] Test admin permissions (requires requireRole middleware)
+- [ ] Test member permissions (requires requireRole middleware)
+- [ ] Verify unauthorized access is blocked (requires requireRole middleware)

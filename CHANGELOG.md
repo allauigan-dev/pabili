@@ -11,6 +11,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Production Auth**: Fixed 500 errors on production auth endpoints by enabling environment-aware secure cookies (automatically enabled for HTTPS).
 - **TypeScript Build**: Fixed type-only imports for `AppEnv` across all server route files to resolve build warnings.
 - **LoginPage**: Removed unused `isPending` variable to fix TypeScript warning.
+- **Sticky Header Cutoff**: Resolved issue where mobile headers were being clipped by refactoring the global layout and unified padding strategy.
+
+### Added
+- **UI/UX: Unified Premium Form Design**:
+    - Implemented a consistent, mobile-first sticky header across all entity forms (`OrderForm`, `StoreForm`, `ResellerForm`, `PaymentForm`, `InvoiceForm`).
+    - Added high-density typography and premium CSS glassmorphism effects to form headers.
+    - Simplified form header UX by removing redundant "Save" buttons in favor of primary action buttons at the bottom.
+- **UI Components**:
+    - Added `Combobox` and `Command` components for improved selection UX (e.g., searching for Stores/Resellers in forms).
+
 
 ### Added
 - **Phase 1: Multi-Tenancy & Authentication (Better Auth Integration)**:

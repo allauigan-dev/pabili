@@ -33,6 +33,7 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
+import { Combobox } from '@/components/ui/combobox';
 import type { CreatePaymentDto } from '@/lib/types';
 
 export const PaymentForm: React.FC = () => {
@@ -138,208 +139,212 @@ export const PaymentForm: React.FC = () => {
     }
 
     return (
-        <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-20">
-            <div className="flex items-center justify-between">
-                <Button variant="ghost" onClick={() => navigate('/payments')} className="gap-2 -ml-2">
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to Payments
-                </Button>
-            </div>
-
-            <div className="space-y-1">
-                <h1 className="text-3xl font-bold tracking-tight">
-                    {isEdit ? 'Edit Payment' : 'Record New Payment'}
-                </h1>
-                <p className="text-muted-foreground">
-                    {isEdit ? 'Update existing payment entry.' : 'Log a payment received from a reseller.'}
-                </p>
-            </div>
-
-            {(error || localError) && (
-                <Alert variant="destructive">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{error || localError}</AlertDescription>
-                </Alert>
-            )}
-
-            <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div className="lg:col-span-2 space-y-8">
-                    <Card>
-                        <CardHeader>
-                            <CardTitle className="text-xl flex items-center gap-2">
-                                <CreditCard className="h-5 w-5 text-primary" />
-                                Transaction Details
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="resellerId">Reseller</Label>
-                                <Select
-                                    value={formData.resellerId?.toString()}
-                                    onValueChange={(v) => handleSelectChange('resellerId', v)}
-                                >
-                                    <SelectTrigger id="resellerId">
-                                        <SelectValue placeholder="Select a reseller" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {resellers?.map(reseller => (
-                                            <SelectItem key={reseller.id} value={reseller.id.toString()}>
-                                                {reseller.resellerName}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-
-                            <Separator />
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="paymentAmount">Amount Paid (PHP)</Label>
-                                    <div className="relative">
-                                        <span className="absolute left-3 top-2.5 text-muted-foreground text-sm font-bold">₱</span>
-                                        <Input
-                                            id="paymentAmount"
-                                            name="paymentAmount"
-                                            type="number"
-                                            step="0.01"
-                                            className="pl-7"
-                                            value={displayNumber(formData.paymentAmount)}
-                                            onChange={handleChange}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="paymentDate">Date Received</Label>
-                                    <div className="relative">
-                                        <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="paymentDate"
-                                            name="paymentDate"
-                                            type="date"
-                                            className="pl-10"
-                                            value={formData.paymentDate}
-                                            onChange={handleChange}
-                                            required
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="paymentMethod">Payment Method</Label>
-                                    <Select
-                                        value={formData.paymentMethod}
-                                        onValueChange={(v) => handleSelectChange('paymentMethod', v)}
-                                    >
-                                        <SelectTrigger id="paymentMethod">
-                                            <SelectValue placeholder="Select method" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="gcash">Gcash</SelectItem>
-                                            <SelectItem value="paymaya">Maya</SelectItem>
-                                            <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                                            <SelectItem value="cash">Cash</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="paymentReference">Reference Number</Label>
-                                    <div className="relative">
-                                        <Hash className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                        <Input
-                                            id="paymentReference"
-                                            name="paymentReference"
-                                            className="pl-10"
-                                            placeholder="Optional"
-                                            value={formData.paymentReference || ''}
-                                            onChange={handleChange}
-                                        />
-                                    </div>
-                                </div>
-                            </div>
-                        </CardContent>
-                    </Card>
-                </div>
-
-                <div className="space-y-8">
-                    <Card className="overflow-hidden">
-                        <CardHeader className="pb-4">
-                            <CardTitle className="text-lg flex items-center gap-2">
-                                <ImageIcon className="h-4 w-4 text-primary" />
-                                Proof of Payment
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            <div className="aspect-[3/4] rounded-lg border-2 border-dashed border-muted bg-secondary/30 flex flex-col items-center justify-center relative group overflow-hidden">
-                                {formData.paymentProof ? (
-                                    <>
-                                        <img src={formData.paymentProof} className="w-full h-full object-cover" alt="Payment Proof" />
-                                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                            <Button size="icon" variant="destructive" onClick={() => setFormData(prev => ({ ...prev, paymentProof: '' }))} type="button">
-                                                <Trash2 className="h-4 w-4" />
-                                            </Button>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <div className="text-center p-4">
-                                        <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
-                                        <p className="text-xs text-muted-foreground">Upload receipt screenshot</p>
-                                    </div>
-                                )}
-                                <Input
-                                    type="file"
-                                    className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                                    onChange={handleFileUpload}
-                                    accept="image/*"
-                                    disabled={uploading}
-                                />
-                            </div>
-                            {uploading && (
-                                <div className="flex items-center gap-2 text-xs text-primary animate-pulse">
-                                    <Loader2 className="h-3 w-3 animate-spin" />
-                                    Uploading...
-                                </div>
-                            )}
-                        </CardContent>
-                        <CardFooter className="bg-muted/20 p-4">
-                            <p className="text-[10px] text-center w-full text-muted-foreground">Screenshots preferred (max. 10MB)</p>
-                        </CardFooter>
-                    </Card>
-
-                    <div className="space-y-3">
-                        <Button
-                            type="submit"
-                            className="w-full h-11 shadow-lg shadow-primary/20"
-                            disabled={mutationLoading || uploading}
-                        >
-                            {mutationLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                <>
-                                    <Save className="mr-2 h-4 w-4" />
-                                    {isEdit ? 'Update Record' : 'Log Payment'}
-                                </>
-                            )}
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            className="w-full h-11"
+        <div className="bg-background text-foreground font-sans min-h-screen pb-24">
+            {/* Header */}
+            <header className="sticky top-0 w-full z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 transition-all">
+                <div className="max-w-5xl mx-auto h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <button
                             onClick={() => navigate('/payments')}
-                            disabled={mutationLoading}
+                            className="text-muted-foreground hover:text-primary transition-all flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-secondary/80 active:scale-95 group"
+                            type="button"
                         >
-                            Cancel
-                        </Button>
+                            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                            <span className="text-sm font-bold">Back to Payments</span>
+                        </button>
                     </div>
                 </div>
-            </form>
+            </header>
+
+            <main className="max-w-md md:max-w-4xl mx-auto px-4 pt-8 md:pt-12">
+                <div className="mb-8">
+                    <h2 className="text-3xl font-black text-foreground tracking-tight mb-2 uppercase">
+                        {isEdit ? 'Update Payment' : 'Record Payment'}
+                    </h2>
+                    <p className="text-muted-foreground text-sm font-medium">
+                        {isEdit ? 'Update existing payment entry.' : 'Log a payment received from a reseller.'}
+                    </p>
+                </div>
+
+                {(error || localError) && (
+                    <Alert variant="destructive" className="mb-8">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Error</AlertTitle>
+                        <AlertDescription>{error || localError}</AlertDescription>
+                    </Alert>
+                )}
+
+                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <div className="lg:col-span-2 space-y-8">
+                        <Card>
+                            <CardHeader>
+                                <CardTitle className="text-xl flex items-center gap-2">
+                                    <CreditCard className="h-5 w-5 text-primary" />
+                                    Transaction Details
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-6">
+                                <div className="space-y-2">
+                                    <Label htmlFor="resellerId">Reseller</Label>
+                                    <Combobox
+                                        options={resellers?.map(reseller => ({ label: reseller.resellerName, value: reseller.id })) || []}
+                                        value={formData.resellerId}
+                                        onChange={(value) => handleSelectChange('resellerId', value.toString())}
+                                        placeholder="Select a reseller"
+                                        searchPlaceholder="Search resellers..."
+                                        emptyMessage="No reseller found."
+                                    />
+                                </div>
+
+                                <Separator />
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="paymentAmount">Amount Paid (PHP)</Label>
+                                        <div className="relative">
+                                            <span className="absolute left-3 top-2.5 text-muted-foreground text-sm font-bold">₱</span>
+                                            <Input
+                                                id="paymentAmount"
+                                                name="paymentAmount"
+                                                type="number"
+                                                step="0.01"
+                                                className="pl-7"
+                                                value={displayNumber(formData.paymentAmount)}
+                                                onChange={handleChange}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="paymentDate">Date Received</Label>
+                                        <div className="relative">
+                                            <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                id="paymentDate"
+                                                name="paymentDate"
+                                                type="date"
+                                                className="pl-10"
+                                                value={formData.paymentDate}
+                                                onChange={handleChange}
+                                                required
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="paymentMethod">Payment Method</Label>
+                                        <Select
+                                            value={formData.paymentMethod}
+                                            onValueChange={(v) => handleSelectChange('paymentMethod', v)}
+                                        >
+                                            <SelectTrigger id="paymentMethod">
+                                                <SelectValue placeholder="Select method" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="gcash">Gcash</SelectItem>
+                                                <SelectItem value="paymaya">Maya</SelectItem>
+                                                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                                                <SelectItem value="cash">Cash</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="paymentReference">Reference Number</Label>
+                                        <div className="relative">
+                                            <Hash className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                id="paymentReference"
+                                                name="paymentReference"
+                                                className="pl-10"
+                                                placeholder="Optional"
+                                                value={formData.paymentReference || ''}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                </div>
+                            </CardContent>
+                        </Card>
+                    </div>
+
+                    <div className="space-y-8">
+                        <Card className="overflow-hidden">
+                            <CardHeader className="pb-4">
+                                <CardTitle className="text-lg flex items-center gap-2">
+                                    <ImageIcon className="h-4 w-4 text-primary" />
+                                    Proof of Payment
+                                </CardTitle>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <div className="aspect-[3/4] rounded-lg border-2 border-dashed border-muted bg-secondary/30 flex flex-col items-center justify-center relative group overflow-hidden">
+                                    {formData.paymentProof ? (
+                                        <>
+                                            <img src={formData.paymentProof} className="w-full h-full object-cover" alt="Payment Proof" />
+                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                                <Button size="icon" variant="destructive" onClick={() => setFormData(prev => ({ ...prev, paymentProof: '' }))} type="button">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </>
+                                    ) : (
+                                        <div className="text-center p-4">
+                                            <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
+                                            <p className="text-xs text-muted-foreground">Upload receipt screenshot</p>
+                                        </div>
+                                    )}
+                                    <Input
+                                        type="file"
+                                        className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
+                                        onChange={handleFileUpload}
+                                        accept="image/*"
+                                        disabled={uploading}
+                                    />
+                                </div>
+                                {uploading && (
+                                    <div className="flex items-center gap-2 text-xs text-primary animate-pulse">
+                                        <Loader2 className="h-3 w-3 animate-spin" />
+                                        Uploading...
+                                    </div>
+                                )}
+                            </CardContent>
+                            <CardFooter className="bg-muted/20 p-4">
+                                <p className="text-[10px] text-center w-full text-muted-foreground">Screenshots preferred (max. 10MB)</p>
+                            </CardFooter>
+                        </Card>
+
+                        <div className="space-y-3">
+                            <Button
+                                type="submit"
+                                className="w-full h-11 shadow-lg shadow-primary/20"
+                                disabled={mutationLoading || uploading}
+                            >
+                                {mutationLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="mr-2 h-4 w-4" />
+                                        {isEdit ? 'Update Record' : 'Log Payment'}
+                                    </>
+                                )}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="w-full h-11"
+                                onClick={() => navigate('/payments')}
+                                disabled={mutationLoading}
+                            >
+                                Cancel
+                            </Button>
+                        </div>
+                    </div>
+                </form>
+            </main>
         </div>
     );
 };

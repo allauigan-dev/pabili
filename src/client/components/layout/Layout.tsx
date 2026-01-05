@@ -9,7 +9,7 @@ export const Layout: React.FC = () => {
             <Sidebar />
 
             <div className="flex-1 flex flex-col md:ml-64 mb-16 md:mb-0">
-                <main className="flex-1 px-2 py-1 md:p-4 max-w-7xl mx-auto w-full">
+                <main className="flex-1 md:p-8 max-w-7xl mx-auto w-full">
                     <Outlet />
                 </main>
             </div>

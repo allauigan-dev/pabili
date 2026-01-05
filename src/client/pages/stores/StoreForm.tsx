@@ -98,147 +98,158 @@ export const StoreForm: React.FC = () => {
     }
 
     return (
-        <div className="max-w-2xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-            <div className="flex items-center justify-between">
-                <Button variant="ghost" onClick={() => navigate('/stores')} className="gap-2 -ml-2">
-                    <ArrowLeft className="h-4 w-4" />
-                    Back to Stores
-                </Button>
-            </div>
+        <div className="bg-background text-foreground font-sans min-h-screen pb-24">
+            {/* Header */}
+            <header className="sticky top-0 w-full z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 transition-all">
+                <div className="max-w-5xl mx-auto h-16 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => navigate('/stores')}
+                            className="text-muted-foreground hover:text-primary transition-all flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-secondary/80 active:scale-95 group"
+                            type="button"
+                        >
+                            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+                            <span className="text-sm font-bold">Back to Stores</span>
+                        </button>
+                    </div>
+                </div>
+            </header>
 
-            <div className="space-y-1">
-                <h1 className="text-3xl font-bold tracking-tight">
-                    {isEdit ? 'Edit Store' : 'Add New Store'}
-                </h1>
-                <p className="text-muted-foreground">
-                    {isEdit ? 'Update your shopping location details.' : 'Register a new store for your pasabuy orders.'}
-                </p>
-            </div>
+            <main className="max-w-md md:max-w-2xl mx-auto px-4 pt-8 md:pt-12">
+                <div className="mb-8">
+                    <h2 className="text-3xl font-black text-foreground tracking-tight mb-2 uppercase">
+                        {isEdit ? 'Update Store' : 'Add Store'}
+                    </h2>
+                    <p className="text-muted-foreground text-sm font-medium">
+                        {isEdit ? 'Update your shopping location details.' : 'Register a new store for your pasabuy orders.'}
+                    </p>
+                </div>
 
-            {(error || localError) && (
-                <Alert variant="destructive" className="animate-in head-shake duration-300">
-                    <AlertCircle className="h-4 w-4" />
-                    <AlertTitle>Action failed</AlertTitle>
-                    <AlertDescription>{error || localError}</AlertDescription>
-                </Alert>
-            )}
+                {(error || localError) && (
+                    <Alert variant="destructive" className="animate-in head-shake duration-300">
+                        <AlertCircle className="h-4 w-4" />
+                        <AlertTitle>Action failed</AlertTitle>
+                        <AlertDescription>{error || localError}</AlertDescription>
+                    </Alert>
+                )}
 
-            <form onSubmit={handleSubmit}>
-                <Card className="border-none shadow-xl bg-gradient-to-br from-card to-secondary/30 overflow-hidden">
-                    <CardHeader className="border-b bg-muted/30 pb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
-                                <Building2 className="h-6 w-6" />
-                            </div>
-                            <div>
-                                <CardTitle>Store Information</CardTitle>
-                                <CardDescription>Basic details about the shopping center or shop.</CardDescription>
-                            </div>
-                        </div>
-                    </CardHeader>
-                    <CardContent className="p-8 space-y-6">
-                        <div className="grid grid-cols-1 gap-6">
-                            <div className="space-y-2">
-                                <Label htmlFor="storeName" className="font-semibold">Store Name</Label>
-                                <div className="relative">
-                                    <StoreIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        id="storeName"
-                                        name="storeName"
-                                        className="pl-10"
-                                        placeholder="e.g. SM Megamall, Costco, IKEA"
-                                        value={formData.storeName}
-                                        onChange={handleChange}
-                                        required
-                                    />
+                <form onSubmit={handleSubmit}>
+                    <Card className="border-none shadow-xl bg-gradient-to-br from-card to-secondary/30 overflow-hidden pt-0">
+                        <CardHeader className="border-b bg-muted/40 pt-6 pb-6">
+                            <div className="flex items-center gap-3">
+                                <div className="h-10 w-10 rounded-lg bg-primary/20 flex items-center justify-center text-primary">
+                                    <Building2 className="h-6 w-6" />
+                                </div>
+                                <div>
+                                    <CardTitle>Store Information</CardTitle>
+                                    <CardDescription>Basic details about the shopping center or shop.</CardDescription>
                                 </div>
                             </div>
-
-                            <div className="space-y-2">
-                                <Label htmlFor="storeAddress" className="font-semibold">Location</Label>
-                                <div className="relative">
-                                    <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                    <Input
-                                        id="storeAddress"
-                                        name="storeAddress"
-                                        className="pl-10"
-                                        placeholder="City, Mall wing, or full address"
-                                        value={formData.storeAddress || ''}
-                                        onChange={handleChange}
-                                    />
-                                </div>
-                            </div>
-
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        </CardHeader>
+                        <CardContent className="p-8 space-y-6">
+                            <div className="grid grid-cols-1 gap-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="storePhone" className="font-semibold">Contact Info</Label>
+                                    <Label htmlFor="storeName" className="font-semibold">Store Name</Label>
                                     <div className="relative">
-                                        <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <StoreIcon className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                         <Input
-                                            id="storePhone"
-                                            name="storePhone"
+                                            id="storeName"
+                                            name="storeName"
                                             className="pl-10"
-                                            placeholder="Phone or social media"
-                                            value={formData.storePhone || ''}
+                                            placeholder="e.g. SM Megamall, Costco, IKEA"
+                                            value={formData.storeName}
+                                            onChange={handleChange}
+                                            required
+                                        />
+                                    </div>
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="storeAddress" className="font-semibold">Location</Label>
+                                    <div className="relative">
+                                        <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                        <Input
+                                            id="storeAddress"
+                                            name="storeAddress"
+                                            className="pl-10"
+                                            placeholder="City, Mall wing, or full address"
+                                            value={formData.storeAddress || ''}
                                             onChange={handleChange}
                                         />
                                     </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="storeStatus" className="font-semibold">Status</Label>
-                                    <Select
-                                        value={formData.storeStatus}
-                                        onValueChange={handleStatusChange}
-                                    >
-                                        <SelectTrigger id="storeStatus" className="bg-background">
-                                            <SelectValue placeholder="Select status" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="active">Active</SelectItem>
-                                            <SelectItem value="inactive">Inactive</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="storePhone" className="font-semibold">Contact Info</Label>
+                                        <div className="relative">
+                                            <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
+                                            <Input
+                                                id="storePhone"
+                                                name="storePhone"
+                                                className="pl-10"
+                                                placeholder="Phone or social media"
+                                                value={formData.storePhone || ''}
+                                                onChange={handleChange}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="storeStatus" className="font-semibold">Status</Label>
+                                        <Select
+                                            value={formData.storeStatus}
+                                            onValueChange={handleStatusChange}
+                                        >
+                                            <SelectTrigger id="storeStatus" className="bg-background">
+                                                <SelectValue placeholder="Select status" />
+                                            </SelectTrigger>
+                                            <SelectContent>
+                                                <SelectItem value="active">Active</SelectItem>
+                                                <SelectItem value="inactive">Inactive</SelectItem>
+                                            </SelectContent>
+                                        </Select>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
 
-                        <Alert className="bg-primary/5 border-primary/20 text-xs py-3">
-                            <Info className="h-4 w-4 text-primary" />
-                            <AlertDescription>
-                                Active stores are shown by default in your order creation forms.
-                            </AlertDescription>
-                        </Alert>
-                    </CardContent>
-                    <CardFooter className="p-8 pt-0 flex flex-col sm:flex-row gap-4">
-                        <Button
-                            type="submit"
-                            className="w-full sm:flex-1 h-11"
-                            disabled={mutationLoading}
-                        >
-                            {mutationLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                <>
-                                    <Save className="mr-2 h-4 w-4" />
-                                    {isEdit ? 'Update Store' : 'Add Store'}
-                                </>
-                            )}
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="ghost"
-                            className="w-full sm:w-auto h-11"
-                            onClick={() => navigate('/stores')}
-                            disabled={mutationLoading}
-                        >
-                            Cancel
-                        </Button>
-                    </CardFooter>
-                </Card>
-            </form>
+                            <Alert className="bg-primary/5 border-primary/20 text-xs py-3">
+                                <Info className="h-4 w-4 text-primary" />
+                                <AlertDescription>
+                                    Active stores are shown by default in your order creation forms.
+                                </AlertDescription>
+                            </Alert>
+                        </CardContent>
+                        <CardFooter className="p-8 pt-0 flex flex-col sm:flex-row gap-4">
+                            <Button
+                                type="submit"
+                                className="w-full sm:flex-1 h-11"
+                                disabled={mutationLoading}
+                            >
+                                {mutationLoading ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    <>
+                                        <Save className="mr-2 h-4 w-4" />
+                                        {isEdit ? 'Update Store' : 'Add Store'}
+                                    </>
+                                )}
+                            </Button>
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                className="w-full sm:w-auto h-11"
+                                onClick={() => navigate('/stores')}
+                                disabled={mutationLoading}
+                            >
+                                Cancel
+                            </Button>
+                        </CardFooter>
+                    </Card>
+                </form>
+            </main>
         </div>
     );
 };

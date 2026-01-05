@@ -97,42 +97,75 @@ The Organization plugin adds:
 Create `src/server/lib/auth.ts`:
 
 ```typescript
+import type { D1Database } from "@cloudflare/workers-types";
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { organization } from "better-auth/plugins";
-import { db } from "../db";
+import * as schema from "../db/schema";
+import { createDb } from "../db";
 
-export const auth = betterAuth({
-  baseURL: process.env.BETTER_AUTH_URL,
-  secret: process.env.BETTER_AUTH_SECRET,
+// Factory function to create auth instance with environment variables
+export const getAuth = (env: { 
+  DB: D1Database; 
+  BETTER_AUTH_SECRET: string; 
+  BETTER_AUTH_URL: string; 
+  GOOGLE_CLIENT_ID: string; 
+  GOOGLE_CLIENT_SECRET: string; 
+  FACEBOOK_CLIENT_ID: string; 
+  FACEBOOK_CLIENT_SECRET: string 
+}) => {
+  const db = createDb(env.DB);
+  const isProduction = env.BETTER_AUTH_URL?.startsWith("https://");
+
+  return betterAuth({
+    baseURL: env.BETTER_AUTH_URL,
+    secret: env.BETTER_AUTH_SECRET,
+    trustedOrigins: [
+      env.BETTER_AUTH_URL,
+      "http://localhost:5173", // Vite dev server
+    ],
   
-  database: drizzleAdapter(db, {
-    provider: "sqlite",
-  }),
-  
-  // Social-only auth (no email/password)
-  emailAndPassword: {
-    enabled: false,
-  },
-  
-  socialProviders: {
-    google: {
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      prompt: "select_account",
-    },
-    facebook: {
-      clientId: process.env.FACEBOOK_CLIENT_ID!,
-      clientSecret: process.env.FACEBOOK_CLIENT_SECRET!,
-    },
-  },
-  
-  plugins: [
-    organization({
-      allowUserToCreateOrganization: true,
+    database: drizzleAdapter(db, {
+      provider: "sqlite",
+      schema: { ...schema },
     }),
-  ],
-});
+  
+    // Social-only auth (no email/password)
+    emailAndPassword: {
+      enabled: false,
+    },
+  
+    socialProviders: {
+      google: {
+        clientId: env.GOOGLE_CLIENT_ID,
+        clientSecret: env.GOOGLE_CLIENT_SECRET,
+        prompt: "select_account",
+      },
+      facebook: {
+        clientId: env.FACEBOOK_CLIENT_ID,
+        clientSecret: env.FACEBOOK_CLIENT_SECRET,
+      },
+    },
+  
+    plugins: [
+      organization({
+        allowUserToCreateOrganization: true,
+      }),
+    ],
+    
+    advanced: {
+      useSecureCookies: isProduction,
+      defaultCookieAttributes: {
+        sameSite: "lax", // Required for OAuth redirects
+        httpOnly: true,
+        path: "/",
+        secure: isProduction,
+      },
+    },
+  });
+};
+
+export type Auth = ReturnType<typeof getAuth>;
 ```
 
 ### Mount Auth Handler
@@ -153,10 +186,11 @@ app.on(["POST", "GET"], "/api/auth/*", (c) => {
 Create `src/server/middleware/auth.ts`:
 
 ```typescript
-import { auth } from "../lib/auth";
+import { getAuth } from "../lib/auth";
 import type { Context, Next } from "hono";
 
 export const authMiddleware = async (c: Context, next: Next) => {
+  const auth = getAuth(c.env);
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   
   if (!session) {
@@ -226,15 +260,93 @@ Create `src/client/components/ProtectedRoute.tsx`:
 
 ```tsx
 import { useSession } from "../lib/auth-client";
-import { Navigate } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
+import { Loader2 } from "lucide-react";
 
-export function ProtectedRoute({ children }: { children: React.ReactNode }) {
+export function ProtectedRoute() {
   const { data: session, isPending } = useSession();
+
+  if (isPending) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
+        <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
+        <p className="text-slate-500 font-medium animate-pulse">Checking session...</p>
+      </div>
+    );
+  }
+
+  if (!session) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return <Outlet />;
+}
+```
+
+### Organization Guard Component
+
+Create `src/client/components/OrgGuard.tsx`:
+
+This component ensures users have an active organization before accessing the app. New users without organizations are redirected to onboarding.
+
+```tsx
+import { useActiveOrganization, useSession, authClient } from "../lib/auth-client";
+import { Navigate, Outlet } from "react-router-dom";
+
+export function OrgGuard() {
+  const { data: session, isPending: isSessionPending } = useSession();
+  const { data: activeOrg, isPending: isOrgPending } = useActiveOrganization();
+  const [hasOrgs, setHasOrgs] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    // Check if user has organizations, auto-activate first one if no active org
+    const checkAndSetOrg = async () => {
+      if (activeOrg) return; // Already have active org
+      
+      const result = await authClient.organization.list();
+      const orgs = result.data || [];
+      
+      if (orgs.length > 0) {
+        await authClient.organization.setActive({ organizationId: orgs[0].id });
+        window.location.reload();
+      } else {
+        setHasOrgs(false);
+      }
+    };
+    checkAndSetOrg();
+  }, [session, activeOrg]);
+
+  // If logged in but no organizations, redirect to onboarding
+  if (!activeOrg && hasOrgs === false) {
+    return <Navigate to="/onboarding" replace />;
+  }
+
+  return <Outlet />;
+}
+```
+
+### Onboarding Page
+
+Create `src/client/pages/onboarding/OnboardingPage.tsx`:
+
+New users are prompted to create their first organization on initial login.
+
+```tsx
+export function OnboardingPage() {
+  const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
   
-  if (isPending) return <div>Loading...</div>;
-  if (!session) return <Navigate to="/login" />;
+  const handleCreateOrg = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const result = await authClient.organization.create({ name, slug });
+    
+    if (result.data) {
+      await authClient.organization.setActive({ organizationId: result.data.id });
+      navigate("/", { replace: true });
+    }
+  };
   
-  return <>{children}</>;
+  // ... form UI
 }
 ```
 
@@ -260,10 +372,11 @@ ALTER TABLE images ADD COLUMN organization_id TEXT REFERENCES organization(id);
 Create `src/server/middleware/organization.ts`:
 
 ```typescript
-import { auth } from "../lib/auth";
+import { getAuth } from "../lib/auth";
 import type { Context, Next } from "hono";
 
 export const requireOrganization = async (c: Context, next: Next) => {
+  const auth = getAuth(c.env);
   const session = await auth.api.getSession({ headers: c.req.raw.headers });
   
   if (!session?.session?.activeOrganizationId) {

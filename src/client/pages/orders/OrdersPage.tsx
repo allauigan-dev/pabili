@@ -59,9 +59,9 @@ export const OrdersPage: React.FC = () => {
     const statusList = ['all', 'pending', 'bought', 'packed', 'delivered', 'cancelled', 'no_stock'];
 
     return (
-        <div className="relative pb-24 min-h-screen -mx-2 -my-1 px-4 pt-2 md:mx-0 md:my-0 md:px-0">
+        <div className="relative pb-24 min-h-screen px-4">
             {/* Sticky Header */}
-            <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm -mx-4 px-4 pt-4 pb-2 md:mx-0 md:px-0 transition-all">
+            <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm -mx-4 px-4 pt-4 pb-2 transition-all">
                 <div className="flex items-center justify-between mb-4">
                     <h1 className="text-2xl font-bold text-foreground tracking-tight">Orders</h1>
                     <div className="flex gap-2">
