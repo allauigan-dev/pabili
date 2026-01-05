@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import {
     Search,
     RefreshCcw,
+    Plus,
 } from 'lucide-react';
 import {
     AlertDialog,
@@ -90,6 +91,14 @@ export const StoresPage: React.FC = () => {
                         {filteredStores.map((store) => (
                             <StoreCard key={store.id} store={store} onDelete={handleDeleteClick} />
                         ))}
+                        <Button
+                            variant="outline"
+                            className="w-full py-8 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all mt-4 mb-8"
+                            onClick={() => navigate('/stores/new')}
+                        >
+                            <Plus className="h-5 w-5 mr-2" />
+                            Add New Store
+                        </Button>
                     </div>
                 ) : (
                     <EmptyState

@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **TypeScript Build**: Fixed type-only imports for `AppEnv` across all server route files to resolve build warnings.
 - **LoginPage**: Removed unused `isPending` variable to fix TypeScript warning.
 - **Sticky Header Cutoff**: Resolved issue where mobile headers were being clipped by refactoring the global layout and unified padding strategy.
+- **Scroll Restoration**: Fixed issue where scroll position persisted across route navigations by implementing a `ScrollToTop` component to reset window scroll.
 
 ### Added
 - **Global FAB**: Implemented a global Floating Action Button with "Scroll to Top" functionality and dynamic positioning.

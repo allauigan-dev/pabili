@@ -92,6 +92,14 @@ export const ResellersPage: React.FC = () => {
                         {filteredResellers.map((reseller) => (
                             <ResellerCard key={reseller.id} reseller={reseller} onDelete={handleDeleteClick} />
                         ))}
+                        <Button
+                            variant="outline"
+                            className="w-full py-8 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all mt-4 mb-8"
+                            onClick={() => navigate('/resellers/new')}
+                        >
+                            <UserPlus className="h-5 w-5 mr-2" />
+                            Add New Reseller
+                        </Button>
                     </div>
                 ) : (
                     <EmptyState

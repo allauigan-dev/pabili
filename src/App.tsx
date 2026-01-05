@@ -16,9 +16,12 @@ import { OrgGuard } from './client/components/OrgGuard';
 import { LoginPage } from './client/pages/auth/LoginPage';
 import { OnboardingPage } from './client/pages/onboarding/OnboardingPage';
 
+import { ScrollToTop } from './client/components/ScrollToTop';
+
 function App() {
   return (
     <BrowserRouter>
+      <ScrollToTop />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 

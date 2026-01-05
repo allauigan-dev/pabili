@@ -3,7 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import {
     Search,
     RefreshCcw,
-    Receipt
+    Receipt,
+    Plus,
 } from 'lucide-react';
 import {
     AlertDialog,
@@ -119,13 +120,23 @@ export const InvoicesPage: React.FC = () => {
                         <Button onClick={refetch}>Retry</Button>
                     </div>
                 ) : filteredInvoices && filteredInvoices.length > 0 ? (
-                    filteredInvoices.map((invoice) => (
-                        <InvoiceCard
-                            key={invoice.id}
-                            invoice={invoice}
-                            onDelete={handleDeleteClick}
-                        />
-                    ))
+                    <div className="space-y-4">
+                        {filteredInvoices.map((invoice) => (
+                            <InvoiceCard
+                                key={invoice.id}
+                                invoice={invoice}
+                                onDelete={handleDeleteClick}
+                            />
+                        ))}
+                        <Button
+                            variant="outline"
+                            className="w-full py-8 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all mt-4 mb-8"
+                            onClick={() => navigate('/invoices/new')}
+                        >
+                            <Plus className="h-5 w-5 mr-2" />
+                            Generate Invoice
+                        </Button>
+                    </div>
                 ) : (
                     <EmptyState
                         title={searchQuery ? "No matching invoices" : "No invoices found"}

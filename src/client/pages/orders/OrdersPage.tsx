@@ -130,14 +130,24 @@ export const OrdersPage: React.FC = () => {
                         <Button onClick={refetch}>Retry</Button>
                     </div>
                 ) : filteredOrders && filteredOrders.length > 0 ? (
-                    filteredOrders.map((order) => (
-                        <OrderCard
-                            key={order.id}
-                            order={order}
-                            onDelete={handleDeleteClick}
-                            onStatusChange={handleStatusChange}
-                        />
-                    ))
+                    <>
+                        {filteredOrders.map((order) => (
+                            <OrderCard
+                                key={order.id}
+                                order={order}
+                                onDelete={handleDeleteClick}
+                                onStatusChange={handleStatusChange}
+                            />
+                        ))}
+                        <Button
+                            variant="outline"
+                            className="w-full py-8 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all mt-4 mb-8"
+                            onClick={() => navigate('/orders/new')}
+                        >
+                            <Plus className="h-5 w-5 mr-2" />
+                            Add New Order
+                        </Button>
+                    </>
                 ) : (
                     <div className="flex flex-col items-center justify-center py-20 opacity-60">
                         <div className="w-20 h-20 bg-secondary rounded-full flex items-center justify-center mb-4">
