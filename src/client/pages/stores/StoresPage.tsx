@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     RefreshCcw,
     Plus,
+    Loader2,
 } from 'lucide-react';
 import {
     AlertDialog,
@@ -14,7 +15,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useStores, useStoreMutations } from '@/hooks/useStores';
+import { useStoreMutations } from '@/hooks/useStores';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { storesApi } from '@/lib/api';
 import { StoreCard } from './StoreCard';
 import { Button } from '@/components/ui/button';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
@@ -24,7 +27,18 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const StoresPage: React.FC = () => {
     const navigate = useNavigate();
-    const { data: stores, loading, error, refetch } = useStores();
+    const {
+        items: stores,
+        isLoading,
+        isLoadingMore,
+        hasMore,
+        error,
+        sentinelRef,
+        reset
+    } = useInfiniteScroll({
+        fetcher: storesApi.listPaginated,
+        pageSize: 20,
+    });
     const { deleteAction } = useStoreMutations();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -38,24 +52,28 @@ export const StoresPage: React.FC = () => {
         if (deleteId) {
             await deleteAction(deleteId);
             setDeleteId(null);
-            refetch();
+            reset();
         }
     };
 
-    const filteredStores = stores?.filter(s => {
-        const matchesSearch = s.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            s.storeAddress?.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === 'all' ? true : s.storeStatus === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+    const filteredStores = useMemo(() => {
+        return stores.filter(s => {
+            const matchesSearch = s.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                s.storeAddress?.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesStatus = statusFilter === 'all' ? true : s.storeStatus === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+    }, [stores, searchQuery, statusFilter]);
 
     const statusList = ['all', 'active', 'inactive'];
 
-    const filterOptions = statusList.map(f => ({
-        label: f,
-        value: f,
-        count: stores?.filter(s => f === 'all' ? true : s.storeStatus === f).length || 0
-    }));
+    const filterOptions = useMemo(() => {
+        return statusList.map(f => ({
+            label: f,
+            value: f,
+            count: stores.filter(s => f === 'all' ? true : s.storeStatus === f).length
+        }));
+    }, [stores]);
 
     return (
         <div className="relative pb-24">
@@ -66,7 +84,7 @@ export const StoresPage: React.FC = () => {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 actions={
-                    <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
+                    <Button variant="ghost" size="icon" onClick={reset} className="rounded-full hover:bg-secondary">
                         <RefreshCcw className="h-5 w-5 text-muted-foreground" />
                     </Button>
                 }
@@ -80,22 +98,38 @@ export const StoresPage: React.FC = () => {
             />
 
             <main className="space-y-4 pt-14">
-                {loading ? (
+                {isLoading && stores.length === 0 ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (
                             <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 h-32 animate-pulse" />
                         ))}
                     </div>
-                ) : error ? (
+                ) : error && stores.length === 0 ? (
                     <div className="bg-destructive/10 text-destructive p-6 rounded-xl border border-destructive/20 text-center">
                         <p className="font-medium mb-4">{error}</p>
-                        <Button variant="outline" size="sm" onClick={refetch}>Retry</Button>
+                        <Button variant="outline" size="sm" onClick={reset}>Retry</Button>
                     </div>
-                ) : filteredStores && filteredStores.length > 0 ? (
+                ) : filteredStores.length > 0 ? (
                     <div className="space-y-4">
                         {filteredStores.map((store) => (
                             <StoreCard key={store.id} store={store} onDelete={handleDeleteClick} />
                         ))}
+
+                        {/* Sentinel element for infinite scroll */}
+                        <div ref={sentinelRef} className="py-4 flex justify-center">
+                            {isLoadingMore && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <span>Loading more...</span>
+                                </div>
+                            )}
+                            {!hasMore && stores.length > 0 && (
+                                <span className="text-sm text-muted-foreground">
+                                    All {stores.length} stores loaded
+                                </span>
+                            )}
+                        </div>
+
                         <Button
                             variant="outline"
                             className="w-full py-8 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all mt-4 mb-8"

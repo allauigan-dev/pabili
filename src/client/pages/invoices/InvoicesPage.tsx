@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     RefreshCcw,
     Receipt,
     Plus,
+    Loader2,
 } from 'lucide-react';
 import {
     AlertDialog,
@@ -15,7 +16,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useInvoices, useInvoiceMutations } from '@/hooks/useInvoices';
+import { useInvoiceMutations } from '@/hooks/useInvoices';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { invoicesApi } from '@/lib/api';
 import { InvoiceCard } from './InvoiceCard';
 import { Button } from '@/components/ui/button';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
@@ -25,7 +28,18 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const InvoicesPage: React.FC = () => {
     const navigate = useNavigate();
-    const { data: invoices, loading, error, refetch } = useInvoices();
+    const {
+        items: invoices,
+        isLoading,
+        isLoadingMore,
+        hasMore,
+        error,
+        sentinelRef,
+        reset
+    } = useInfiniteScroll({
+        fetcher: invoicesApi.listPaginated,
+        pageSize: 20,
+    });
     const { deleteAction } = useInvoiceMutations();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -39,25 +53,29 @@ export const InvoicesPage: React.FC = () => {
         if (deleteId) {
             await deleteAction(deleteId);
             setDeleteId(null);
-            refetch();
+            reset();
         }
     };
 
-    const filteredInvoices = invoices?.filter(i => {
-        const customerName = i.customerName || '';
-        const matchesSearch = i.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            customerName.toLowerCase().includes(searchQuery.toLowerCase());
-        const matchesStatus = statusFilter === 'all' ? true : i.invoiceStatus === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+    const filteredInvoices = useMemo(() => {
+        return invoices.filter(i => {
+            const customerName = i.customerName || '';
+            const matchesSearch = i.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                customerName.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesStatus = statusFilter === 'all' ? true : i.invoiceStatus === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+    }, [invoices, searchQuery, statusFilter]);
 
     const statusList = ['all', 'draft', 'pending', 'sent', 'paid', 'overdue', 'cancelled'];
 
-    const filterOptions = statusList.map(f => ({
-        label: f,
-        value: f,
-        count: invoices?.filter(i => f === 'all' ? true : i.invoiceStatus === f).length || 0
-    }));
+    const filterOptions = useMemo(() => {
+        return statusList.map(f => ({
+            label: f,
+            value: f,
+            count: invoices.filter(i => f === 'all' ? true : i.invoiceStatus === f).length
+        }));
+    }, [invoices]);
 
     return (
         <div className="relative pb-24">
@@ -68,7 +86,7 @@ export const InvoicesPage: React.FC = () => {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 actions={
-                    <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
+                    <Button variant="ghost" size="icon" onClick={reset} className="rounded-full hover:bg-secondary">
                         <RefreshCcw className="h-5 w-5 text-muted-foreground" />
                     </Button>
                 }
@@ -83,18 +101,18 @@ export const InvoicesPage: React.FC = () => {
 
             {/* Main Content */}
             <main className="space-y-4 pt-14">
-                {loading ? (
+                {isLoading && invoices.length === 0 ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (
                             <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 h-32 animate-pulse" />
                         ))}
                     </div>
-                ) : error ? (
+                ) : error && invoices.length === 0 ? (
                     <div className="p-8 text-center bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft border border-border/50">
                         <p className="text-destructive mb-4">{error}</p>
-                        <Button onClick={refetch}>Retry</Button>
+                        <Button onClick={reset}>Retry</Button>
                     </div>
-                ) : filteredInvoices && filteredInvoices.length > 0 ? (
+                ) : filteredInvoices.length > 0 ? (
                     <div className="space-y-4">
                         {filteredInvoices.map((invoice) => (
                             <InvoiceCard
@@ -103,6 +121,22 @@ export const InvoicesPage: React.FC = () => {
                                 onDelete={handleDeleteClick}
                             />
                         ))}
+
+                        {/* Sentinel element for infinite scroll */}
+                        <div ref={sentinelRef} className="py-4 flex justify-center">
+                            {isLoadingMore && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <span>Loading more...</span>
+                                </div>
+                            )}
+                            {!hasMore && invoices.length > 0 && (
+                                <span className="text-sm text-muted-foreground">
+                                    All {invoices.length} invoices loaded
+                                </span>
+                            )}
+                        </div>
+
                         <Button
                             variant="outline"
                             className="w-full py-8 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all mt-4 mb-8"

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Plus,
     RefreshCcw,
     Search,
+    Loader2,
 } from 'lucide-react';
 import {
     AlertDialog,
@@ -15,7 +16,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useOrders, useOrderMutations } from '@/hooks/useOrders';
+import { useOrderMutations } from '@/hooks/useOrders';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { ordersApi } from '@/lib/api';
 import { OrderCard } from './OrderCard';
 import { Button } from '@/components/ui/button';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
@@ -25,7 +28,18 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const OrdersPage: React.FC = () => {
     const navigate = useNavigate();
-    const { data: orders, loading, error, refetch } = useOrders();
+    const {
+        items: orders,
+        isLoading,
+        isLoadingMore,
+        hasMore,
+        error,
+        sentinelRef,
+        reset
+    } = useInfiniteScroll({
+        fetcher: ordersApi.listPaginated,
+        pageSize: 20,
+    });
     const { deleteAction, updateStatusAction } = useOrderMutations();
     const [filter, setFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
@@ -39,30 +53,35 @@ export const OrdersPage: React.FC = () => {
         if (deleteId) {
             await deleteAction(deleteId);
             setDeleteId(null);
-            refetch();
+            reset();
         }
     };
 
     const handleStatusChange = async (id: number, status: OrderStatus) => {
         await updateStatusAction({ id, status });
-        refetch();
+        reset();
     };
 
-    const filteredOrders = orders?.filter(o => {
-        const matchesFilter = filter === 'all' ? true : o.orderStatus === filter;
-        const matchesSearch = o.orderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            o.storeName.toLowerCase().includes(searchQuery.toLowerCase());
-        return matchesFilter && matchesSearch;
-    });
+    // Client-side filtering on loaded items
+    const filteredOrders = useMemo(() => {
+        return orders.filter(o => {
+            const matchesFilter = filter === 'all' ? true : o.orderStatus === filter;
+            const matchesSearch = o.orderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                o.storeName.toLowerCase().includes(searchQuery.toLowerCase());
+            return matchesFilter && matchesSearch;
+        });
+    }, [orders, filter, searchQuery]);
 
     const statusList = ['all', 'pending', 'bought', 'packed', 'delivered', 'cancelled', 'no_stock'];
 
-    const filterOptions = statusList.map(f => ({
-        label: f,
-        value: f,
-        count: orders?.filter(o => f === 'all' ? true : o.orderStatus === f).length || 0
-    }));
+    const filterOptions = useMemo(() => {
+        return statusList.map(f => ({
+            label: f,
+            value: f,
+            count: orders.filter(o => f === 'all' ? true : o.orderStatus === f).length
+        }));
+    }, [orders]);
 
     return (
         <div className="relative pb-24">
@@ -73,7 +92,7 @@ export const OrdersPage: React.FC = () => {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 actions={
-                    <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
+                    <Button variant="ghost" size="icon" onClick={reset} className="rounded-full hover:bg-secondary">
                         <RefreshCcw className="h-5 w-5 text-muted-foreground" />
                     </Button>
                 }
@@ -88,18 +107,18 @@ export const OrdersPage: React.FC = () => {
 
             {/* Main Content */}
             <main className="space-y-4 pt-14">
-                {loading ? (
+                {isLoading && orders.length === 0 ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (
                             <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 h-32 animate-pulse" />
                         ))}
                     </div>
-                ) : error ? (
+                ) : error && orders.length === 0 ? (
                     <div className="p-8 text-center bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft border border-border/50">
                         <p className="text-destructive mb-4">{error}</p>
-                        <Button onClick={refetch}>Retry</Button>
+                        <Button onClick={reset}>Retry</Button>
                     </div>
-                ) : filteredOrders && filteredOrders.length > 0 ? (
+                ) : filteredOrders.length > 0 ? (
                     <>
                         {filteredOrders.map((order) => (
                             <OrderCard
@@ -109,6 +128,22 @@ export const OrdersPage: React.FC = () => {
                                 onStatusChange={handleStatusChange}
                             />
                         ))}
+
+                        {/* Sentinel element for infinite scroll */}
+                        <div ref={sentinelRef} className="py-4 flex justify-center">
+                            {isLoadingMore && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <span>Loading more...</span>
+                                </div>
+                            )}
+                            {!hasMore && orders.length > 0 && (
+                                <span className="text-sm text-muted-foreground">
+                                    All {orders.length} orders loaded
+                                </span>
+                            )}
+                        </div>
+
                         <Button
                             variant="outline"
                             className="w-full py-8 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all mt-4 mb-8"

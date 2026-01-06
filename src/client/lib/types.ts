@@ -66,6 +66,10 @@ export interface Customer {
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
+    // Balance fields (returned by list endpoint)
+    totalOrders?: number;
+    totalPayments?: number;
+    balance?: number;
 }
 
 export interface Payment {

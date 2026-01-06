@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     RefreshCcw,
     UserPlus,
+    Loader2,
 } from 'lucide-react';
 import {
     AlertDialog,
@@ -14,7 +15,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useCustomers, useCustomerMutations } from '@/hooks/useCustomers';
+import { useCustomerMutations } from '@/hooks/useCustomers';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { customersApi } from '@/lib/api';
 import { CustomerCard } from './CustomerCard';
 import { Button } from '@/components/ui/button';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
@@ -23,7 +26,18 @@ import { HeaderContent } from '@/components/layout/HeaderProvider';
 
 export const CustomersPage: React.FC = () => {
     const navigate = useNavigate();
-    const { data: customers, loading, error, refetch } = useCustomers();
+    const {
+        items: customers,
+        isLoading,
+        isLoadingMore,
+        hasMore,
+        error,
+        sentinelRef,
+        reset
+    } = useInfiniteScroll({
+        fetcher: customersApi.listPaginated,
+        pageSize: 20,
+    });
     const { deleteAction } = useCustomerMutations();
     const [searchQuery, setSearchQuery] = useState('');
     const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -36,14 +50,16 @@ export const CustomersPage: React.FC = () => {
         if (deleteId) {
             await deleteAction(deleteId);
             setDeleteId(null);
-            refetch();
+            reset();
         }
     };
 
-    const filteredCustomers = customers?.filter(c =>
-        c.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (c.customerEmail && c.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()))
-    );
+    const filteredCustomers = useMemo(() => {
+        return customers.filter(c =>
+            c.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            (c.customerEmail && c.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()))
+        );
+    }, [customers, searchQuery]);
 
     return (
         <div className="relative pb-24">
@@ -54,29 +70,45 @@ export const CustomersPage: React.FC = () => {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 actions={
-                    <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
+                    <Button variant="ghost" size="icon" onClick={reset} className="rounded-full hover:bg-secondary">
                         <RefreshCcw className="h-5 w-5 text-muted-foreground" />
                     </Button>
                 }
             />
 
             <main className="space-y-4 pt-6">
-                {loading ? (
+                {isLoading && customers.length === 0 ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (
                             <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 h-32 animate-pulse" />
                         ))}
                     </div>
-                ) : error ? (
+                ) : error && customers.length === 0 ? (
                     <div className="bg-destructive/10 text-destructive p-8 rounded-xl border border-destructive/20 text-center">
                         <p className="font-medium mb-4">{error}</p>
-                        <Button variant="outline" onClick={refetch}>Retry</Button>
+                        <Button variant="outline" onClick={reset}>Retry</Button>
                     </div>
-                ) : filteredCustomers && filteredCustomers.length > 0 ? (
+                ) : filteredCustomers.length > 0 ? (
                     <div className="space-y-4">
                         {filteredCustomers.map((customer) => (
                             <CustomerCard key={customer.id} customer={customer} onDelete={handleDeleteClick} />
                         ))}
+
+                        {/* Sentinel element for infinite scroll */}
+                        <div ref={sentinelRef} className="py-4 flex justify-center">
+                            {isLoadingMore && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <span>Loading more...</span>
+                                </div>
+                            )}
+                            {!hasMore && customers.length > 0 && (
+                                <span className="text-sm text-muted-foreground">
+                                    All {customers.length} customers loaded
+                                </span>
+                            )}
+                        </div>
+
                         <Button
                             variant="outline"
                             className="w-full py-8 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all mt-4 mb-8"

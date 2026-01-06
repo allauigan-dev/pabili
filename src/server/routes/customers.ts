@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, isNull, sum } from 'drizzle-orm';
+import { eq, desc, and, isNull, sum, count } from 'drizzle-orm';
 import { createDb, customers, orders, payments } from '../db';
 
 import type { AppEnv } from '../types';
@@ -31,12 +31,28 @@ const createCustomerSchema = z.object({
 
 const updateCustomerSchema = createCustomerSchema.partial();
 
-// GET /api/customers - List all customers
+// GET /api/customers - List customers with pagination and balance
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
     const organizationId = c.get('organizationId');
 
+    // Pagination params
+    const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+    const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
+    const offset = (page - 1) * limit;
+
     try {
+        // Get total count
+        const [countResult] = await db
+            .select({ total: count() })
+            .from(customers)
+            .where(and(
+                eq(customers.organizationId, organizationId),
+                isNull(customers.deletedAt)
+            ));
+        const total = countResult?.total || 0;
+
+        // Get paginated customers
         const allCustomers = await db
             .select()
             .from(customers)
@@ -44,9 +60,51 @@ app.get('/', async (c) => {
                 eq(customers.organizationId, organizationId),
                 isNull(customers.deletedAt)
             ))
-            .orderBy(desc(customers.createdAt));
+            .orderBy(desc(customers.createdAt))
+            .limit(limit)
+            .offset(offset);
 
-        return c.json({ success: true, data: allCustomers });
+        // Calculate balance for each customer in parallel
+        const customersWithBalance = await Promise.all(
+            allCustomers.map(async (customer) => {
+                // Get total orders amount for this customer
+                const [ordersResult] = await db
+                    .select({ total: sum(orders.orderCustomerTotal) })
+                    .from(orders)
+                    .where(and(
+                        eq(orders.customerId, customer.id),
+                        eq(orders.organizationId, organizationId),
+                        isNull(orders.deletedAt)
+                    ));
+
+                // Get total confirmed payments for this customer
+                const [paymentsResult] = await db
+                    .select({ total: sum(payments.paymentAmount) })
+                    .from(payments)
+                    .where(and(
+                        eq(payments.customerId, customer.id),
+                        eq(payments.organizationId, organizationId),
+                        eq(payments.paymentStatus, 'confirmed'),
+                        isNull(payments.deletedAt)
+                    ));
+
+                const totalOrders = Number(ordersResult?.total ?? 0);
+                const totalPayments = Number(paymentsResult?.total ?? 0);
+
+                return {
+                    ...customer,
+                    totalOrders,
+                    totalPayments,
+                    balance: totalOrders - totalPayments,
+                };
+            })
+        );
+
+        return c.json({
+            success: true,
+            data: customersWithBalance,
+            meta: { page, pageSize: limit, total }
+        });
     } catch (error) {
         console.error('Error fetching customers:', error);
         return c.json({ success: false, error: 'Failed to fetch customers' }, 500);

@@ -1,9 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     RefreshCcw,
     PlusCircle,
     Plus,
+    Loader2,
 } from 'lucide-react';
 import {
     AlertDialog,
@@ -15,7 +16,9 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { usePayments, usePaymentMutations } from '@/hooks/usePayments';
+import { usePaymentMutations } from '@/hooks/usePayments';
+import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { paymentsApi } from '@/lib/api';
 import { PaymentCard } from './PaymentCard';
 import { Button } from '@/components/ui/button';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
@@ -25,7 +28,18 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const PaymentsPage: React.FC = () => {
     const navigate = useNavigate();
-    const { data: payments, loading, error, refetch } = usePayments();
+    const {
+        items: payments,
+        isLoading,
+        isLoadingMore,
+        hasMore,
+        error,
+        sentinelRef,
+        reset
+    } = useInfiniteScroll({
+        fetcher: paymentsApi.listPaginated,
+        pageSize: 20,
+    });
     const { deleteAction, confirmAction } = usePaymentMutations();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
@@ -39,33 +53,37 @@ export const PaymentsPage: React.FC = () => {
         if (deleteId) {
             await deleteAction(deleteId);
             setDeleteId(null);
-            refetch();
+            reset();
         }
     };
 
     const handleConfirm = async (id: number) => {
         if (window.confirm('Confirm this payment?')) {
             await confirmAction(id);
-            refetch();
+            reset();
         }
     };
 
-    const filteredPayments = payments?.filter(p => {
-        const customerName = p.customerName || '';
-        const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.paymentReference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.paymentAmount.toString().includes(searchQuery);
-        const matchesStatus = statusFilter === 'all' ? true : p.paymentStatus === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
+    const filteredPayments = useMemo(() => {
+        return payments.filter(p => {
+            const customerName = p.customerName || '';
+            const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.paymentReference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                p.paymentAmount.toString().includes(searchQuery);
+            const matchesStatus = statusFilter === 'all' ? true : p.paymentStatus === statusFilter;
+            return matchesSearch && matchesStatus;
+        });
+    }, [payments, searchQuery, statusFilter]);
 
     const statusList = ['all', 'pending', 'confirmed', 'rejected'];
 
-    const filterOptions = statusList.map(f => ({
-        label: f,
-        value: f,
-        count: payments?.filter(p => f === 'all' ? true : p.paymentStatus === f).length || 0
-    }));
+    const filterOptions = useMemo(() => {
+        return statusList.map(f => ({
+            label: f,
+            value: f,
+            count: payments.filter(p => f === 'all' ? true : p.paymentStatus === f).length
+        }));
+    }, [payments]);
 
     return (
         <div className="relative pb-24">
@@ -76,7 +94,7 @@ export const PaymentsPage: React.FC = () => {
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 actions={
-                    <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
+                    <Button variant="ghost" size="icon" onClick={reset} className="rounded-full hover:bg-secondary">
                         <RefreshCcw className="h-5 w-5 text-muted-foreground" />
                     </Button>
                 }
@@ -91,18 +109,18 @@ export const PaymentsPage: React.FC = () => {
 
             {/* Main Content */}
             <main className="space-y-4 pt-14">
-                {loading ? (
+                {isLoading && payments.length === 0 ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (
                             <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 h-32 animate-pulse" />
                         ))}
                     </div>
-                ) : error ? (
+                ) : error && payments.length === 0 ? (
                     <div className="p-8 text-center bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft border border-border/50">
                         <p className="text-destructive mb-4">{error}</p>
-                        <Button onClick={refetch}>Retry</Button>
+                        <Button onClick={reset}>Retry</Button>
                     </div>
-                ) : filteredPayments && filteredPayments.length > 0 ? (
+                ) : filteredPayments.length > 0 ? (
                     <div className="space-y-4">
                         {filteredPayments.map((payment) => (
                             <PaymentCard
@@ -112,6 +130,22 @@ export const PaymentsPage: React.FC = () => {
                                 onConfirm={handleConfirm}
                             />
                         ))}
+
+                        {/* Sentinel element for infinite scroll */}
+                        <div ref={sentinelRef} className="py-4 flex justify-center">
+                            {isLoadingMore && (
+                                <div className="flex items-center gap-2 text-muted-foreground">
+                                    <Loader2 className="h-5 w-5 animate-spin" />
+                                    <span>Loading more...</span>
+                                </div>
+                            )}
+                            {!hasMore && payments.length > 0 && (
+                                <span className="text-sm text-muted-foreground">
+                                    All {payments.length} payments loaded
+                                </span>
+                            )}
+                        </div>
+
                         <Button
                             variant="outline"
                             className="w-full py-8 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all mt-4 mb-8"

@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, isNull } from 'drizzle-orm';
+import { eq, desc, and, isNull, count, sql } from 'drizzle-orm';
 import { createDb, orders, stores, customers } from '../db';
 
 import type { AppEnv } from '../types';
@@ -48,12 +48,28 @@ function generateOrderNumber() {
     return `ORD-${timestamp}-${random}`;
 }
 
-// GET /api/orders - List all orders
+// GET /api/orders - List orders with pagination
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
     const organizationId = c.get('organizationId');
 
+    // Pagination params
+    const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+    const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
+    const offset = (page - 1) * limit;
+
     try {
+        // Get total count
+        const [countResult] = await db
+            .select({ total: count() })
+            .from(orders)
+            .where(and(
+                eq(orders.organizationId, organizationId),
+                isNull(orders.deletedAt)
+            ));
+        const total = countResult?.total || 0;
+
+        // Get paginated orders
         const allOrders = await db
             .select({
                 id: orders.id,
@@ -87,14 +103,20 @@ app.get('/', async (c) => {
                 eq(orders.organizationId, organizationId),
                 isNull(orders.deletedAt)
             ))
-            .orderBy(desc(orders.createdAt));
+            .orderBy(desc(orders.createdAt))
+            .limit(limit)
+            .offset(offset);
 
         const ordersWithParsedImages = allOrders.map(order => ({
             ...order,
             orderImages: order.orderImages ? JSON.parse(order.orderImages as string) : []
         }));
 
-        return c.json({ success: true, data: ordersWithParsedImages });
+        return c.json({
+            success: true,
+            data: ordersWithParsedImages,
+            meta: { page, pageSize: limit, total }
+        });
     } catch (error) {
         console.error('Error fetching orders:', error);
         return c.json({ success: false, error: 'Failed to fetch orders' }, 500);

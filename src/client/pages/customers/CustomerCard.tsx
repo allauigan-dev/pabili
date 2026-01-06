@@ -8,7 +8,6 @@ import {
     Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useCustomerBalance } from '@/hooks/useCustomers';
 import { formatCurrency } from '@/lib/utils';
 import type { Customer } from '@/lib/types';
 
@@ -19,9 +18,9 @@ interface CustomerCardProps {
 
 export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onDelete }) => {
     const navigate = useNavigate();
-    const { data: balance, loading: loadingBalance } = useCustomerBalance(customer.id);
 
-    const outstandingBalance = balance ? balance.totalOrders - balance.totalPayments : 0;
+    // Use balance from customer object directly (already fetched with customer list)
+    const outstandingBalance = customer.balance ?? 0;
     const hasBalance = outstandingBalance > 0;
 
     // Status Logic
@@ -71,7 +70,7 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onDelete }
                         </div>
                         <div className="flex flex-col items-end">
                             <p className={`font-bold text-base whitespace-nowrap ${hasBalance ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                {loadingBalance ? '...' : formatCurrency(outstandingBalance)}
+                                {formatCurrency(outstandingBalance)}
                             </p>
                             <span className="text-[9px] text-muted-foreground uppercase font-medium">Due</span>
                         </div>

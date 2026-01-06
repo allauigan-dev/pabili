@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, isNull } from 'drizzle-orm';
+import { eq, desc, and, isNull, count } from 'drizzle-orm';
 import { createDb, invoices } from '../db';
 
 import type { AppEnv } from '../types';
@@ -44,12 +44,27 @@ const updateStatusSchema = z.object({
     status: z.enum(['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled']),
 });
 
-// GET /api/invoices - List all invoices
+// GET /api/invoices - List invoices with pagination
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
     const organizationId = c.get('organizationId');
 
+    // Pagination params
+    const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+    const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
+    const offset = (page - 1) * limit;
+
     try {
+        // Get total count
+        const [countResult] = await db
+            .select({ total: count() })
+            .from(invoices)
+            .where(and(
+                eq(invoices.organizationId, organizationId),
+                isNull(invoices.deletedAt)
+            ));
+        const total = countResult?.total || 0;
+
         const allInvoices = await db
             .select()
             .from(invoices)
@@ -57,9 +72,15 @@ app.get('/', async (c) => {
                 eq(invoices.organizationId, organizationId),
                 isNull(invoices.deletedAt)
             ))
-            .orderBy(desc(invoices.createdAt));
+            .orderBy(desc(invoices.createdAt))
+            .limit(limit)
+            .offset(offset);
 
-        return c.json({ success: true, data: allInvoices });
+        return c.json({
+            success: true,
+            data: allInvoices,
+            meta: { page, pageSize: limit, total }
+        });
     } catch (error) {
         console.error('Error fetching invoices:', error);
         return c.json({ success: false, error: 'Failed to fetch invoices' }, 500);

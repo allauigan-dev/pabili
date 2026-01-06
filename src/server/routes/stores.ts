@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, isNull } from 'drizzle-orm';
+import { eq, desc, and, isNull, count } from 'drizzle-orm';
 import { createDb, stores } from '../db';
 
 import type { AppEnv } from '../types';
@@ -33,12 +33,27 @@ const createStoreSchema = z.object({
 
 const updateStoreSchema = createStoreSchema.partial();
 
-// GET /api/stores - List all stores
+// GET /api/stores - List stores with pagination
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
     const organizationId = c.get('organizationId');
 
+    // Pagination params
+    const page = Math.max(1, parseInt(c.req.query('page') || '1'));
+    const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
+    const offset = (page - 1) * limit;
+
     try {
+        // Get total count
+        const [countResult] = await db
+            .select({ total: count() })
+            .from(stores)
+            .where(and(
+                eq(stores.organizationId, organizationId),
+                isNull(stores.deletedAt)
+            ));
+        const total = countResult?.total || 0;
+
         const allStores = await db
             .select()
             .from(stores)
@@ -46,9 +61,15 @@ app.get('/', async (c) => {
                 eq(stores.organizationId, organizationId),
                 isNull(stores.deletedAt)
             ))
-            .orderBy(desc(stores.createdAt));
+            .orderBy(desc(stores.createdAt))
+            .limit(limit)
+            .offset(offset);
 
-        return c.json({ success: true, data: allStores });
+        return c.json({
+            success: true,
+            data: allStores,
+            meta: { page, pageSize: limit, total }
+        });
     } catch (error) {
         console.error('Error fetching stores:', error);
         return c.json({ success: false, error: 'Failed to fetch stores' }, 500);

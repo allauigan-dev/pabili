@@ -189,6 +189,8 @@ async function fetchApi<T>(url: string, options?: RequestInit & CacheOptions): P
  */
 export const ordersApi = {
     list: () => fetchApi<Order[]>('/api/orders'),
+    listPaginated: (page: number = 1, limit: number = 20) =>
+        fetchApi<Order[]>(`/api/orders?page=${page}&limit=${limit}`, { skipCache: true }),
     get: (id: number) => fetchApi<Order>(`/api/orders/${id}`),
     create: (data: CreateOrderDto) => fetchApi<Order>('/api/orders', {
         method: 'POST',
@@ -212,6 +214,8 @@ export const ordersApi = {
  */
 export const storesApi = {
     list: () => fetchApi<Store[]>('/api/stores'),
+    listPaginated: (page: number = 1, limit: number = 20) =>
+        fetchApi<Store[]>(`/api/stores?page=${page}&limit=${limit}`, { skipCache: true }),
     get: (id: number) => fetchApi<Store>(`/api/stores/${id}`),
     create: (data: CreateStoreDto) => fetchApi<Store>('/api/stores', {
         method: 'POST',
@@ -231,6 +235,8 @@ export const storesApi = {
  */
 export const customersApi = {
     list: () => fetchApi<Customer[]>('/api/customers'),
+    listPaginated: (page: number = 1, limit: number = 20) =>
+        fetchApi<Customer[]>(`/api/customers?page=${page}&limit=${limit}`, { skipCache: true }),
     get: (id: number) => fetchApi<Customer>(`/api/customers/${id}`),
     getOrders: (id: number) => fetchApi<Order[]>(`/api/customers/${id}/orders`),
     getBalance: (id: number) => fetchApi<{ totalOrders: number; totalPayments: number; balance: number }>(`/api/customers/${id}/balance`),
@@ -252,6 +258,8 @@ export const customersApi = {
  */
 export const paymentsApi = {
     list: () => fetchApi<Payment[]>('/api/payments'),
+    listPaginated: (page: number = 1, limit: number = 20) =>
+        fetchApi<Payment[]>(`/api/payments?page=${page}&limit=${limit}`, { skipCache: true }),
     get: (id: number) => fetchApi<Payment>(`/api/payments/${id}`),
     create: (data: CreatePaymentDto) => fetchApi<Payment>('/api/payments', {
         method: 'POST',
@@ -274,6 +282,8 @@ export const paymentsApi = {
  */
 export const invoicesApi = {
     list: () => fetchApi<Invoice[]>('/api/invoices'),
+    listPaginated: (page: number = 1, limit: number = 20) =>
+        fetchApi<Invoice[]>(`/api/invoices?page=${page}&limit=${limit}`, { skipCache: true }),
     get: (id: number) => fetchApi<Invoice>(`/api/invoices/${id}`),
     create: (data: CreateInvoiceDto) => fetchApi<Invoice>('/api/invoices', {
         method: 'POST',

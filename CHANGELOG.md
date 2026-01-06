@@ -8,6 +8,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Infinite Scroll**: Replaced pagination with auto-loading infinite scroll across all list pages:
+  - Created `useInfiniteScroll` hook using Intersection Observer API
+  - Added `listPaginated` functions to all API objects (`ordersApi`, `storesApi`, etc.)
+  - Updated `OrdersPage`, `PaymentsPage`, `StoresPage`, `CustomersPage`, `InvoicesPage` with sentinel-based loading
+  - Shows loading spinner at bottom when fetching more items
+  - Displays "All X items loaded" when complete
+- **Backend Pagination**: Added `page` and `limit` query params to all list endpoints with `meta` response containing total count
+- **Seed Scripts**: Added `scripts/seed.sql` and `scripts/seed-orders.sql` for generating sample data
+
+### Changed
+- **Customer Balance Optimization**: Fixed N+1 query issue where each `CustomerCard` made a separate API call for balance:
+  - Backend `/api/customers` now includes `totalOrders`, `totalPayments`, and `balance` for each customer
+  - `CustomerCard` uses embedded balance data directly instead of separate `useCustomerBalance` hook
 - **Client-Side API Cache**: Implemented in-memory caching for API responses to eliminate skeleton loading on page navigation:
   - GET requests are cached with 30-second TTL
   - Mutations (POST/PUT/DELETE) automatically invalidate related caches
