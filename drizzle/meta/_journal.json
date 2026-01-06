@@ -8,6 +8,13 @@
       "when": 1767666823417,
       "tag": "0000_wakeful_cardiac",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1767713605903,
+      "tag": "0001_fuzzy_jack_murdock",
+      "breakpoints": true
     }
   ]
 }

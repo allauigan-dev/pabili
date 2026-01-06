@@ -11,6 +11,7 @@ import { createDb, orders, stores, customers } from '../db';
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
 import { requireOrganization } from '../middleware/organization';
+import { logActivity } from '../lib/activity-logger';
 
 const app = new Hono<AppEnv>();
 
@@ -208,6 +209,18 @@ app.post('/', zValidator('json', createOrderSchema), async (c) => {
             })
             .returning();
 
+        // Log activity
+        await logActivity({
+            db,
+            organizationId,
+            type: 'order',
+            action: 'created',
+            entityId: newOrder.id,
+            title: newOrder.orderName,
+            description: `New order created (#${newOrder.orderNumber})`,
+            status: newOrder.orderStatus,
+        });
+
         const orderWithParsedImages = {
             ...newOrder,
             orderImages: newOrder.orderImages ? JSON.parse(newOrder.orderImages as string) : []
@@ -269,6 +282,20 @@ app.put('/:id', zValidator('json', updateOrderSchema), async (c) => {
             ))
             .returning();
 
+        if (updatedOrder) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'order',
+                action: 'updated',
+                entityId: updatedOrder.id,
+                title: updatedOrder.orderName,
+                description: `Order details modified`,
+                status: updatedOrder.orderStatus,
+            });
+        }
+
         if (!updatedOrder) {
             return c.json({ success: false, error: 'Order not found' }, 404);
         }
@@ -307,6 +334,20 @@ app.patch('/:id/status', zValidator('json', updateStatusSchema), async (c) => {
             ))
             .returning();
 
+        if (updatedOrder) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'order',
+                action: 'status_changed',
+                entityId: updatedOrder.id,
+                title: updatedOrder.orderName,
+                description: `Status changed to ${status}`,
+                status: status,
+            });
+        }
+
         if (!updatedOrder) {
             return c.json({ success: false, error: 'Order not found' }, 404);
         }
@@ -338,6 +379,20 @@ app.delete('/:id', async (c) => {
                 isNull(orders.deletedAt)
             ))
             .returning();
+
+        if (deletedOrder) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'order',
+                action: 'deleted',
+                entityId: deletedOrder.id,
+                title: deletedOrder.orderName,
+                description: `Order deleted`,
+                status: deletedOrder.orderStatus,
+            });
+        }
 
         if (!deletedOrder) {
             return c.json({ success: false, error: 'Order not found' }, 404);

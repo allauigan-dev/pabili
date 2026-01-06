@@ -11,6 +11,7 @@ import { createDb, payments } from '../db';
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
 import { requireOrganization } from '../middleware/organization';
+import { logActivity } from '../lib/activity-logger';
 
 const app = new Hono<AppEnv>();
 
@@ -121,6 +122,18 @@ app.post('/', zValidator('json', createPaymentSchema), async (c) => {
             })
             .returning();
 
+        // Log activity
+        await logActivity({
+            db,
+            organizationId,
+            type: 'payment',
+            action: 'created',
+            entityId: newPayment.id,
+            title: `Payment from Customer`, // Should ideally fetch customer name but let's keep it simple for now
+            description: `${newPayment.paymentMethod.replace('_', ' ')} payment recorded`,
+            status: newPayment.paymentStatus,
+        });
+
         return c.json({ success: true, data: newPayment }, 201);
     } catch (error) {
         console.error('Error creating payment:', error);
@@ -182,6 +195,20 @@ app.patch('/:id/confirm', async (c) => {
             ))
             .returning();
 
+        if (confirmedPayment) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'payment',
+                action: 'status_changed',
+                entityId: confirmedPayment.id,
+                title: `Payment Confirmed`,
+                description: `Payment was confirmed and verified`,
+                status: 'confirmed',
+            });
+        }
+
         if (!confirmedPayment) {
             return c.json({ success: false, error: 'Payment not found' }, 404);
         }
@@ -213,6 +240,20 @@ app.delete('/:id', async (c) => {
                 isNull(payments.deletedAt)
             ))
             .returning();
+
+        if (deletedPayment) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'payment',
+                action: 'deleted',
+                entityId: deletedPayment.id,
+                title: `Payment #${deletedPayment.id}`,
+                description: `Payment record deleted`,
+                status: deletedPayment.paymentStatus,
+            });
+        }
 
         if (!deletedPayment) {
             return c.json({ success: false, error: 'Payment not found' }, 404);

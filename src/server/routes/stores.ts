@@ -11,6 +11,7 @@ import { createDb, stores } from '../db';
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
 import { requireOrganization } from '../middleware/organization';
+import { logActivity } from '../lib/activity-logger';
 
 const app = new Hono<AppEnv>();
 
@@ -122,6 +123,18 @@ app.post('/', zValidator('json', createStoreSchema), async (c) => {
             })
             .returning();
 
+        // Log activity
+        await logActivity({
+            db,
+            organizationId,
+            type: 'store',
+            action: 'created',
+            entityId: newStore.id,
+            title: newStore.storeName,
+            description: `New store added`,
+            status: newStore.storeStatus,
+        });
+
         return c.json({ success: true, data: newStore }, 201);
     } catch (error) {
         console.error('Error creating store:', error);
@@ -150,6 +163,20 @@ app.put('/:id', zValidator('json', updateStoreSchema), async (c) => {
                 isNull(stores.deletedAt)
             ))
             .returning();
+
+        if (updatedStore) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'store',
+                action: 'updated',
+                entityId: updatedStore.id,
+                title: updatedStore.storeName,
+                description: `Store details modified`,
+                status: updatedStore.storeStatus,
+            });
+        }
 
         if (!updatedStore) {
             return c.json({ success: false, error: 'Store not found' }, 404);
@@ -182,6 +209,20 @@ app.delete('/:id', async (c) => {
                 isNull(stores.deletedAt)
             ))
             .returning();
+
+        if (deletedStore) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'store',
+                action: 'deleted',
+                entityId: deletedStore.id,
+                title: deletedStore.storeName,
+                description: `Store deleted`,
+                status: deletedStore.storeStatus,
+            });
+        }
 
         if (!deletedStore) {
             return c.json({ success: false, error: 'Store not found' }, 404);

@@ -11,6 +11,7 @@ import { createDb, customers, orders, payments } from '../db';
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
 import { requireOrganization } from '../middleware/organization';
+import { logActivity } from '../lib/activity-logger';
 
 const app = new Hono<AppEnv>();
 
@@ -235,6 +236,18 @@ app.post('/', zValidator('json', createCustomerSchema), async (c) => {
             })
             .returning();
 
+        // Log activity
+        await logActivity({
+            db,
+            organizationId,
+            type: 'customer',
+            action: 'created',
+            entityId: newCustomer.id,
+            title: newCustomer.customerName,
+            description: `New customer added`,
+            status: newCustomer.customerStatus,
+        });
+
         return c.json({ success: true, data: newCustomer }, 201);
     } catch (error) {
         console.error('Error creating customer:', error);
@@ -263,6 +276,20 @@ app.put('/:id', zValidator('json', updateCustomerSchema), async (c) => {
                 isNull(customers.deletedAt)
             ))
             .returning();
+
+        if (updatedCustomer) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'customer',
+                action: 'updated',
+                entityId: updatedCustomer.id,
+                title: updatedCustomer.customerName,
+                description: `Customer details modified`,
+                status: updatedCustomer.customerStatus,
+            });
+        }
 
         if (!updatedCustomer) {
             return c.json({ success: false, error: 'Customer not found' }, 404);
@@ -295,6 +322,20 @@ app.delete('/:id', async (c) => {
                 isNull(customers.deletedAt)
             ))
             .returning();
+
+        if (deletedCustomer) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'customer',
+                action: 'deleted',
+                entityId: deletedCustomer.id,
+                title: deletedCustomer.customerName,
+                description: `Customer deleted`,
+                status: deletedCustomer.customerStatus,
+            });
+        }
 
         if (!deletedCustomer) {
             return c.json({ success: false, error: 'Customer not found' }, 404);

@@ -304,6 +304,36 @@ export const images = sqliteTable('images', {
 ]);
 
 // ============================================
+// ACTIVITIES TABLE (Activity Log)
+// ============================================
+export const activities = sqliteTable('activities', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    organizationId: text('organization_id').references(() => organization.id),
+
+    // Activity Info
+    type: text('type', {
+        enum: ['order', 'store', 'customer', 'payment', 'invoice']
+    }).notNull(),
+    action: text('action', {
+        enum: ['created', 'updated', 'deleted', 'status_changed']
+    }).notNull(),
+    entityId: integer('entity_id').notNull(),
+
+    // Display Info
+    title: text('title').notNull(),
+    description: text('description'),
+    status: text('status'),
+
+    // Metadata
+    userId: text('user_id').references(() => user.id),
+    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+}, (table) => [
+    index('idx_activities_org').on(table.organizationId),
+    index('idx_activities_type').on(table.type),
+    index('idx_activities_date').on(table.createdAt),
+]);
+
+// ============================================
 // TYPE EXPORTS
 // ============================================
 export type Store = typeof stores.$inferSelect;
@@ -323,4 +353,7 @@ export type NewPayment = typeof payments.$inferInsert;
 
 export type Image = typeof images.$inferSelect;
 export type NewImage = typeof images.$inferInsert;
+
+export type Activity = typeof activities.$inferSelect;
+export type NewActivity = typeof activities.$inferInsert;
 

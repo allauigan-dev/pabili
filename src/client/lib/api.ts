@@ -1,4 +1,4 @@
-import type { ApiResponse, Order, Store, Customer, Payment, Invoice, CreateOrderDto, CreateStoreDto, CreateCustomerDto, CreatePaymentDto, CreateInvoiceDto } from './types';
+import type { ApiResponse, Order, Store, Customer, Payment, Invoice, Activity, CreateOrderDto, CreateStoreDto, CreateCustomerDto, CreatePaymentDto, CreateInvoiceDto } from './types';
 
 // ============================================
 // API CACHE LAYER
@@ -19,6 +19,17 @@ interface CacheOptions {
 
 // In-memory cache storage
 const apiCache = new Map<string, CacheEntry<unknown>>();
+
+// Cache invalidation listeners
+const cacheListeners = new Set<(pattern: string) => void>();
+
+/**
+ * Subscribe to cache invalidation events
+ */
+export function onCacheInvalidate(callback: (pattern: string) => void): () => void {
+    cacheListeners.add(callback);
+    return () => cacheListeners.delete(callback);
+}
 
 // Default TTL: 30 seconds
 const DEFAULT_TTL = 30 * 1000;
@@ -75,6 +86,8 @@ function setCacheResponse<T>(url: string, data: ApiResponse<T>, ttl: number): vo
 export function invalidateCache(pattern?: string): void {
     if (!pattern) {
         apiCache.clear();
+        // Notify listeners with empty pattern (clear all)
+        cacheListeners.forEach(listener => listener(''));
         return;
     }
 
@@ -83,6 +96,9 @@ export function invalidateCache(pattern?: string): void {
             apiCache.delete(key);
         }
     }
+
+    // Notify listeners
+    cacheListeners.forEach(listener => listener(pattern));
 }
 
 /**
@@ -170,8 +186,12 @@ async function fetchApi<T>(url: string, options?: RequestInit & CacheOptions): P
             }
             if (basePath.includes('/payments')) {
                 invalidateCache('/api/customers'); // Customer balances may change
+                invalidateCache('/api/customers'); // Customer balances may change
                 invalidateCache('/api/invoices');  // Invoice status may change
             }
+
+            // Always invalidate activities on any mutation
+            invalidateCache('/api/activities');
         }
 
         return data;
@@ -300,6 +320,13 @@ export const invoicesApi = {
     delete: (id: number) => fetchApi<void>(`/api/invoices/${id}`, {
         method: 'DELETE',
     }),
+};
+
+/**
+ * Activities API
+ */
+export const activitiesApi = {
+    list: (limit: number = 50) => fetchApi<Activity[]>(`/api/activities?limit=${limit}`),
 };
 
 /**

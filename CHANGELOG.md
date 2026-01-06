@@ -8,6 +8,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Activity Feed Improvements**:
+  - **Natural Language Formatting**: Updated Dashboard activity feed to display events as natural sentences (e.g., "Order #123 was placed", "Customer John added") instead of generic titles.
+  - **Deletion Tracking**: Implemented logging for deleted items (Orders, Customers, Stores, Payments) so they appear in the activity feed.
+  - **Auto-Refresh**: Implemented real-time updates for the activity feed using a cache invalidation system in `api.ts`, ensuring the feed updates instantly without manual refresh.
+
+### Added
 - **Phase 8 Planning**: Created comprehensive documentation for Settings page implementation in `docs/phase-8-settings/`.
 
 ### Fixed

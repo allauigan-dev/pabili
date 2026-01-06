@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Package,
@@ -8,11 +8,11 @@ import {
     Plus,
     UserPlus,
     History,
-    ChevronRight,
     Receipt,
     Pencil,
     Check,
-    Banknote
+    Banknote,
+    CreditCard
 } from 'lucide-react';
 import {
     Dialog,
@@ -25,9 +25,25 @@ import { Button } from "@/components/ui/button";
 import { useOrders } from '@/hooks/useOrders';
 import { useStores } from '@/hooks/useStores';
 import { useCustomers } from '@/hooks/useCustomers';
+
+import { useActivities } from '@/hooks/useActivities';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSession } from '@/lib/auth-client';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
+
+type ActivityType = 'order' | 'customer' | 'store' | 'payment';
+
+interface Activity {
+    id: number;
+    type: ActivityType;
+    title: string;
+    subtitle: string;
+    timestamp: string;
+    image?: string | null;
+    status?: string;
+    navigatePath: string;
+    sentence: string;
+}
 
 export const Dashboard: React.FC = () => {
     const navigate = useNavigate();
@@ -35,6 +51,8 @@ export const Dashboard: React.FC = () => {
     const { data: orders } = useOrders();
     const { data: stores } = useStores();
     const { data: customers } = useCustomers();
+
+    const { data: activitiesData } = useActivities(10);
 
     // Get user's first name for greeting
     const userName = session?.user?.name?.split(' ')[0] || 'there';
@@ -47,14 +65,91 @@ export const Dashboard: React.FC = () => {
         pending: orders?.filter(o => o.orderStatus === 'pending').length || 0,
     };
 
-    const formatCurrency = (amount: number) => {
-        return new Intl.NumberFormat('en-PH', {
-            style: 'currency',
-            currency: 'PHP',
-        }).format(amount);
+    // Helper to format activity into a sentence
+    const formatActivitySentence = (type: ActivityType, title: string, status: string | undefined | null, action: string | undefined | null, description: string | undefined | null): string => {
+        if (type === 'order') {
+            if (action === 'created') return `${title} was placed`;
+            if (action === 'status_changed') {
+                if (status === 'pending') return `${title} is pending`;
+                if (status === 'bought') return `${title} is bought`;
+                if (status === 'packed') return `${title} is packed`;
+                if (status === 'delivered') return `${title} was delivered`;
+                if (status === 'cancelled') return `${title} was cancelled`;
+                if (status === 'no_stock') return `${title} is out of stock`;
+                return `${title} is ${status}`;
+            }
+            if (action === 'updated') return `${title} details were updated`;
+        }
+
+        if (type === 'customer') {
+            if (action === 'created') return `${title} added as new customer`;
+            if (action === 'updated') return `${title} details were updated`;
+        }
+
+        if (type === 'store') {
+            if (action === 'created') return `${title} added as new store`;
+            if (action === 'updated') return `${title} details were updated`;
+            if (action === 'status_changed') return `${title} is now ${status}`;
+        }
+
+        if (type === 'payment') {
+            if (description) {
+                // Capitalize first letter of description
+                return description.charAt(0).toUpperCase() + description.slice(1);
+            }
+            return 'Payment was recorded';
+        }
+
+        // Fallback
+        if (action === 'deleted') return `${title} was deleted`;
+        return `${title} - ${description || ''}`;
     };
 
-    const recentOrders = orders?.slice(0, 10) || [];
+    // Map backend activities to UI Activity interface
+    const recentActivities = useMemo<Activity[]>(() => {
+        if (!activitiesData) return [];
+
+        return activitiesData.map(act => {
+            const type = act.type as ActivityType;
+            let navigatePath = `/${type}s`;
+            if (act.entityId) {
+                navigatePath = `/${type}s/${act.entityId}/edit`;
+            }
+
+            return {
+                id: act.id,
+                type,
+                title: act.title,
+                subtitle: act.description || '',
+                timestamp: act.createdAt,
+                status: act.status || undefined,
+                navigatePath,
+                sentence: formatActivitySentence(type, act.title, act.status, act.action, act.description),
+            };
+        });
+    }, [activitiesData]);
+
+    // Get icon component for activity type
+    const getActivityIcon = (type: ActivityType) => {
+        switch (type) {
+            case 'order': return Package;
+            case 'customer': return Users;
+            case 'store': return StoreIcon;
+            case 'payment': return CreditCard;
+        }
+    };
+
+    // Get icon background color for activity type
+    const getActivityIconBg = (type: ActivityType) => {
+        switch (type) {
+            case 'order': return 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-400';
+            case 'customer': return 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400';
+            case 'store': return 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400';
+            case 'payment': return 'bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400';
+        }
+    };
+
+
 
     const quickActions = [
         { label: 'New Order', icon: Plus, path: '/orders/new', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/40' },
@@ -190,52 +285,39 @@ export const Dashboard: React.FC = () => {
                                 </div>
                                 <h2 className="text-xl sm:text-2xl font-bold tracking-tight">Recent Activity</h2>
                             </div>
-                            <button
-                                className="text-xs sm:text-sm font-semibold text-primary hover:underline flex items-center bg-primary/5 px-3 py-1.5 rounded-full transition-colors"
-                                onClick={() => navigate('/orders')}
-                            >
-                                View All <ChevronRight className="h-4 w-4 ml-1" />
-                            </button>
                         </div>
                         <div className="space-y-6">
-                            {recentOrders.length > 0 ? recentOrders.map((order, index) => (
-                                <div key={order.id}>
-                                    <div
-                                        className="flex items-center justify-between cursor-pointer group hover:bg-muted/50 p-2 -m-2 rounded-2xl transition-all"
-                                        onClick={() => navigate(`/orders/${order.id}/edit`)}
-                                    >
-                                        <div className="flex items-center gap-4 sm:gap-5">
-                                            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-secondary flex items-center justify-center text-muted-foreground overflow-hidden relative shadow-sm transition-transform group-hover:scale-105">
-                                                {order.orderImage ? (
-                                                    <img src={order.orderImage} alt="" className="w-full h-full object-cover" />
-                                                ) : (
-                                                    <Package className="h-6 w-6 sm:h-7 sm:w-7" />
-                                                )}
-                                            </div>
-                                            <div>
-                                                <h3 className="text-sm sm:text-base font-bold group-hover:text-primary transition-colors">{order.orderName}</h3>
-                                                <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                                                    <span>{new Date(order.createdAt).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}</span>
-                                                    <span className="w-1 h-1 rounded-full bg-border"></span>
-                                                    <span>{new Date(order.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                                                </p>
+                            {recentActivities.length > 0 ? recentActivities.map((activity, index) => {
+                                const IconComponent = getActivityIcon(activity.type);
+                                return (
+                                    <div key={`${activity.type}-${activity.id}`}>
+                                        <div
+                                            className="flex items-center justify-between cursor-pointer group hover:bg-muted/50 p-2 -m-2 rounded-2xl transition-all"
+                                            onClick={() => navigate(activity.navigatePath)}
+                                        >
+                                            <div className="flex items-center gap-4 sm:gap-5">
+                                                <div className={`w-12 h-12 sm:w-14 sm:h-14 rounded-2xl flex items-center justify-center overflow-hidden relative shadow-sm transition-transform group-hover:scale-105 ${activity.image ? 'bg-secondary' : getActivityIconBg(activity.type)}`}>
+                                                    {activity.image ? (
+                                                        <img src={activity.image} alt="" className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        <IconComponent className="h-6 w-6 sm:h-7 sm:w-7" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h3 className="text-sm sm:text-base font-medium group-hover:text-primary transition-colors">{activity.sentence}</h3>
+                                                    <p className="text-[10px] sm:text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
+                                                        <span>{new Date(activity.timestamp).toLocaleDateString('en-PH', { month: 'short', day: 'numeric' })}</span>
+                                                        <span>{new Date(activity.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                                                    </p>
+                                                </div>
                                             </div>
                                         </div>
-                                        <div className="text-right">
-                                            <p className="text-base sm:text-lg font-bold text-primary">{formatCurrency(order.orderCustomerTotal)}</p>
-                                            <span className={`inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold mt-1.5 shadow-sm ${order.orderStatus === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
-                                                order.orderStatus === 'delivered' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' :
-                                                    'bg-secondary text-secondary-foreground'
-                                                } capitalize`}>
-                                                {order.orderStatus}
-                                            </span>
-                                        </div>
+                                        {index < recentActivities.length - 1 && (
+                                            <div className="h-px bg-border/60 w-full my-1"></div>
+                                        )}
                                     </div>
-                                    {index < recentOrders.length - 1 && (
-                                        <div className="h-px bg-border/60 w-full my-1"></div>
-                                    )}
-                                </div>
-                            )) : (
+                                );
+                            }) : (
                                 <div className="text-center py-16 text-muted-foreground text-sm flex flex-col items-center gap-3">
                                     <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center">
                                         <History className="h-6 w-6 opacity-20" />
@@ -324,6 +406,6 @@ export const Dashboard: React.FC = () => {
                     </div>
                 </DialogContent>
             </Dialog>
-        </div>
+        </div >
     );
 };

@@ -129,6 +129,19 @@ export interface ImageMetadata {
     deletedAt?: string | null;
 }
 
+export interface Activity {
+    id: number;
+    organizationId: string;
+    type: EntityType;
+    action: 'created' | 'updated' | 'deleted' | 'status_changed';
+    entityId: number;
+    title: string;
+    description?: string | null;
+    status?: string | null;
+    userId?: string | null;
+    createdAt: string;
+}
+
 export interface ApiResponse<T> {
     success: boolean;
     data?: T;
