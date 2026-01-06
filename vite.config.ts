@@ -12,4 +12,34 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src/client"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            // React core
+            if (id.includes('/react-dom/') || id.includes('/react/')) {
+              return 'vendor-react';
+            }
+            // React Router
+            if (id.includes('react-router')) {
+              return 'vendor-router';
+            }
+            // Lucide icons
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            // Radix UI components
+            if (id.includes('@radix-ui')) {
+              return 'vendor-radix';
+            }
+            // CMDK (command menu)
+            if (id.includes('/cmdk/')) {
+              return 'vendor-cmdk';
+            }
+          }
+        },
+      },
+    },
+  },
 })

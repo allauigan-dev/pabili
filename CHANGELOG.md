@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Changed
+- **Build Optimization**: Configured Vite code splitting with manual chunks to separate React, React Router, Radix UI, and Lucide icons into vendor bundles. Reduced main application bundle size by ~70% (569KB to 176KB).
 - **PWA UI**: Updated `offline.html` and `InstallBanner.tsx` to align with the app's Violet design system, replacing the legacy Teal theme and adding Inter font support.
 
 
