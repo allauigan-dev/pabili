@@ -3,89 +3,89 @@ import { Download, X } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 interface InstallBannerProps {
-    delay?: number; // Delay in ms before showing the banner
+  delay?: number; // Delay in ms before showing the banner
 }
 
 export function InstallBanner({ delay = 30000 }: InstallBannerProps) {
-    const { isInstallable, isInstalled, promptInstall, dismissPrompt } = useInstallPrompt();
-    const [isVisible, setIsVisible] = useState(false);
-    const [isDismissed, setIsDismissed] = useState(false);
+  const { isInstallable, isInstalled, promptInstall, dismissPrompt } = useInstallPrompt();
+  const [isVisible, setIsVisible] = useState(false);
+  const [isDismissed, setIsDismissed] = useState(false);
 
-    useEffect(() => {
-        // Check if user has previously dismissed
-        const dismissed = localStorage.getItem('pwa-install-dismissed');
-        if (dismissed) {
-            const dismissedTime = parseInt(dismissed, 10);
-            // Re-show after 7 days
-            if (Date.now() - dismissedTime < 7 * 24 * 60 * 60 * 1000) {
-                setIsDismissed(true);
-                return;
-            }
-        }
-
-        // Show banner after delay
-        if (isInstallable && !isDismissed) {
-            const timer = setTimeout(() => {
-                setIsVisible(true);
-            }, delay);
-            return () => clearTimeout(timer);
-        }
-    }, [isInstallable, isDismissed, delay]);
-
-    const handleInstall = async () => {
-        const outcome = await promptInstall();
-        if (outcome === 'accepted') {
-            setIsVisible(false);
-        }
-    };
-
-    const handleDismiss = () => {
-        setIsVisible(false);
+  useEffect(() => {
+    // Check if user has previously dismissed
+    const dismissed = localStorage.getItem('pwa-install-dismissed');
+    if (dismissed) {
+      const dismissedTime = parseInt(dismissed, 10);
+      // Re-show after 7 days
+      if (Date.now() - dismissedTime < 7 * 24 * 60 * 60 * 1000) {
         setIsDismissed(true);
-        dismissPrompt();
-        localStorage.setItem('pwa-install-dismissed', Date.now().toString());
-    };
-
-    // Don't render if installed, not installable, dismissed, or not visible
-    if (isInstalled || !isInstallable || isDismissed || !isVisible) {
-        return null;
+        return;
+      }
     }
 
-    return (
-        <div className="install-banner">
-            <div className="install-banner__content">
-                <div className="install-banner__icon">
-                    <Download size={24} />
-                </div>
-                <div className="install-banner__text">
-                    <strong>Install Pabili</strong>
-                    <span>Get quick access from your home screen</span>
-                </div>
-            </div>
-            <div className="install-banner__actions">
-                <button
-                    className="install-banner__install-btn"
-                    onClick={handleInstall}
-                >
-                    Install
-                </button>
-                <button
-                    className="install-banner__dismiss-btn"
-                    onClick={handleDismiss}
-                    aria-label="Dismiss"
-                >
-                    <X size={20} />
-                </button>
-            </div>
+    // Show banner after delay
+    if (isInstallable && !isDismissed) {
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, delay);
+      return () => clearTimeout(timer);
+    }
+  }, [isInstallable, isDismissed, delay]);
 
-            <style>{`
+  const handleInstall = async () => {
+    const outcome = await promptInstall();
+    if (outcome === 'accepted') {
+      setIsVisible(false);
+    }
+  };
+
+  const handleDismiss = () => {
+    setIsVisible(false);
+    setIsDismissed(true);
+    dismissPrompt();
+    localStorage.setItem('pwa-install-dismissed', Date.now().toString());
+  };
+
+  // Don't render if installed, not installable, dismissed, or not visible
+  if (isInstalled || !isInstallable || isDismissed || !isVisible) {
+    return null;
+  }
+
+  return (
+    <div className="install-banner">
+      <div className="install-banner__content">
+        <div className="install-banner__icon">
+          <Download size={22} />
+        </div>
+        <div className="install-banner__text">
+          <strong>Install Pabili</strong>
+          <span>Get quick access from your home screen</span>
+        </div>
+      </div>
+      <div className="install-banner__actions">
+        <button
+          className="install-banner__install-btn"
+          onClick={handleInstall}
+        >
+          Install
+        </button>
+        <button
+          className="install-banner__dismiss-btn"
+          onClick={handleDismiss}
+          aria-label="Dismiss"
+        >
+          <X size={18} />
+        </button>
+      </div>
+
+      <style>{`
         .install-banner {
           position: fixed;
           bottom: 80px;
           left: 16px;
           right: 16px;
-          background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-          border: 1px solid rgba(255, 255, 255, 0.1);
+          background: hsl(220 26% 17%);
+          border: 1px solid hsl(215 19% 27%);
           border-radius: 16px;
           padding: 16px;
           display: flex;
@@ -119,13 +119,14 @@ export function InstallBanner({ delay = 30000 }: InstallBannerProps) {
         .install-banner__icon {
           width: 48px;
           height: 48px;
-          background: linear-gradient(135deg, #008080 0%, #006666 100%);
+          background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(262 83% 50%) 100%);
           border-radius: 12px;
           display: flex;
           align-items: center;
           justify-content: center;
           color: white;
           flex-shrink: 0;
+          box-shadow: 0 4px 12px hsla(262 83% 58% / 0.3);
         }
 
         .install-banner__text {
@@ -138,12 +139,12 @@ export function InstallBanner({ delay = 30000 }: InstallBannerProps) {
         .install-banner__text strong {
           font-size: 15px;
           font-weight: 600;
-          color: #f8fafc;
+          color: hsl(210 20% 98%);
         }
 
         .install-banner__text span {
           font-size: 13px;
-          color: #94a3b8;
+          color: hsl(218 11% 65%);
           white-space: nowrap;
           overflow: hidden;
           text-overflow: ellipsis;
@@ -158,7 +159,7 @@ export function InstallBanner({ delay = 30000 }: InstallBannerProps) {
 
         .install-banner__install-btn {
           padding: 10px 20px;
-          background: linear-gradient(135deg, #008080 0%, #006666 100%);
+          background: linear-gradient(135deg, hsl(262 83% 58%) 0%, hsl(262 83% 50%) 100%);
           color: white;
           border: none;
           border-radius: 10px;
@@ -166,11 +167,16 @@ export function InstallBanner({ delay = 30000 }: InstallBannerProps) {
           font-weight: 600;
           cursor: pointer;
           transition: all 0.2s ease;
+          box-shadow: 0 4px 12px hsla(262 83% 58% / 0.3);
         }
 
         .install-banner__install-btn:hover {
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(0, 128, 128, 0.3);
+          box-shadow: 0 6px 16px hsla(262 83% 58% / 0.4);
+        }
+
+        .install-banner__install-btn:active {
+          transform: translateY(0);
         }
 
         .install-banner__dismiss-btn {
@@ -181,15 +187,15 @@ export function InstallBanner({ delay = 30000 }: InstallBannerProps) {
           justify-content: center;
           background: transparent;
           border: none;
-          color: #64748b;
+          color: hsl(218 11% 65%);
           cursor: pointer;
           border-radius: 8px;
           transition: all 0.2s ease;
         }
 
         .install-banner__dismiss-btn:hover {
-          background: rgba(255, 255, 255, 0.1);
-          color: #94a3b8;
+          background: hsl(215 19% 27%);
+          color: hsl(210 20% 98%);
         }
 
         @media (max-width: 400px) {
@@ -210,6 +216,6 @@ export function InstallBanner({ delay = 30000 }: InstallBannerProps) {
           }
         }
       `}</style>
-        </div>
-    );
+    </div>
+  );
 }

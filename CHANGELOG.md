@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **PWA UI**: Updated `offline.html` and `InstallBanner.tsx` to align with the app's Violet design system, replacing the legacy Teal theme and adding Inter font support.
+
+
 ### Added
 - **PWA Best Practices Implementation**:
   - Enhanced `manifest.json` with multiple icon sizes (48-512px), maskable icons, and app shortcuts
