@@ -1,1 +1,0 @@
-ALTER TABLE `orders` ADD `order_images` text;

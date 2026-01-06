@@ -8,18 +8,18 @@ import {
     Trash2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useResellerBalance } from '@/hooks/useResellers';
+import { useCustomerBalance } from '@/hooks/useCustomers';
 import { formatCurrency } from '@/lib/utils';
-import type { Reseller } from '@/lib/types';
+import type { Customer } from '@/lib/types';
 
-interface ResellerCardProps {
-    reseller: Reseller;
+interface CustomerCardProps {
+    customer: Customer;
     onDelete: (id: number) => void;
 }
 
-export const ResellerCard: React.FC<ResellerCardProps> = ({ reseller, onDelete }) => {
+export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onDelete }) => {
     const navigate = useNavigate();
-    const { data: balance, loading: loadingBalance } = useResellerBalance(reseller.id);
+    const { data: balance, loading: loadingBalance } = useCustomerBalance(customer.id);
 
     const outstandingBalance = balance ? balance.totalOrders - balance.totalPayments : 0;
     const hasBalance = outstandingBalance > 0;
@@ -40,10 +40,10 @@ export const ResellerCard: React.FC<ResellerCardProps> = ({ reseller, onDelete }
                     <span className={`absolute top-0 right-0 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md z-10 uppercase ${statusBadge}`}>
                         {statusLabel}
                     </span>
-                    {reseller.resellerPhoto ? (
+                    {customer.customerPhoto ? (
                         <img
-                            src={reseller.resellerPhoto}
-                            alt={reseller.resellerName}
+                            src={customer.customerPhoto}
+                            alt={customer.customerName}
                             className="w-full h-full object-cover"
                         />
                     ) : (
@@ -55,16 +55,16 @@ export const ResellerCard: React.FC<ResellerCardProps> = ({ reseller, onDelete }
                 <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                     <div className="flex justify-between items-start">
                         <div className="min-w-0 pr-2">
-                            <h3 className="text-base font-bold text-foreground truncate">{reseller.resellerName}</h3>
+                            <h3 className="text-base font-bold text-foreground truncate">{customer.customerName}</h3>
                             <div className="flex flex-col gap-1 mt-1">
-                                <div className="flex items-center text-xs text-muted-foreground">
+                                <div className="items-center text-xs text-muted-foreground flex">
                                     <Mail className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />
-                                    <span className="truncate">{reseller.resellerEmail || 'No email'}</span>
+                                    <span className="truncate">{customer.customerEmail || 'No email'}</span>
                                 </div>
-                                {reseller.resellerPhone && (
+                                {customer.customerPhone && (
                                     <div className="flex items-center text-xs text-muted-foreground">
                                         <Phone className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />
-                                        <span className="truncate">{reseller.resellerPhone}</span>
+                                        <span className="truncate">{customer.customerPhone}</span>
                                     </div>
                                 )}
                             </div>
@@ -82,7 +82,7 @@ export const ResellerCard: React.FC<ResellerCardProps> = ({ reseller, onDelete }
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                            onClick={() => navigate(`/resellers/${reseller.id}/edit`)}
+                            onClick={() => navigate(`/customers/${customer.id}/edit`)}
                         >
                             <Edit className="h-4 w-4" />
                         </Button>
@@ -90,7 +90,7 @@ export const ResellerCard: React.FC<ResellerCardProps> = ({ reseller, onDelete }
                             variant="ghost"
                             size="icon"
                             className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={() => onDelete(reseller.id)}
+                            onClick={() => onDelete(customer.id)}
                         >
                             <Trash2 className="h-4 w-4" />
                         </Button>
@@ -100,4 +100,3 @@ export const ResellerCard: React.FC<ResellerCardProps> = ({ reseller, onDelete }
         </div>
     );
 };
-

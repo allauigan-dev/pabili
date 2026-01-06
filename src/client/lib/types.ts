@@ -4,11 +4,11 @@
 
 export type OrderStatus = 'pending' | 'bought' | 'packed' | 'delivered' | 'cancelled' | 'no_stock';
 export type StoreStatus = 'active' | 'inactive';
-export type ResellerStatus = 'active' | 'inactive';
+export type CustomerStatus = 'active' | 'inactive';
 export type PaymentMethod = 'cash' | 'gcash' | 'paymaya' | 'bank_transfer' | 'other';
 export type PaymentStatus = 'pending' | 'confirmed' | 'rejected';
 export type InvoiceStatus = 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' | 'cancelled';
-export type EntityType = 'order' | 'store' | 'reseller' | 'payment' | 'invoice';
+export type EntityType = 'order' | 'store' | 'customer' | 'payment' | 'invoice';
 export type ImageType = 'primary' | 'logo' | 'cover' | 'proof' | 'gallery' | 'attachment';
 
 export interface Order {
@@ -22,20 +22,20 @@ export interface Order {
     orderImages?: string[] | null;
     orderPrice: number;
     orderFee: number;
-    orderResellerPrice: number;
+    orderCustomerPrice: number;
     orderTotal: number;
-    orderResellerTotal: number;
+    orderCustomerTotal: number;
     orderStatus: OrderStatus;
     orderDate: string;
     storeId: number;
-    resellerId: number;
+    customerId: number;
     invoiceId?: number | null;
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
     // Joined fields frequently returned by API
     storeName: string;
-    resellerName: string;
+    customerName: string;
 }
 
 export interface Store {
@@ -53,15 +53,16 @@ export interface Store {
     deletedAt?: string | null;
 }
 
-export interface Reseller {
+export interface Customer {
     id: number;
-    resellerName: string;
-    resellerAddress?: string | null;
-    resellerPhone?: string | null;
-    resellerEmail?: string | null;
-    resellerPhoto?: string | null;
-    resellerDescription?: string | null;
-    resellerStatus: ResellerStatus;
+    organizationId: string;
+    customerName: string;
+    customerAddress?: string | null;
+    customerPhone?: string | null;
+    customerEmail?: string | null;
+    customerPhoto?: string | null;
+    customerDescription?: string | null;
+    customerStatus: CustomerStatus;
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
@@ -76,13 +77,13 @@ export interface Payment {
     paymentNotes?: string | null;
     paymentStatus: PaymentStatus;
     paymentDate: string;
-    resellerId: number;
+    customerId: number;
     invoiceId?: number | null;
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
     // Joined fields frequently returned by API
-    resellerName?: string;
+    customerName?: string;
     confirmedAt?: string | null;
 }
 
@@ -95,12 +96,12 @@ export interface Invoice {
     invoiceNotes?: string | null;
     dueDate?: string | null;
     invoiceStatus: InvoiceStatus;
-    resellerId: number;
+    customerId: number;
     createdAt: string;
     updatedAt: string;
     deletedAt?: string | null;
     // Joined fields frequently returned by API
-    resellerName?: string;
+    customerName?: string;
     orderIds?: number[];
 }
 
@@ -135,12 +136,12 @@ export interface ApiResponse<T> {
     };
 }
 
-export interface CreateOrderDto extends Partial<Omit<Order, 'id' | 'orderNumber' | 'orderTotal' | 'orderResellerTotal' | 'createdAt' | 'updatedAt' | 'deletedAt'>> {
+export interface CreateOrderDto extends Partial<Omit<Order, 'id' | 'orderNumber' | 'orderTotal' | 'orderCustomerTotal' | 'createdAt' | 'updatedAt' | 'deletedAt'>> {
     orderName: string;
     orderPrice: number;
-    orderResellerPrice: number;
+    orderCustomerPrice: number;
     storeId: number;
-    resellerId: number;
+    customerId: number;
     orderImages?: string[];
 }
 
@@ -148,15 +149,15 @@ export interface CreateStoreDto extends Partial<Omit<Store, 'id' | 'createdAt' |
     storeName: string;
 }
 
-export interface CreateResellerDto extends Partial<Omit<Reseller, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>> {
-    resellerName: string;
+export interface CreateCustomerDto extends Partial<Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt' | 'organizationId'>> {
+    customerName: string;
 }
 
 export interface CreatePaymentDto extends Partial<Omit<Payment, 'id' | 'createdAt' | 'updatedAt' | 'deletedAt'>> {
     paymentAmount: number;
-    resellerId: number;
+    customerId: number;
 }
 
 export interface CreateInvoiceDto extends Partial<Omit<Invoice, 'id' | 'invoiceNumber' | 'invoiceBalance' | 'createdAt' | 'updatedAt' | 'deletedAt'>> {
-    resellerId: number;
+    customerId: number;
 }

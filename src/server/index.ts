@@ -8,9 +8,9 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 
 // Import routes
-import ordersRoutes from './routes/orders';
+import customersRoutes from './routes/customers';
 import storesRoutes from './routes/stores';
-import resellersRoutes from './routes/resellers';
+import ordersRoutes from './routes/orders';
 import paymentsRoutes from './routes/payments';
 import invoicesRoutes from './routes/invoices';
 import uploadRoutes from './routes/upload';
@@ -47,7 +47,7 @@ app.get('/api/health', (c) => {
 // Mount routes
 app.route('/api/orders', ordersRoutes);
 app.route('/api/stores', storesRoutes);
-app.route('/api/resellers', resellersRoutes);
+app.route('/api/customers', customersRoutes);
 app.route('/api/payments', paymentsRoutes);
 app.route('/api/invoices', invoicesRoutes);
 app.route('/api/upload', uploadRoutes);

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    ArrowLeft,
     Save,
     Store as StoreIcon,
     MapPin,
@@ -32,6 +31,7 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { CreateStoreDto } from '@/lib/types';
+import { HeaderContent } from '@/components/layout/HeaderProvider';
 
 export const StoreForm: React.FC = () => {
     const { id } = useParams();
@@ -99,23 +99,10 @@ export const StoreForm: React.FC = () => {
 
     return (
         <div className="bg-background text-foreground font-sans min-h-screen pb-24">
-            {/* Header */}
-            <header className="sticky top-0 w-full z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 transition-all">
-                <div className="max-w-5xl mx-auto h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => navigate('/stores')}
-                            className="text-muted-foreground hover:text-primary transition-all flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-secondary/80 active:scale-95 group"
-                            type="button"
-                        >
-                            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                            <span className="text-sm font-bold">Back to Stores</span>
-                        </button>
-                    </div>
-                </div>
-            </header>
+            {/* Clear header content from previous page */}
+            <HeaderContent title={isEdit ? 'Edit Store' : 'New Store'} />
 
-            <main className="max-w-md md:max-w-2xl mx-auto px-4 pt-8 md:pt-12">
+            <main className="max-w-md md:max-w-2xl mx-auto px-4 pt-4 md:pt-6">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-foreground tracking-tight mb-2 uppercase">
                         {isEdit ? 'Update Store' : 'Add Store'}

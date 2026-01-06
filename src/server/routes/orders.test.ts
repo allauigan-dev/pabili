@@ -1,10 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+// Mock middlewares before importing the app
+vi.mock('../middleware/auth', () => ({
+    requireAuth: vi.fn(async (c, next) => {
+        c.set('user', { id: 'test-user' });
+        return next();
+    })
+}))
+
+vi.mock('../middleware/organization', () => ({
+    requireOrganization: vi.fn(async (c, next) => {
+        c.set('organizationId', 'test-org');
+        return next();
+    })
+}))
+
 import ordersApp from './orders'
 
 // Mock the database module
 vi.mock('../db', () => ({
     createDb: vi.fn(() => mockDb),
-    orders: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt', resellerId: 'resellerId' },
+    orders: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt', customerId: 'customerId' },
 }))
 
 // Mock database instance
@@ -95,7 +111,7 @@ describe('Orders API', () => {
                 body: JSON.stringify({}),
             })
 
-            const res = await ordersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
 
@@ -107,11 +123,11 @@ describe('Orders API', () => {
                 orderQuantity: 2,
                 orderPrice: 100,
                 orderFee: 10,
-                orderResellerPrice: 120,
+                orderCustomerPrice: 120,
                 orderTotal: 220,
-                orderResellerTotal: 240,
+                orderCustomerTotal: 240,
                 storeId: 1,
-                resellerId: 1,
+                customerId: 1,
                 createdAt: new Date().toISOString(),
             }])
 
@@ -123,13 +139,13 @@ describe('Orders API', () => {
                     orderQuantity: 2,
                     orderPrice: 100,
                     orderFee: 10,
-                    orderResellerPrice: 120,
+                    orderCustomerPrice: 120,
                     storeId: 1,
-                    resellerId: 1,
+                    customerId: 1,
                 }),
             })
 
-            const res = await ordersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(201)
 
             const data = await res.json()
@@ -150,7 +166,7 @@ describe('Orders API', () => {
                     body: JSON.stringify({ status }),
                 })
 
-                const res = await ordersApp.fetch(req, { DB: {} } as unknown as Env)
+                const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
                 expect(res.status).toBe(200)
             }
         })
@@ -162,7 +178,7 @@ describe('Orders API', () => {
                 body: JSON.stringify({ status: 'invalid_status' }),
             })
 
-            const res = await ordersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
     })
@@ -173,7 +189,7 @@ describe('Orders API', () => {
                 method: 'GET',
             })
 
-            const res = await ordersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
@@ -188,7 +204,7 @@ describe('Orders API', () => {
                 method: 'GET',
             })
 
-            const res = await ordersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(404)
 
             const data = await res.json()

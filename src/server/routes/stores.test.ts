@@ -1,4 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+// Mock middlewares before importing the app
+vi.mock('../middleware/auth', () => ({
+    requireAuth: vi.fn(async (c, next) => {
+        c.set('user', { id: 'test-user' });
+        return next();
+    })
+}))
+
+vi.mock('../middleware/organization', () => ({
+    requireOrganization: vi.fn(async (c, next) => {
+        c.set('organizationId', 'test-org');
+        return next();
+    })
+}))
+
 import storesApp from './stores'
 
 // Mock the database module
@@ -89,7 +105,7 @@ describe('Stores API', () => {
                 body: JSON.stringify({}),
             })
 
-            const res = await storesApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await storesApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
 
@@ -109,7 +125,7 @@ describe('Stores API', () => {
                 }),
             })
 
-            const res = await storesApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await storesApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(201)
 
             const data = await res.json()
@@ -123,7 +139,7 @@ describe('Stores API', () => {
                 method: 'GET',
             })
 
-            const res = await storesApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await storesApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
@@ -138,7 +154,7 @@ describe('Stores API', () => {
                 method: 'GET',
             })
 
-            const res = await storesApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await storesApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(404)
 
             const data = await res.json()

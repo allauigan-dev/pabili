@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Resellers → Customers Rename**: Refactored the entire application to use "Customers" terminology instead of "Resellers":
+  - Renamed database table `resellers` → `customers` with updated column names (`customer_name`, `customer_id`, etc.)
+  - Updated all API routes (`/api/resellers` → `/api/customers`)
+  - Migrated frontend pages, hooks, and components to use `Customer` terminology
+  - Updated Orders, Invoices, and Payments to reference `customer_id` instead of `reseller_id`
+  - Renamed pricing fields: `order_reseller_price` → `order_customer_price`, `order_reseller_total` → `order_customer_total`
+- **Database Schema Reset**: Regenerated migrations from scratch to resolve migration conflicts from the rename refactor.
+
+### Added
+- **Dynamic Header System**: Implemented `HeaderProvider` context for dynamic page headers with search and filter support.
+- **FilterPills Component**: Created reusable filter pill UI component for status filtering across list pages.
+- **Customers Module**: New `/customers` routes with full CRUD operations, replacing the old Resellers module.
+
+### Removed
+- **Resellers Module**: Removed all reseller-related files (`ResellersPage`, `ResellerForm`, `ResellerCard`, `useResellers` hook, and API routes).
+
 ### Fixed
 - **Production Auth**: Fixed 500 errors on production auth endpoints by enabling environment-aware secure cookies (automatically enabled for HTTPS).
 - **TypeScript Build**: Fixed type-only imports for `AppEnv` across all server route files to resolve build warnings.

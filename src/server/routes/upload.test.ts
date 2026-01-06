@@ -1,4 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+// Mock middlewares before importing the app
+vi.mock('../middleware/auth', () => ({
+    requireAuth: vi.fn(async (c, next) => {
+        c.set('user', { id: 'test-user' });
+        return next();
+    })
+}))
+
+vi.mock('../middleware/organization', () => ({
+    requireOrganization: vi.fn(async (c, next) => {
+        c.set('organizationId', 'test-org');
+        return next();
+    })
+}))
+
 import uploadApp from './upload'
 
 // Mock R2 bucket
@@ -50,7 +66,7 @@ describe('Upload API', () => {
                 body: formData,
             })
 
-            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as Env)
+            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
@@ -68,7 +84,7 @@ describe('Upload API', () => {
                 body: formData,
             })
 
-            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as Env)
+            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
@@ -94,7 +110,7 @@ describe('Upload API', () => {
                     body: formData,
                 })
 
-                const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as Env)
+                const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as any)
                 expect(res.status).toBe(201)
 
                 const data = await res.json()
@@ -116,7 +132,7 @@ describe('Upload API', () => {
                 body: formData,
             })
 
-            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as Env)
+            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
@@ -136,12 +152,13 @@ describe('Upload API', () => {
                 body: formData,
             })
 
-            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as Env)
+            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as any)
             expect(res.status).toBe(201)
 
             const data = await res.json()
             expect(data.success).toBe(true)
             expect(data.data.key).toContain('temp/')
+            expect(data.data.key).toContain('orgs/test-org/')
             expect(data.data).toHaveProperty('originalFilename')
             expect(data.data.mimeType).toBe('image/jpeg')
         })
@@ -157,22 +174,23 @@ describe('Upload API', () => {
                 body: formData,
             })
 
-            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as Env)
+            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as any)
             expect(res.status).toBe(201)
 
             const data = await res.json()
             expect(data.success).toBe(true)
             expect(data.data.key).toContain('orders/123/')
+            expect(data.data.key).toContain('orgs/test-org/')
         })
     })
 
     describe('File deletion', () => {
         it('should delete existing file', async () => {
-            const req = new Request('http://localhost/orders/123/test.jpg', {
+            const req = new Request('http://localhost/orgs/test-org/orders/123/test.jpg', {
                 method: 'DELETE',
             })
 
-            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as Env)
+            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as any)
             expect(res.status).toBe(200)
 
             const data = await res.json()
@@ -183,16 +201,29 @@ describe('Upload API', () => {
         it('should return 404 for non-existent file', async () => {
             mockBucket.head.mockResolvedValueOnce(null)
 
-            const req = new Request('http://localhost/nonexistent/file.jpg', {
+            const req = new Request('http://localhost/orgs/test-org/nonexistent/file.jpg', {
                 method: 'DELETE',
             })
 
-            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as Env)
+            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as any)
             expect(res.status).toBe(404)
 
             const data = await res.json()
             expect(data.success).toBe(false)
             expect(data.error).toBe('File not found')
+        })
+
+        it('should return 403 for file not belonging to organization', async () => {
+            const req = new Request('http://localhost/orgs/other-org/file.jpg', {
+                method: 'DELETE',
+            })
+
+            const res = await uploadApp.fetch(req, { BUCKET: mockBucket } as unknown as any)
+            expect(res.status).toBe(403)
+
+            const data = await res.json()
+            expect(data.success).toBe(false)
+            expect(data.error).toBe('Forbidden')
         })
     })
 })

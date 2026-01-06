@@ -114,32 +114,32 @@ export const stores = sqliteTable('stores', {
 ]);
 
 // ============================================
-// RESELLERS TABLE
+// CUSTOMERS TABLE
 // ============================================
-export const resellers = sqliteTable('resellers', {
+export const customers = sqliteTable('customers', {
     id: integer('id').primaryKey({ autoIncrement: true }),
     organizationId: text('organization_id').references(() => organization.id),
 
-    // Reseller Info
-    resellerName: text('reseller_name').notNull(),
-    resellerAddress: text('reseller_address'),
-    resellerPhone: text('reseller_phone'),
-    resellerEmail: text('reseller_email'),
+    // Customer Info
+    customerName: text('customer_name').notNull(),
+    customerAddress: text('customer_address'),
+    customerPhone: text('customer_phone'),
+    customerEmail: text('customer_email'),
 
     // Media
-    resellerPhoto: text('reseller_photo'),
-    resellerDescription: text('reseller_description'),
+    customerPhoto: text('customer_photo'),
+    customerDescription: text('customer_description'),
 
     // Status
-    resellerStatus: text('reseller_status', { enum: ['active', 'inactive'] }).notNull().default('active'),
+    customerStatus: text('customer_status', { enum: ['active', 'inactive'] }).notNull().default('active'),
 
     // Timestamps
     createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
     updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
     deletedAt: text('deleted_at'),
 }, (table) => [
-    index('idx_resellers_status').on(table.resellerStatus),
-    index('idx_resellers_org').on(table.organizationId),
+    index('idx_customers_status').on(table.customerStatus),
+    index('idx_customers_org').on(table.organizationId),
 ]);
 
 // ============================================
@@ -162,14 +162,14 @@ export const invoices = sqliteTable('invoices', {
     }).notNull().default('draft'),
 
     // Relations
-    resellerId: integer('reseller_id').notNull().references(() => resellers.id),
+    customerId: integer('customer_id').notNull().references(() => customers.id),
 
     // Timestamps
     createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
     updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
     deletedAt: text('deleted_at'),
 }, (table) => [
-    index('idx_invoices_reseller').on(table.resellerId),
+    index('idx_invoices_customer').on(table.customerId),
     index('idx_invoices_status').on(table.invoiceStatus),
     index('idx_invoices_due_date').on(table.dueDate),
     index('idx_invoices_org').on(table.organizationId),
@@ -194,11 +194,11 @@ export const orders = sqliteTable('orders', {
     // Pricing
     orderPrice: real('order_price').notNull(),         // Cost per unit
     orderFee: real('order_fee').notNull().default(0),  // Fee per unit
-    orderResellerPrice: real('order_reseller_price').notNull(), // Reseller price per unit
+    orderCustomerPrice: real('order_customer_price').notNull(), // Customer price per unit
 
     // Calculated totals (stored for performance)
     orderTotal: real('order_total'),           // quantity * (price + fee)
-    orderResellerTotal: real('order_reseller_total'), // quantity * reseller_price
+    orderCustomerTotal: real('order_customer_total'), // quantity * customer_price
 
     // Status
     orderStatus: text('order_status', {
@@ -208,7 +208,7 @@ export const orders = sqliteTable('orders', {
 
     // Relations
     storeId: integer('store_id').notNull().references(() => stores.id),
-    resellerId: integer('reseller_id').notNull().references(() => resellers.id),
+    customerId: integer('customer_id').notNull().references(() => customers.id),
     invoiceId: integer('invoice_id').references(() => invoices.id),
 
     // Timestamps
@@ -217,7 +217,7 @@ export const orders = sqliteTable('orders', {
     deletedAt: text('deleted_at'),
 }, (table) => [
     index('idx_orders_status').on(table.orderStatus),
-    index('idx_orders_reseller').on(table.resellerId),
+    index('idx_orders_customer').on(table.customerId),
     index('idx_orders_store').on(table.storeId),
     index('idx_orders_date').on(table.orderDate),
     index('idx_orders_org').on(table.organizationId),
@@ -246,7 +246,7 @@ export const payments = sqliteTable('payments', {
     paymentDate: text('payment_date').default(sql`CURRENT_TIMESTAMP`),
 
     // Relations
-    resellerId: integer('reseller_id').notNull().references(() => resellers.id),
+    customerId: integer('customer_id').notNull().references(() => customers.id),
     invoiceId: integer('invoice_id').references(() => invoices.id),
 
     // Timestamps
@@ -254,7 +254,7 @@ export const payments = sqliteTable('payments', {
     updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
     deletedAt: text('deleted_at'),
 }, (table) => [
-    index('idx_payments_reseller').on(table.resellerId),
+    index('idx_payments_customer').on(table.customerId),
     index('idx_payments_status').on(table.paymentStatus),
     index('idx_payments_date').on(table.paymentDate),
     index('idx_payments_org').on(table.organizationId),
@@ -280,7 +280,7 @@ export const images = sqliteTable('images', {
 
     // Polymorphic Association
     entityType: text('entity_type', {
-        enum: ['order', 'store', 'reseller', 'payment', 'invoice']
+        enum: ['order', 'store', 'customer', 'payment', 'invoice']
     }).notNull(),
     entityId: integer('entity_id').notNull(),
     imageType: text('image_type', {
@@ -309,8 +309,8 @@ export const images = sqliteTable('images', {
 export type Store = typeof stores.$inferSelect;
 export type NewStore = typeof stores.$inferInsert;
 
-export type Reseller = typeof resellers.$inferSelect;
-export type NewReseller = typeof resellers.$inferInsert;
+export type Customer = typeof customers.$inferSelect;
+export type NewCustomer = typeof customers.$inferInsert;
 
 export type Invoice = typeof invoices.$inferSelect;
 export type NewInvoice = typeof invoices.$inferInsert;

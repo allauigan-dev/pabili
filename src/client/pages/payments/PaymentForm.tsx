@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    ArrowLeft,
     Save,
     CreditCard,
     Calendar,
@@ -12,7 +11,7 @@ import {
     Image as ImageIcon
 } from 'lucide-react';
 import { usePayment, usePaymentMutations } from '@/hooks/usePayments';
-import { useResellers } from '@/hooks/useResellers';
+import { useCustomers } from '@/hooks/useCustomers';
 import { uploadApi } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -35,13 +34,14 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Separator } from '@/components/ui/separator';
 import { Combobox } from '@/components/ui/combobox';
 import type { CreatePaymentDto } from '@/lib/types';
+import { HeaderContent } from '@/components/layout/HeaderProvider';
 
 export const PaymentForm: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEdit = !!id;
 
-    const { data: resellers } = useResellers();
+    const { data: customers } = useCustomers();
     const { data: payment, loading: loadingPayment } = usePayment(Number(id));
     const { createAction, updateAction, loading: mutationLoading, error } = usePaymentMutations();
 
@@ -51,7 +51,7 @@ export const PaymentForm: React.FC = () => {
         paymentMethod: 'gcash',
         paymentReference: '',
         paymentProof: '',
-        resellerId: 0,
+        customerId: 0,
     });
 
     const [uploading, setUploading] = useState(false);
@@ -65,7 +65,7 @@ export const PaymentForm: React.FC = () => {
                 paymentMethod: payment.paymentMethod,
                 paymentReference: payment.paymentReference || '',
                 paymentProof: payment.paymentProof || '',
-                resellerId: payment.resellerId,
+                customerId: payment.customerId,
             });
         }
     }, [isEdit, payment]);
@@ -86,7 +86,7 @@ export const PaymentForm: React.FC = () => {
     const handleSelectChange = (name: string, value: string) => {
         setFormData(prev => ({
             ...prev,
-            [name]: name === 'resellerId' ? Number(value) : value,
+            [name]: name === 'customerId' ? Number(value) : value,
         }));
     };
 
@@ -110,8 +110,8 @@ export const PaymentForm: React.FC = () => {
         e.preventDefault();
         setLocalError(null);
 
-        if (!formData.resellerId) {
-            setLocalError('Please select a reseller');
+        if (!formData.customerId) {
+            setLocalError('Please select a customer');
             return;
         }
 
@@ -140,29 +140,16 @@ export const PaymentForm: React.FC = () => {
 
     return (
         <div className="bg-background text-foreground font-sans min-h-screen pb-24">
-            {/* Header */}
-            <header className="sticky top-0 w-full z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 transition-all">
-                <div className="max-w-5xl mx-auto h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => navigate('/payments')}
-                            className="text-muted-foreground hover:text-primary transition-all flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-secondary/80 active:scale-95 group"
-                            type="button"
-                        >
-                            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                            <span className="text-sm font-bold">Back to Payments</span>
-                        </button>
-                    </div>
-                </div>
-            </header>
+            {/* Clear header content from previous page */}
+            <HeaderContent title={isEdit ? 'Edit Payment' : 'New Payment'} />
 
-            <main className="max-w-md md:max-w-4xl mx-auto px-4 pt-8 md:pt-12">
+            <main className="max-w-md md:max-w-4xl mx-auto px-4 pt-4 md:pt-6">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-foreground tracking-tight mb-2 uppercase">
                         {isEdit ? 'Update Payment' : 'Record Payment'}
                     </h2>
                     <p className="text-muted-foreground text-sm font-medium">
-                        {isEdit ? 'Update existing payment entry.' : 'Log a payment received from a reseller.'}
+                        {isEdit ? 'Update existing payment entry.' : 'Log a payment received from a customer.'}
                     </p>
                 </div>
 
@@ -185,14 +172,14 @@ export const PaymentForm: React.FC = () => {
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="resellerId">Reseller</Label>
+                                    <Label htmlFor="customerId">Customer</Label>
                                     <Combobox
-                                        options={resellers?.map(reseller => ({ label: reseller.resellerName, value: reseller.id })) || []}
-                                        value={formData.resellerId}
-                                        onChange={(value) => handleSelectChange('resellerId', value.toString())}
-                                        placeholder="Select a reseller"
-                                        searchPlaceholder="Search resellers..."
-                                        emptyMessage="No reseller found."
+                                        options={customers?.map(customer => ({ label: customer.customerName, value: customer.id })) || []}
+                                        value={formData.customerId}
+                                        onChange={(value) => handleSelectChange('customerId', value.toString())}
+                                        placeholder="Select a customer"
+                                        searchPlaceholder="Search customers..."
+                                        emptyMessage="No customer found."
                                     />
                                 </div>
 

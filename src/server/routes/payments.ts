@@ -26,7 +26,7 @@ const createPaymentSchema = z.object({
     paymentReference: z.string().optional(),
     paymentProof: z.string().optional(),
     paymentNotes: z.string().optional(),
-    resellerId: z.number().int().positive(),
+    customerId: z.number().int().positive(),
     invoiceId: z.number().int().positive().optional(),
 });
 

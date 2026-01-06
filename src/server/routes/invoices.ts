@@ -35,7 +35,7 @@ const createInvoiceSchema = z.object({
     invoiceNotes: z.string().optional(),
     dueDate: z.string().optional(),
     invoiceStatus: z.enum(['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled']).default('draft'),
-    resellerId: z.number().int().positive(),
+    customerId: z.number().int().positive(),
 });
 
 const updateInvoiceSchema = createInvoiceSchema.partial();

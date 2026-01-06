@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    ArrowLeft,
     User,
     ShoppingCart,
     Loader2,
@@ -11,7 +10,7 @@ import {
     Package
 } from 'lucide-react';
 import { useInvoice, useInvoiceMutations } from '@/hooks/useInvoices';
-import { useResellers } from '@/hooks/useResellers';
+import { useCustomers } from '@/hooks/useCustomers';
 import { useOrders } from '@/hooks/useOrders';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
@@ -36,13 +35,14 @@ import { Separator } from '@/components/ui/separator';
 import { Combobox } from '@/components/ui/combobox';
 import { cn, formatCurrency } from '@/lib/utils';
 import type { CreateInvoiceDto, InvoiceStatus } from '@/lib/types';
+import { HeaderContent } from '@/components/layout/HeaderProvider';
 
 export const InvoiceForm: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEdit = !!id;
 
-    const { data: resellers } = useResellers();
+    const { data: customers } = useCustomers();
     const { data: orders } = useOrders();
     const { data: invoice, loading: loadingInvoice } = useInvoice(Number(id));
     const { createAction, updateAction, loading: mutationLoading, error } = useInvoiceMutations();
@@ -50,7 +50,7 @@ export const InvoiceForm: React.FC = () => {
     const [formData, setFormData] = useState<CreateInvoiceDto>({
         invoiceStatus: 'draft',
         invoiceTotal: 0,
-        resellerId: 0,
+        customerId: 0,
         orderIds: [],
     });
 
@@ -61,28 +61,28 @@ export const InvoiceForm: React.FC = () => {
             setFormData({
                 invoiceStatus: invoice.invoiceStatus as InvoiceStatus,
                 invoiceTotal: invoice.invoiceTotal,
-                resellerId: invoice.resellerId,
+                customerId: invoice.customerId,
                 orderIds: invoice.orderIds || [],
             });
         }
     }, [isEdit, invoice]);
 
-    // Filter orders by selected reseller
+    // Filter orders by selected customer
     const availableOrders = useMemo(() => {
-        if (!formData.resellerId) return [];
-        return orders?.filter(o => o.resellerId === formData.resellerId) || [];
-    }, [orders, formData.resellerId]);
+        if (!formData.customerId) return [];
+        return orders?.filter(o => o.customerId === formData.customerId) || [];
+    }, [orders, formData.customerId]);
 
     useEffect(() => {
         const total = availableOrders
             .filter(o => (formData.orderIds || []).includes(o.id))
-            .reduce((sum, o) => sum + o.orderResellerTotal, 0);
+            .reduce((sum, o) => sum + (o.orderCustomerTotal || 0), 0);
         setFormData(prev => ({ ...prev, invoiceTotal: total }));
     }, [formData.orderIds, availableOrders]);
 
     const handleSelectChange = (name: string, value: string) => {
         setFormData(prev => {
-            if (name === 'resellerId') {
+            if (name === 'customerId') {
                 return { ...prev, [name]: Number(value), orderIds: [] };
             }
             return { ...prev, [name]: value as any };
@@ -104,8 +104,8 @@ export const InvoiceForm: React.FC = () => {
         e.preventDefault();
         setLocalError(null);
 
-        if (!formData.resellerId) {
-            setLocalError('Please select a reseller');
+        if (!formData.customerId) {
+            setLocalError('Please select a customer');
             return;
         }
 
@@ -141,23 +141,10 @@ export const InvoiceForm: React.FC = () => {
 
     return (
         <div className="bg-background text-foreground font-sans min-h-screen pb-24">
-            {/* Header */}
-            <header className="sticky top-0 w-full z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 transition-all">
-                <div className="max-w-5xl mx-auto h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => navigate('/invoices')}
-                            className="text-muted-foreground hover:text-primary transition-all flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-secondary/80 active:scale-95 group"
-                            type="button"
-                        >
-                            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                            <span className="text-sm font-bold">Back to Invoices</span>
-                        </button>
-                    </div>
-                </div>
-            </header>
+            {/* Clear header content from previous page */}
+            <HeaderContent title={isEdit ? 'Edit Invoice' : 'New Invoice'} />
 
-            <main className="max-w-md md:max-w-4xl mx-auto px-4 pt-8 md:pt-12">
+            <main className="max-w-md md:max-w-4xl mx-auto px-4 pt-4 md:pt-6">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-foreground tracking-tight mb-2 uppercase">
                         {isEdit ? 'Update Invoice' : 'Create Invoice'}
@@ -186,17 +173,17 @@ export const InvoiceForm: React.FC = () => {
                             </CardHeader>
                             <CardContent className="space-y-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="resellerId">Reseller / Bill To</Label>
+                                    <Label htmlFor="customerId">Customer / Bill To</Label>
                                     <Combobox
-                                        options={resellers?.map(reseller => ({ label: reseller.resellerName, value: reseller.id })) || []}
-                                        value={formData.resellerId}
-                                        onChange={(value) => handleSelectChange('resellerId', value.toString())}
+                                        options={customers?.map(customer => ({ label: customer.customerName, value: customer.id })) || []}
+                                        value={formData.customerId}
+                                        onChange={(value) => handleSelectChange('customerId', value.toString())}
                                         disabled={isEdit}
-                                        placeholder="Select reseller to bill"
-                                        searchPlaceholder="Search resellers..."
-                                        emptyMessage="No reseller found."
+                                        placeholder="Select customer to bill"
+                                        searchPlaceholder="Search customers..."
+                                        emptyMessage="No customer found."
                                     />
-                                    {isEdit && <p className="text-[10px] text-muted-foreground">Reseller cannot be changed after invoice creation.</p>}
+                                    {isEdit && <p className="text-[10px] text-muted-foreground">Customer cannot be changed after invoice creation.</p>}
                                 </div>
 
                                 <div className="space-y-2">
@@ -231,15 +218,15 @@ export const InvoiceForm: React.FC = () => {
                                 </Badge>
                             </CardHeader>
                             <CardContent className="space-y-4">
-                                {!formData.resellerId ? (
+                                {!formData.customerId ? (
                                     <div className="py-12 text-center bg-muted/30 rounded-lg border-2 border-dashed">
                                         <Package className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                        <p className="text-sm text-muted-foreground">Select a reseller first to see their orders.</p>
+                                        <p className="text-sm text-muted-foreground">Select a customer first to see their orders.</p>
                                     </div>
                                 ) : availableOrders.length === 0 ? (
                                     <div className="py-12 text-center bg-muted/30 rounded-lg border-2 border-dashed">
                                         <Package className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                        <p className="text-sm text-muted-foreground">This reseller doesn't have any orders yet.</p>
+                                        <p className="text-sm text-muted-foreground">This customer doesn't have any orders yet.</p>
                                     </div>
                                 ) : (
                                     <div className="grid grid-cols-1 gap-2">
@@ -273,7 +260,7 @@ export const InvoiceForm: React.FC = () => {
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-4">
-                                                        <p className="text-sm font-bold">{formatCurrency(order.orderResellerTotal)}</p>
+                                                        <p className="text-sm font-bold">{formatCurrency(order.orderCustomerTotal || 0)}</p>
                                                         <div className={cn(
                                                             "h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all",
                                                             isSelected ? "bg-primary border-primary" : "border-muted"

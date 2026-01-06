@@ -24,16 +24,17 @@ import {
 import { Button } from "@/components/ui/button";
 import { useOrders } from '@/hooks/useOrders';
 import { useStores } from '@/hooks/useStores';
-import { useResellers } from '@/hooks/useResellers';
+import { useCustomers } from '@/hooks/useCustomers';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSession } from '@/lib/auth-client';
+import { HeaderContent } from '@/components/layout/HeaderProvider';
 
 export const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { data: session } = useSession();
     const { data: orders } = useOrders();
     const { data: stores } = useStores();
-    const { data: resellers } = useResellers();
+    const { data: customers } = useCustomers();
 
     // Get user's first name for greeting
     const userName = session?.user?.name?.split(' ')[0] || 'there';
@@ -42,7 +43,7 @@ export const Dashboard: React.FC = () => {
     const stats = {
         orders: orders?.length || 0,
         activeStores: stores?.filter(s => s.storeStatus === 'active').length || 0,
-        resellers: resellers?.length || 0,
+        customers: customers?.length || 0,
         pending: orders?.filter(o => o.orderStatus === 'pending').length || 0,
     };
 
@@ -58,7 +59,7 @@ export const Dashboard: React.FC = () => {
     const quickActions = [
         { label: 'New Order', icon: Plus, path: '/orders/new', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/40' },
         { label: 'Add Store', icon: StoreIcon, path: '/stores/new', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/40' },
-        { label: 'Add Reseller', icon: UserPlus, path: '/resellers/new', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/40' },
+        { label: 'Add Customer', icon: UserPlus, path: '/customers/new', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/40' },
         { label: 'Create Invoice', icon: Receipt, path: '/invoices/new', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/40' },
         { label: 'Record Payment', icon: Banknote, path: '/payments/new', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900/40' },
     ];
@@ -78,74 +79,67 @@ export const Dashboard: React.FC = () => {
     };
 
     return (
-        <div className="pb-10 px-4 sm:px-0">
-            <header className="flex justify-between items-start pt-4 pb-8 transition-all">
-                <div>
-                    <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold flex items-center gap-2 tracking-tight">
-                        Mabuhay! <span className="text-2xl sm:text-3xl lg:text-4xl">🇵🇭</span>
-                    </h1>
-                    <p className="text-sm sm:text-base lg:text-lg text-muted-foreground mt-1">Welcome back, {userName}</p>
-                </div>
-                <div className="hidden sm:flex text-[10px] sm:text-xs font-bold text-muted-foreground tracking-widest uppercase bg-secondary/80 backdrop-blur-sm px-4 py-1.5 rounded-full border shadow-sm">
-                    {new Date().toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' })}
-                </div>
-            </header>
+        <div className="pb-10">
+            <HeaderContent
+                title={`Mabuhay, ${userName}! 🇵🇭`}
+                actions={
+                    <div className="hidden sm:flex text-[10px] font-bold text-muted-foreground tracking-widest uppercase bg-secondary/80 backdrop-blur-sm px-4 py-1.5 rounded-full border shadow-sm">
+                        {new Date().toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' })}
+                    </div>
+                }
+            />
 
             <section className="mb-10">
                 <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
                     {/* Orders Card */}
-                    <div className="bg-card p-4 sm:p-6 rounded-3xl shadow-sm border flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-blue-50 dark:bg-blue-900/20 rounded-full group-hover:scale-110 transition-transform"></div>
+                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-4 sm:p-6 rounded-3xl shadow-lg border-none flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all">
                         <div className="flex justify-between items-start z-10">
-                            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest">Orders</span>
-                            <div className="w-10 h-10 rounded-2xl bg-blue-100 dark:bg-blue-900/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shadow-inner">
+                            <span className="text-[10px] sm:text-xs font-bold text-blue-100 uppercase tracking-widest">Orders</span>
+                            <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center shadow-inner backdrop-blur-md border border-white/10">
                                 <Package className="h-5 w-5 sm:h-6 sm:w-6" />
                             </div>
                         </div>
-                        <div className="z-10">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">{stats.orders}</span>
+                        <div className="z-10 text-white">
+                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{stats.orders}</span>
                         </div>
                     </div>
 
                     {/* Active Stores Card */}
-                    <div className="bg-card p-4 sm:p-6 rounded-3xl shadow-sm border flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-emerald-50 dark:bg-emerald-900/20 rounded-full group-hover:scale-110 transition-transform"></div>
+                    <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 sm:p-6 rounded-3xl shadow-lg border-none flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all">
                         <div className="flex justify-between items-start z-10">
-                            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest">Active Stores</span>
-                            <div className="w-10 h-10 rounded-2xl bg-emerald-100 dark:bg-emerald-900/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shadow-inner">
+                            <span className="text-[10px] sm:text-xs font-bold text-emerald-100 uppercase tracking-widest">Active Stores</span>
+                            <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center shadow-inner backdrop-blur-md border border-white/10">
                                 <StoreIcon className="h-5 w-5 sm:h-6 sm:w-6" />
                             </div>
                         </div>
-                        <div className="z-10">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">{stats.activeStores}</span>
+                        <div className="z-10 text-white">
+                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{stats.activeStores}</span>
                         </div>
                     </div>
 
-                    {/* Resellers Card */}
-                    <div className="bg-card p-4 sm:p-6 rounded-3xl shadow-sm border flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-purple-50 dark:bg-purple-900/20 rounded-full group-hover:scale-110 transition-transform"></div>
+                    {/* Customers Card */}
+                    <div className="bg-gradient-to-br from-purple-600 to-purple-700 p-4 sm:p-6 rounded-3xl shadow-lg border-none flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all">
                         <div className="flex justify-between items-start z-10">
-                            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest">Resellers</span>
-                            <div className="w-10 h-10 rounded-2xl bg-purple-100 dark:bg-purple-900/40 text-purple-600 dark:text-purple-400 flex items-center justify-center shadow-inner">
+                            <span className="text-[10px] sm:text-xs font-bold text-purple-100 uppercase tracking-widest">Customers</span>
+                            <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center shadow-inner backdrop-blur-md border border-white/10">
                                 <Users className="h-5 w-5 sm:h-6 sm:w-6" />
                             </div>
                         </div>
-                        <div className="z-10">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">{stats.resellers}</span>
+                        <div className="z-10 text-white">
+                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{stats.customers}</span>
                         </div>
                     </div>
 
                     {/* Pending Card */}
-                    <div className="bg-card p-4 sm:p-6 rounded-3xl shadow-sm border flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-md transition-all">
-                        <div className="absolute -right-4 -top-4 w-24 h-24 bg-amber-50 dark:bg-amber-900/20 rounded-full group-hover:scale-110 transition-transform"></div>
+                    <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-4 sm:p-6 rounded-3xl shadow-lg border-none flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all">
                         <div className="flex justify-between items-start z-10">
-                            <span className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest">Pending</span>
-                            <div className="w-10 h-10 rounded-2xl bg-amber-100 dark:bg-amber-900/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-inner">
+                            <span className="text-[10px] sm:text-xs font-bold text-amber-50 uppercase tracking-widest">Pending</span>
+                            <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center shadow-inner backdrop-blur-md border border-white/10">
                                 <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
                             </div>
                         </div>
-                        <div className="z-10">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight">{stats.pending}</span>
+                        <div className="z-10 text-white">
+                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{stats.pending}</span>
                         </div>
                     </div>
                 </div>
@@ -153,7 +147,7 @@ export const Dashboard: React.FC = () => {
 
             {/* Quick Actions - Mobile & Tablet */}
             <section className="lg:hidden mb-12">
-                <div className="mb-5 flex items-center justify-between">
+                <div className="mb-6 flex items-center justify-between">
                     <h2 className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest">Quick Actions</h2>
                     <Button
                         variant="ghost"
@@ -228,7 +222,7 @@ export const Dashboard: React.FC = () => {
                                             </div>
                                         </div>
                                         <div className="text-right">
-                                            <p className="text-base sm:text-lg font-bold text-primary">{formatCurrency(order.orderResellerTotal)}</p>
+                                            <p className="text-base sm:text-lg font-bold text-primary">{formatCurrency(order.orderCustomerTotal)}</p>
                                             <span className={`inline-block px-3 py-1 rounded-full text-[10px] sm:text-xs font-bold mt-1.5 shadow-sm ${order.orderStatus === 'pending' ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-400' :
                                                 order.orderStatus === 'delivered' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-400' :
                                                     'bg-secondary text-secondary-foreground'

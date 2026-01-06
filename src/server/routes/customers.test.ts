@@ -1,12 +1,29 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import resellersApp from './resellers'
+
+// Mock middlewares before importing the app
+vi.mock('../middleware/auth', () => ({
+    requireAuth: vi.fn(async (c, next) => {
+        c.set('user', { id: 'test-user' });
+        return next();
+    })
+}))
+
+vi.mock('../middleware/organization', () => ({
+    requireOrganization: vi.fn(async (c, next) => {
+        c.set('organizationId', 'test-org');
+        return next();
+    })
+}))
+
+import ordersApp from './orders'
+import customersApp from './customers'
 
 // Mock the database module
 vi.mock('../db', () => ({
     createDb: vi.fn(() => mockDb),
-    resellers: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt' },
-    orders: { id: 'id', resellerId: 'resellerId', deletedAt: 'deletedAt', orderResellerTotal: 'orderResellerTotal', createdAt: 'createdAt' },
-    payments: { id: 'id', resellerId: 'resellerId', paymentStatus: 'paymentStatus', deletedAt: 'deletedAt', paymentAmount: 'paymentAmount' },
+    customers: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt' },
+    orders: { id: 'id', customerId: 'customerId', deletedAt: 'deletedAt', orderCustomerTotal: 'orderCustomerTotal', createdAt: 'createdAt' },
+    payments: { id: 'id', customerId: 'customerId', paymentStatus: 'paymentStatus', deletedAt: 'deletedAt', paymentAmount: 'paymentAmount' },
 }))
 
 // Mock database instance
@@ -22,7 +39,7 @@ const mockDb = {
     returning: vi.fn().mockResolvedValue([]),
 }
 
-describe('Resellers API', () => {
+describe('Customers API', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         mockDb.select.mockReturnThis()
@@ -37,59 +54,59 @@ describe('Resellers API', () => {
     })
 
     describe('Route definitions', () => {
-        it('should have the resellers app defined', () => {
-            expect(resellersApp).toBeDefined()
+        it('should have the customers app defined', () => {
+            expect(customersApp).toBeDefined()
         })
 
         it('should have routes defined', () => {
-            expect(resellersApp.routes).toBeDefined()
-            expect(resellersApp.routes.length).toBeGreaterThan(0)
+            expect(customersApp.routes).toBeDefined()
+            expect(customersApp.routes.length).toBeGreaterThan(0)
         })
 
-        it('should have GET / route for listing resellers', () => {
-            const getRoute = resellersApp.routes.find(
+        it('should have GET / route for listing customers', () => {
+            const getRoute = customersApp.routes.find(
                 (r) => r.method === 'GET' && r.path === '/'
             )
             expect(getRoute).toBeDefined()
         })
 
-        it('should have GET /:id route for single reseller', () => {
-            const getByIdRoute = resellersApp.routes.find(
+        it('should have GET /:id route for single customer', () => {
+            const getByIdRoute = customersApp.routes.find(
                 (r) => r.method === 'GET' && r.path === '/:id'
             )
             expect(getByIdRoute).toBeDefined()
         })
 
-        it('should have GET /:id/orders route for reseller orders', () => {
-            const ordersRoute = resellersApp.routes.find(
+        it('should have GET /:id/orders route for customer orders', () => {
+            const ordersRoute = customersApp.routes.find(
                 (r) => r.method === 'GET' && r.path === '/:id/orders'
             )
             expect(ordersRoute).toBeDefined()
         })
 
-        it('should have GET /:id/balance route for reseller balance', () => {
-            const balanceRoute = resellersApp.routes.find(
+        it('should have GET /:id/balance route for customer balance', () => {
+            const balanceRoute = customersApp.routes.find(
                 (r) => r.method === 'GET' && r.path === '/:id/balance'
             )
             expect(balanceRoute).toBeDefined()
         })
 
-        it('should have POST / route for creating reseller', () => {
-            const postRoute = resellersApp.routes.find(
+        it('should have POST / route for creating customer', () => {
+            const postRoute = customersApp.routes.find(
                 (r) => r.method === 'POST' && r.path === '/'
             )
             expect(postRoute).toBeDefined()
         })
 
-        it('should have PUT /:id route for updating reseller', () => {
-            const putRoute = resellersApp.routes.find(
+        it('should have PUT /:id route for updating customer', () => {
+            const putRoute = customersApp.routes.find(
                 (r) => r.method === 'PUT' && r.path === '/:id'
             )
             expect(putRoute).toBeDefined()
         })
 
         it('should have DELETE /:id route for soft delete', () => {
-            const deleteRoute = resellersApp.routes.find(
+            const deleteRoute = customersApp.routes.find(
                 (r) => r.method === 'DELETE' && r.path === '/:id'
             )
             expect(deleteRoute).toBeDefined()
@@ -97,22 +114,22 @@ describe('Resellers API', () => {
     })
 
     describe('Validation schemas', () => {
-        it('should require resellerName for POST request', async () => {
+        it('should require customerName for POST request', async () => {
             const req = new Request('http://localhost/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({}),
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
 
-        it('should accept valid reseller data', async () => {
+        it('should accept valid customer data', async () => {
             mockDb.returning.mockResolvedValueOnce([{
                 id: 1,
-                resellerName: 'John Doe',
-                resellerStatus: 'active',
+                customerName: 'John Doe',
+                customerStatus: 'active',
                 createdAt: new Date().toISOString(),
             }])
 
@@ -120,11 +137,11 @@ describe('Resellers API', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    resellerName: 'John Doe',
+                    customerName: 'John Doe',
                 }),
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(201)
 
             const data = await res.json()
@@ -134,40 +151,40 @@ describe('Resellers API', () => {
         it('should accept valid email format', async () => {
             mockDb.returning.mockResolvedValueOnce([{
                 id: 1,
-                resellerName: 'Jane Doe',
-                resellerEmail: 'jane@example.com',
+                customerName: 'Jane Doe',
+                customerEmail: 'jane@example.com',
             }])
 
             const req = new Request('http://localhost/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    resellerName: 'Jane Doe',
-                    resellerEmail: 'jane@example.com',
+                    customerName: 'Jane Doe',
+                    customerEmail: 'jane@example.com',
                 }),
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(201)
         })
 
         it('should accept empty email string', async () => {
             mockDb.returning.mockResolvedValueOnce([{
                 id: 1,
-                resellerName: 'Jane Doe',
-                resellerEmail: '',
+                customerName: 'Jane Doe',
+                customerEmail: '',
             }])
 
             const req = new Request('http://localhost/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    resellerName: 'Jane Doe',
-                    resellerEmail: '',
+                    customerName: 'Jane Doe',
+                    customerEmail: '',
                 }),
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(201)
         })
 
@@ -176,48 +193,48 @@ describe('Resellers API', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    resellerName: 'Jane Doe',
-                    resellerEmail: 'invalid-email',
+                    customerName: 'Jane Doe',
+                    customerEmail: 'invalid-email',
                 }),
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
     })
 
-    describe('Reseller orders', () => {
-        it('should return reseller orders', async () => {
+    describe('Customer orders', () => {
+        it('should return customer orders', async () => {
             mockDb.orderBy.mockResolvedValueOnce([
-                { id: 1, orderName: 'Order 1', resellerId: 1 },
-                { id: 2, orderName: 'Order 2', resellerId: 1 },
+                { id: 1, orderName: 'Order 1', customerId: 1 },
+                { id: 2, orderName: 'Order 2', customerId: 1 },
             ])
 
             const req = new Request('http://localhost/1/orders', {
                 method: 'GET',
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(200)
 
             const data = await res.json()
             expect(data.success).toBe(true)
         })
 
-        it('should return 400 for invalid reseller ID on orders', async () => {
+        it('should return 400 for invalid customer ID on orders', async () => {
             const req = new Request('http://localhost/invalid/orders', {
                 method: 'GET',
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
-            expect(data.error).toBe('Invalid reseller ID')
+            expect(data.error).toBe('Invalid customer ID')
         })
     })
 
-    describe('Reseller balance', () => {
+    describe('Customer balance', () => {
         it('should calculate balance correctly', async () => {
             // Mock orders total
             mockDb.where.mockResolvedValueOnce([{ total: 5000 }])
@@ -228,7 +245,7 @@ describe('Resellers API', () => {
                 method: 'GET',
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(200)
 
             const data = await res.json()
@@ -238,46 +255,46 @@ describe('Resellers API', () => {
             expect(data.data).toHaveProperty('balance')
         })
 
-        it('should return 400 for invalid reseller ID on balance', async () => {
+        it('should return 400 for invalid customer ID on balance', async () => {
             const req = new Request('http://localhost/invalid/balance', {
                 method: 'GET',
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
-            expect(data.error).toBe('Invalid reseller ID')
+            expect(data.error).toBe('Invalid customer ID')
         })
     })
 
     describe('Error handling', () => {
-        it('should return 400 for invalid reseller ID on GET /:id', async () => {
+        it('should return 400 for invalid customer ID on GET /:id', async () => {
             const req = new Request('http://localhost/invalid', {
                 method: 'GET',
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
             expect(data.success).toBe(false)
-            expect(data.error).toBe('Invalid reseller ID')
+            expect(data.error).toBe('Invalid customer ID')
         })
 
-        it('should return 404 for non-existent reseller', async () => {
+        it('should return 404 for non-existent customer', async () => {
             mockDb.where.mockResolvedValueOnce([])
 
             const req = new Request('http://localhost/999', {
                 method: 'GET',
             })
 
-            const res = await resellersApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await customersApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(404)
 
             const data = await res.json()
             expect(data.success).toBe(false)
-            expect(data.error).toBe('Reseller not found')
+            expect(data.error).toBe('Customer not found')
         })
     })
 })

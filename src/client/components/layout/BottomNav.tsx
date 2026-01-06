@@ -101,7 +101,7 @@ export const BottomNav: React.FC = () => {
                                 Quick Links
                             </p>
                             <NavLink
-                                to="/resellers"
+                                to="/customers"
                                 onClick={() => setIsMoreOpen(false)}
                                 className={({ isActive }) =>
                                     cn(
@@ -113,7 +113,7 @@ export const BottomNav: React.FC = () => {
                                 }
                             >
                                 <Users className="h-5 w-5" />
-                                <span className="font-medium">Resellers</span>
+                                <span className="font-medium">Customers</span>
                             </NavLink>
                         </div>
 

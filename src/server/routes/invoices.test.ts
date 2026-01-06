@@ -1,10 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+// Mock middlewares before importing the app
+vi.mock('../middleware/auth', () => ({
+    requireAuth: vi.fn(async (c, next) => {
+        c.set('user', { id: 'test-user' });
+        return next();
+    })
+}))
+
+vi.mock('../middleware/organization', () => ({
+    requireOrganization: vi.fn(async (c, next) => {
+        c.set('organizationId', 'test-org');
+        return next();
+    })
+}))
+
 import invoicesApp from './invoices'
 
 // Mock the database module
 vi.mock('../db', () => ({
     createDb: vi.fn(() => mockDb),
-    invoices: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt', resellerId: 'resellerId' },
+    invoices: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt', customerId: 'customerId' },
 }))
 
 // Mock database instance
@@ -95,14 +111,14 @@ describe('Invoices API', () => {
     })
 
     describe('Validation schemas', () => {
-        it('should require resellerId for POST request', async () => {
+        it('should require customerId for POST request', async () => {
             const req = new Request('http://localhost/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({}),
             })
 
-            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
 
@@ -113,7 +129,7 @@ describe('Invoices API', () => {
                 invoiceTotal: 1000,
                 invoicePaid: 0,
                 invoiceStatus: 'draft',
-                resellerId: 1,
+                customerId: 1,
                 createdAt: new Date().toISOString(),
             }])
 
@@ -121,12 +137,12 @@ describe('Invoices API', () => {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    resellerId: 1,
+                    customerId: 1,
                     invoiceTotal: 1000,
                 }),
             })
 
-            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(201)
 
             const data = await res.json()
@@ -147,7 +163,7 @@ describe('Invoices API', () => {
                     body: JSON.stringify({ status }),
                 })
 
-                const res = await invoicesApp.fetch(req, { DB: {} } as unknown as Env)
+                const res = await invoicesApp.fetch(req, { DB: {} } as unknown as any)
                 expect(res.status).toBe(200)
             }
         })
@@ -159,7 +175,7 @@ describe('Invoices API', () => {
                 body: JSON.stringify({ status: 'invalid_status' }),
             })
 
-            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
     })
@@ -170,7 +186,7 @@ describe('Invoices API', () => {
                 method: 'GET',
             })
 
-            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(501)
 
             const data = await res.json()
@@ -185,7 +201,7 @@ describe('Invoices API', () => {
                 method: 'GET',
             })
 
-            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
@@ -200,7 +216,7 @@ describe('Invoices API', () => {
                 method: 'GET',
             })
 
-            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await invoicesApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(404)
 
             const data = await res.json()

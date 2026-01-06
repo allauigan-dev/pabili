@@ -81,7 +81,7 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({ invoice, onDelete }) =
                             <div className="flex items-center text-xs text-muted-foreground mt-1 space-x-3">
                                 <span className="flex items-center truncate">
                                     <User className="h-3.5 w-3.5 mr-1 opacity-70" />
-                                    {invoice.resellerName}
+                                    {invoice.customerName}
                                 </span>
                                 <span className="flex items-center">
                                     <Calendar className="h-3.5 w-3.5 mr-1 opacity-70" />

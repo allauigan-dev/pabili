@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Search,
     RefreshCcw,
     Receipt,
     Plus,
@@ -21,6 +20,8 @@ import { InvoiceCard } from './InvoiceCard';
 import { Button } from '@/components/ui/button';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 import { EmptyState } from '@/components/index';
+import { HeaderContent } from '@/components/layout/HeaderProvider';
+import { FilterPills } from '@/components/ui/FilterPills';
 
 export const InvoicesPage: React.FC = () => {
     const navigate = useNavigate();
@@ -43,71 +44,45 @@ export const InvoicesPage: React.FC = () => {
     };
 
     const filteredInvoices = invoices?.filter(i => {
-        const resellerName = i.resellerName || '';
+        const customerName = i.customerName || '';
         const matchesSearch = i.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            resellerName.toLowerCase().includes(searchQuery.toLowerCase());
+            customerName.toLowerCase().includes(searchQuery.toLowerCase());
         const matchesStatus = statusFilter === 'all' ? true : i.invoiceStatus === statusFilter;
         return matchesSearch && matchesStatus;
     });
 
     const statusList = ['all', 'draft', 'pending', 'sent', 'paid', 'overdue', 'cancelled'];
 
+    const filterOptions = statusList.map(f => ({
+        label: f,
+        value: f,
+        count: invoices?.filter(i => f === 'all' ? true : i.invoiceStatus === f).length || 0
+    }));
+
     return (
-        <div className="relative pb-24 min-h-screen px-4">
-            {/* Sticky Header */}
-            <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm -mx-4 px-4 pt-4 pb-2 transition-all">
-                <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-2xl font-bold text-foreground tracking-tight">Invoices</h1>
-                    <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
-                            <RefreshCcw className="h-5 w-5 text-muted-foreground" />
-                        </Button>
-                    </div>
-                </div>
-
-                {/* Search Bar */}
-                <div className="relative mb-4">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                        <Search className="h-5 w-5 text-muted-foreground" />
-                    </div>
-                    <input
-                        className="block w-full pl-10 pr-3 h-12 border-none rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm ring-1 ring-border focus:outline-none focus:ring-2 focus:ring-primary sm:text-sm transition-shadow text-foreground placeholder:text-muted-foreground"
-                        placeholder="Search invoices, resellers..."
-                        type="text"
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
+        <div className="relative pb-24">
+            <HeaderContent
+                title="Invoices"
+                showSearch={true}
+                searchPlaceholder="Search invoices, customers..."
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                actions={
+                    <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
+                        <RefreshCcw className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                }
+                filterContent={
+                    <FilterPills
+                        options={filterOptions}
+                        activeValue={statusFilter}
+                        onChange={setStatusFilter}
                     />
-                </div>
-
-                {/* Filter Tabs */}
-                <div className="flex space-x-3 overflow-x-auto no-scrollbar pb-2 mask-linear">
-                    {statusList.map((f) => {
-                        const count = invoices?.filter(i => f === 'all' ? true : i.invoiceStatus === f).length || 0;
-                        const isActive = statusFilter === f;
-
-                        return (
-                            <button
-                                key={f}
-                                onClick={() => setStatusFilter(f)}
-                                className={`flex-shrink-0 px-4 py-2 rounded-full text-sm font-medium transition-all flex items-center gap-2 ${isActive
-                                    ? 'bg-primary text-primary-foreground shadow-md shadow-primary/20'
-                                    : 'bg-surface-light dark:bg-surface-dark text-muted-foreground border border-border hover:bg-secondary'
-                                    }`}
-                            >
-                                <span className="capitalize">{f}</span>
-                                {isActive && (
-                                    <span className="bg-white/20 text-current text-[10px] px-1.5 py-0.5 rounded-full">
-                                        {count}
-                                    </span>
-                                )}
-                            </button>
-                        );
-                    })}
-                </div>
-            </header>
+                }
+            />
 
             {/* Main Content */}
-            <main className="space-y-4 pt-2">
+            <main className="space-y-4 pt-14">
                 {loading ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (

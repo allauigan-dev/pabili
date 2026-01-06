@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    ArrowLeft,
     Save,
     User,
     Mail,
@@ -10,7 +9,7 @@ import {
     AlertCircle,
     UserPlus
 } from 'lucide-react';
-import { useReseller, useResellerMutations } from '@/hooks/useResellers';
+import { useCustomer, useCustomerMutations } from '@/hooks/useCustomers';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -23,33 +22,34 @@ import {
     CardFooter
 } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import type { CreateResellerDto } from '@/lib/types';
+import type { CreateCustomerDto } from '@/lib/types';
+import { HeaderContent } from '@/components/layout/HeaderProvider';
 
-export const ResellerForm: React.FC = () => {
+export const CustomerForm: React.FC = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const isEdit = !!id;
 
-    const { data: reseller, loading: loadingReseller } = useReseller(Number(id));
-    const { createAction, updateAction, loading: mutationLoading, error } = useResellerMutations();
+    const { data: customer, loading: loadingCustomer } = useCustomer(Number(id));
+    const { createAction, updateAction, loading: mutationLoading, error } = useCustomerMutations();
 
-    const [formData, setFormData] = useState<CreateResellerDto>({
-        resellerName: '',
-        resellerEmail: '',
-        resellerPhone: '',
+    const [formData, setFormData] = useState<CreateCustomerDto>({
+        customerName: '',
+        customerEmail: '',
+        customerPhone: '',
     });
 
     const [localError, setLocalError] = useState<string | null>(null);
 
     useEffect(() => {
-        if (isEdit && reseller) {
+        if (isEdit && customer) {
             setFormData({
-                resellerName: reseller.resellerName,
-                resellerEmail: reseller.resellerEmail,
-                resellerPhone: reseller.resellerPhone,
+                customerName: customer.customerName,
+                customerEmail: customer.customerEmail,
+                customerPhone: customer.customerPhone,
             });
         }
-    }, [isEdit, reseller]);
+    }, [isEdit, customer]);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const { name, value } = e.target;
@@ -68,46 +68,33 @@ export const ResellerForm: React.FC = () => {
         }
 
         if (result) {
-            navigate('/resellers');
+            navigate('/customers');
         } else {
             // Error is handled by the hook and will be returned via the 'error' prop
         }
     };
 
-    if (isEdit && loadingReseller) {
+    if (isEdit && loadingCustomer) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-muted-foreground animate-pulse">Loading reseller data...</p>
+                <p className="text-muted-foreground animate-pulse">Loading customer data...</p>
             </div>
         );
     }
 
     return (
         <div className="bg-background text-foreground font-sans min-h-screen pb-24">
-            {/* Header */}
-            <header className="sticky top-0 w-full z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 transition-all">
-                <div className="max-w-5xl mx-auto h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => navigate('/resellers')}
-                            className="text-muted-foreground hover:text-primary transition-all flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-secondary/80 active:scale-95 group"
-                            type="button"
-                        >
-                            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                            <span className="text-sm font-bold">Back to Resellers</span>
-                        </button>
-                    </div>
-                </div>
-            </header>
+            {/* Clear header content from previous page */}
+            <HeaderContent title={isEdit ? 'Edit Customer' : 'New Customer'} />
 
-            <main className="max-w-md md:max-w-2xl mx-auto px-4 pt-8 md:pt-12">
+            <main className="max-w-md md:max-w-2xl mx-auto px-4 pt-4 md:pt-6">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-foreground tracking-tight mb-2 uppercase">
-                        {isEdit ? 'Update Profile' : 'Enroll Partner'}
+                        {isEdit ? 'Update Profile' : 'Enroll Customer'}
                     </h2>
                     <p className="text-muted-foreground text-sm font-medium">
-                        {isEdit ? 'Update profile information for this business partner.' : 'Onboard a new reseller to your pasabuy network.'}
+                        {isEdit ? 'Update profile information for this customer.' : 'Onboard a new customer to your pasabuy network.'}
                     </p>
                 </div>
 
@@ -127,7 +114,7 @@ export const ResellerForm: React.FC = () => {
                                     <UserPlus className="h-6 w-6" />
                                 </div>
                                 <div>
-                                    <CardTitle>Partner Profile</CardTitle>
+                                    <CardTitle>Customer Profile</CardTitle>
                                     <CardDescription>Contact information for communication and billing.</CardDescription>
                                 </div>
                             </div>
@@ -135,15 +122,15 @@ export const ResellerForm: React.FC = () => {
                         <CardContent className="p-8 space-y-6">
                             <div className="grid grid-cols-1 gap-6">
                                 <div className="space-y-2">
-                                    <Label htmlFor="resellerName">Full Name / Business Name</Label>
+                                    <Label htmlFor="customerName">Full Name / Business Name</Label>
                                     <div className="relative">
                                         <User className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                         <Input
-                                            id="resellerName"
-                                            name="resellerName"
+                                            id="customerName"
+                                            name="customerName"
                                             className="pl-10"
                                             placeholder="e.g. Maria Clara, Zen Shippers"
-                                            value={formData.resellerName}
+                                            value={formData.customerName}
                                             onChange={handleChange}
                                             required
                                         />
@@ -152,16 +139,16 @@ export const ResellerForm: React.FC = () => {
 
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
-                                        <Label htmlFor="resellerEmail">Email Address</Label>
+                                        <Label htmlFor="customerEmail">Email Address</Label>
                                         <div className="relative">
                                             <Mail className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                             <Input
-                                                id="resellerEmail"
-                                                name="resellerEmail"
+                                                id="customerEmail"
+                                                name="customerEmail"
                                                 type="email"
                                                 className="pl-10"
-                                                placeholder="partner@example.com"
-                                                value={formData.resellerEmail || ''}
+                                                placeholder="customer@example.com"
+                                                value={formData.customerEmail || ''}
                                                 onChange={handleChange}
                                                 required
                                             />
@@ -169,15 +156,15 @@ export const ResellerForm: React.FC = () => {
                                     </div>
 
                                     <div className="space-y-2">
-                                        <Label htmlFor="resellerPhone">Phone Number</Label>
+                                        <Label htmlFor="customerPhone">Phone Number</Label>
                                         <div className="relative">
                                             <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
                                             <Input
-                                                id="resellerPhone"
-                                                name="resellerPhone"
+                                                id="customerPhone"
+                                                name="customerPhone"
                                                 className="pl-10"
                                                 placeholder="+63 912 345 6789"
-                                                value={formData.resellerPhone || ''}
+                                                value={formData.customerPhone || ''}
                                                 onChange={handleChange}
                                                 required
                                             />
@@ -200,7 +187,7 @@ export const ResellerForm: React.FC = () => {
                                 ) : (
                                     <>
                                         <Save className="mr-2 h-4 w-4" />
-                                        {isEdit ? 'Update Profile' : 'Enroll Partner'}
+                                        {isEdit ? 'Update Profile' : 'Enroll Customer'}
                                     </>
                                 )}
                             </Button>
@@ -208,7 +195,7 @@ export const ResellerForm: React.FC = () => {
                                 type="button"
                                 variant="ghost"
                                 className="w-full sm:w-auto h-11"
-                                onClick={() => navigate('/resellers')}
+                                onClick={() => navigate('/customers')}
                                 disabled={mutationLoading}
                             >
                                 Cancel

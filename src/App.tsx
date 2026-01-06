@@ -5,8 +5,8 @@ import { OrdersPage } from './client/pages/orders/OrdersPage';
 import { OrderForm } from './client/pages/orders/OrderForm';
 import { StoresPage } from './client/pages/stores/StoresPage';
 import { StoreForm } from './client/pages/stores/StoreForm';
-import { ResellersPage } from './client/pages/resellers/ResellersPage';
-import { ResellerForm } from './client/pages/resellers/ResellerForm';
+import { CustomersPage } from './client/pages/customers/CustomersPage';
+import { CustomerForm } from './client/pages/customers/CustomerForm';
 import { PaymentsPage } from './client/pages/payments/PaymentsPage';
 import { PaymentForm } from './client/pages/payments/PaymentForm';
 import { InvoicesPage } from './client/pages/invoices/InvoicesPage';
@@ -37,9 +37,9 @@ function App() {
               <Route path="/stores" element={<StoresPage />} />
               <Route path="/stores/new" element={<StoreForm />} />
               <Route path="/stores/:id/edit" element={<StoreForm />} />
-              <Route path="/resellers" element={<ResellersPage />} />
-              <Route path="/resellers/new" element={<ResellerForm />} />
-              <Route path="/resellers/:id/edit" element={<ResellerForm />} />
+              <Route path="/customers" element={<CustomersPage />} />
+              <Route path="/customers/new" element={<CustomerForm />} />
+              <Route path="/customers/:id/edit" element={<CustomerForm />} />
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/payments/new" element={<PaymentForm />} />
               <Route path="/invoices" element={<InvoicesPage />} />

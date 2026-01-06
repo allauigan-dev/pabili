@@ -143,7 +143,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
                             <div className="flex flex-col mt-1">
                                 <span className="flex items-center text-xs text-muted-foreground truncate">
                                     <User className="h-3.5 w-3.5 mr-1 opacity-70" />
-                                    {order.resellerName}
+                                    {order.customerName}
                                 </span>
                                 <span className="flex items-center text-[10px] text-muted-foreground/80 mt-0.5 truncate uppercase tracking-wider font-medium">
                                     <Store className="h-3 w-3 mr-1 opacity-70" />
@@ -155,7 +155,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
                         {/* Right Side: Price and Actions */}
                         <div className="flex flex-col items-end">
                             <p className="text-primary font-bold text-base whitespace-nowrap">
-                                {formatCurrency(order.orderResellerTotal ?? 0)}
+                                {formatCurrency(order.orderCustomerTotal ?? 0)}
                             </p>
 
                             <div className="flex items-center mt-2 space-x-0.5">

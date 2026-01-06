@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Search,
     RefreshCcw,
     Plus,
 } from 'lucide-react';
@@ -18,16 +17,17 @@ import {
 import { useStores, useStoreMutations } from '@/hooks/useStores';
 import { StoreCard } from './StoreCard';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 import { EmptyState } from '@/components/index';
-// Skeleton is replaced by custom div pulse
+import { HeaderContent } from '@/components/layout/HeaderProvider';
+import { FilterPills } from '@/components/ui/FilterPills';
 
 export const StoresPage: React.FC = () => {
     const navigate = useNavigate();
     const { data: stores, loading, error, refetch } = useStores();
     const { deleteAction } = useStoreMutations();
     const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
     const [deleteId, setDeleteId] = useState<number | null>(null);
 
     const handleDeleteClick = (id: number) => {
@@ -42,39 +42,44 @@ export const StoresPage: React.FC = () => {
         }
     };
 
-    const filteredStores = stores?.filter(s =>
-        s.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        s.storeAddress?.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    const filteredStores = stores?.filter(s => {
+        const matchesSearch = s.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            s.storeAddress?.toLowerCase().includes(searchQuery.toLowerCase());
+        const matchesStatus = statusFilter === 'all' ? true : s.storeStatus === statusFilter;
+        return matchesSearch && matchesStatus;
+    });
+
+    const statusList = ['all', 'active', 'inactive'];
+
+    const filterOptions = statusList.map(f => ({
+        label: f,
+        value: f,
+        count: stores?.filter(s => f === 'all' ? true : s.storeStatus === f).length || 0
+    }));
 
     return (
-        <div className="relative pb-24 min-h-screen px-4">
-            <header className="sticky top-0 z-30 bg-background/95 backdrop-blur-sm -mx-4 px-4 pt-4 pb-2 transition-all">
-                <div className="flex items-center justify-between mb-4">
-                    <h1 className="text-2xl font-bold text-foreground tracking-tight">Stores</h1>
-                    <div className="flex gap-2">
-                        <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
-                            <RefreshCcw className="h-5 w-5 text-muted-foreground" />
-                        </Button>
-                    </div>
-                </div>
+        <div className="relative pb-24">
+            <HeaderContent
+                title="Stores"
+                showSearch={true}
+                searchPlaceholder="Search stores..."
+                searchQuery={searchQuery}
+                onSearchChange={setSearchQuery}
+                actions={
+                    <Button variant="ghost" size="icon" onClick={refetch} className="rounded-full hover:bg-secondary">
+                        <RefreshCcw className="h-5 w-5 text-muted-foreground" />
+                    </Button>
+                }
+                filterContent={
+                    <FilterPills
+                        options={filterOptions}
+                        activeValue={statusFilter}
+                        onChange={setStatusFilter}
+                    />
+                }
+            />
 
-                <div className="relative mb-2">
-                    <div className="relative">
-                        <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <Search className="h-5 w-5 text-muted-foreground" />
-                        </div>
-                        <Input
-                            placeholder="Search stores..."
-                            className="block w-full pl-10 pr-3 h-12 border-none rounded-xl bg-surface-light dark:bg-surface-dark shadow-sm ring-1 ring-border focus:outline-none focus:ring-2 focus:ring-primary sm:text-sm transition-shadow text-foreground placeholder:text-muted-foreground"
-                            value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
-                        />
-                    </div>
-                </div>
-            </header>
-
-            <main className="space-y-4 pt-2">
+            <main className="space-y-4 pt-14">
                 {loading ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (

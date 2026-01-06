@@ -6,7 +6,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, desc, and, isNull } from 'drizzle-orm';
-import { createDb, orders, stores, resellers } from '../db';
+import { createDb, orders, stores, customers } from '../db';
 
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
@@ -28,9 +28,9 @@ const createOrderSchema = z.object({
     orderImages: z.array(z.string()).optional(),
     orderPrice: z.number().positive('Price must be positive'),
     orderFee: z.number().nonnegative().default(0),
-    orderResellerPrice: z.number().positive('Reseller price must be positive'),
+    orderCustomerPrice: z.number().positive('Customer price must be positive'),
     storeId: z.number().int().positive(),
-    resellerId: z.number().int().positive(),
+    customerId: z.number().int().positive(),
     invoiceId: z.number().int().positive().optional(),
 });
 
@@ -66,23 +66,23 @@ app.get('/', async (c) => {
                 orderImages: orders.orderImages,
                 orderPrice: orders.orderPrice,
                 orderFee: orders.orderFee,
-                orderResellerPrice: orders.orderResellerPrice,
+                orderCustomerPrice: orders.orderCustomerPrice,
                 orderTotal: orders.orderTotal,
-                orderResellerTotal: orders.orderResellerTotal,
+                orderCustomerTotal: orders.orderCustomerTotal,
                 orderStatus: orders.orderStatus,
                 orderDate: orders.orderDate,
                 storeId: orders.storeId,
-                resellerId: orders.resellerId,
+                customerId: orders.customerId,
                 invoiceId: orders.invoiceId,
                 createdAt: orders.createdAt,
                 updatedAt: orders.updatedAt,
                 deletedAt: orders.deletedAt,
                 storeName: stores.storeName,
-                resellerName: resellers.resellerName,
+                customerName: customers.customerName,
             })
             .from(orders)
             .leftJoin(stores, eq(orders.storeId, stores.id))
-            .leftJoin(resellers, eq(orders.resellerId, resellers.id))
+            .leftJoin(customers, eq(orders.customerId, customers.id))
             .where(and(
                 eq(orders.organizationId, organizationId),
                 isNull(orders.deletedAt)
@@ -124,23 +124,23 @@ app.get('/:id', async (c) => {
                 orderImages: orders.orderImages,
                 orderPrice: orders.orderPrice,
                 orderFee: orders.orderFee,
-                orderResellerPrice: orders.orderResellerPrice,
+                orderCustomerPrice: orders.orderCustomerPrice,
                 orderTotal: orders.orderTotal,
-                orderResellerTotal: orders.orderResellerTotal,
+                orderCustomerTotal: orders.orderCustomerTotal,
                 orderStatus: orders.orderStatus,
                 orderDate: orders.orderDate,
                 storeId: orders.storeId,
-                resellerId: orders.resellerId,
+                customerId: orders.customerId,
                 invoiceId: orders.invoiceId,
                 createdAt: orders.createdAt,
                 updatedAt: orders.updatedAt,
                 deletedAt: orders.deletedAt,
                 storeName: stores.storeName,
-                resellerName: resellers.resellerName,
+                customerName: customers.customerName,
             })
             .from(orders)
             .leftJoin(stores, eq(orders.storeId, stores.id))
-            .leftJoin(resellers, eq(orders.resellerId, resellers.id))
+            .leftJoin(customers, eq(orders.customerId, customers.id))
             .where(and(
                 eq(orders.id, id),
                 eq(orders.organizationId, organizationId),
@@ -172,7 +172,7 @@ app.post('/', zValidator('json', createOrderSchema), async (c) => {
     try {
         // Calculate totals
         const orderTotal = data.orderQuantity * (data.orderPrice + data.orderFee);
-        const orderResellerTotal = data.orderQuantity * data.orderResellerPrice;
+        const orderCustomerTotal = data.orderQuantity * data.orderCustomerPrice;
 
         const [newOrder] = await db
             .insert(orders)
@@ -182,7 +182,7 @@ app.post('/', zValidator('json', createOrderSchema), async (c) => {
                 organizationId,
                 orderNumber: generateOrderNumber(),
                 orderTotal,
-                orderResellerTotal,
+                orderCustomerTotal,
             })
             .returning();
 
@@ -213,7 +213,7 @@ app.put('/:id', zValidator('json', updateOrderSchema), async (c) => {
         // Recalculate totals if relevant fields changed
         const updateData: Record<string, unknown> = { ...data, updatedAt: new Date().toISOString() };
 
-        if (data.orderQuantity !== undefined || data.orderPrice !== undefined || data.orderFee !== undefined) {
+        if (data.orderQuantity !== undefined || data.orderPrice !== undefined || data.orderFee !== undefined || data.orderCustomerPrice !== undefined) {
             // Need to fetch current values to recalculate
             const [current] = await db
                 .select()
@@ -227,10 +227,10 @@ app.put('/:id', zValidator('json', updateOrderSchema), async (c) => {
                 const qty = data.orderQuantity ?? current.orderQuantity;
                 const price = data.orderPrice ?? current.orderPrice;
                 const fee = data.orderFee ?? current.orderFee;
-                const resellerPrice = data.orderResellerPrice ?? current.orderResellerPrice;
+                const customerPrice = data.orderCustomerPrice ?? current.orderCustomerPrice;
 
                 updateData.orderTotal = qty * (price + fee);
-                updateData.orderResellerTotal = qty * resellerPrice;
+                updateData.orderCustomerTotal = qty * customerPrice;
             }
         }
 
@@ -329,3 +329,4 @@ app.delete('/:id', async (c) => {
 });
 
 export default app;
+

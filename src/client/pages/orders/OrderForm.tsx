@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    ArrowLeft,
     Image as ImageIcon,
     Upload,
     Package as PackageIcon,
@@ -13,11 +12,12 @@ import {
 } from 'lucide-react';
 import { useOrder, useOrderMutations } from '@/hooks/useOrders';
 import { useStores } from '@/hooks/useStores';
-import { useResellers } from '@/hooks/useResellers';
+import { useCustomers } from '@/hooks/useCustomers';
 import { uploadApi } from '@/lib/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Combobox } from '@/components/ui/combobox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { HeaderContent } from '@/components/layout/HeaderProvider';
 import type { CreateOrderDto, OrderStatus } from '@/lib/types';
 
 const MAX_IMAGES = 5;
@@ -29,7 +29,7 @@ export const OrderForm: React.FC = () => {
     const isEdit = !!id;
 
     const { data: stores } = useStores();
-    const { data: resellers } = useResellers();
+    const { data: customers } = useCustomers();
     const { data: order, loading: loadingOrder } = useOrder(Number(id));
     const { createAction, updateAction, loading: mutationLoading, error } = useOrderMutations();
 
@@ -40,11 +40,11 @@ export const OrderForm: React.FC = () => {
         orderQuantity: 1,
         orderPrice: 0,
         orderFee: 0,
-        orderResellerPrice: 0,
+        orderCustomerPrice: 0,
         orderImage: '',
         orderImages: [],
         storeId: 0,
-        resellerId: 0,
+        customerId: 0,
     });
 
     const [uploading, setUploading] = useState(false);
@@ -59,11 +59,11 @@ export const OrderForm: React.FC = () => {
                 orderQuantity: order.orderQuantity,
                 orderPrice: order.orderPrice,
                 orderFee: order.orderFee,
-                orderResellerPrice: order.orderResellerPrice,
+                orderCustomerPrice: order.orderCustomerPrice,
                 orderImage: order.orderImage || '',
                 orderImages: order.orderImages || [],
                 storeId: order.storeId,
-                resellerId: order.resellerId,
+                customerId: order.customerId,
             });
         }
     }, [isEdit, order]);
@@ -139,8 +139,8 @@ export const OrderForm: React.FC = () => {
         if (e) e.preventDefault();
         setLocalError(null);
 
-        if (!formData.storeId || !formData.resellerId) {
-            setLocalError('Please select both a store and a reseller');
+        if (!formData.storeId || !formData.customerId) {
+            setLocalError('Please select both a store and a customer');
             return;
         }
 
@@ -167,24 +167,10 @@ export const OrderForm: React.FC = () => {
 
     return (
         <div className="bg-background text-foreground font-sans min-h-screen pb-24">
-            {/* Header */}
-            <header className="sticky top-0 w-full z-40 bg-background/80 backdrop-blur-xl border-b border-border/50 px-4 transition-all">
-                <div className="max-w-5xl mx-auto h-16 flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <button
-                            onClick={() => navigate('/orders')}
-                            className="text-muted-foreground hover:text-primary transition-all flex items-center gap-2 px-3 py-2 rounded-xl hover:bg-secondary/80 active:scale-95 group"
-                            type="button"
-                        >
-                            <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-                            <span className="text-sm font-bold">Back to Orders</span>
-                        </button>
-                    </div>
+            {/* Clear header content from previous page */}
+            <HeaderContent title={isEdit ? 'Edit Order' : 'New Order'} />
 
-                </div>
-            </header>
-
-            <main className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto px-4 pt-8 md:pt-12">
+            <main className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto px-4 pt-4 md:pt-6">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-foreground tracking-tight mb-2 uppercase">
                         {isEdit ? 'Update Details' : 'Create Order'}
@@ -336,14 +322,14 @@ export const OrderForm: React.FC = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <label htmlFor="resellerId" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Reseller</label>
+                                    <label htmlFor="customerId" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Customer</label>
                                     <Combobox
-                                        options={resellers?.map(reseller => ({ label: reseller.resellerName, value: reseller.id })) || []}
-                                        value={formData.resellerId}
-                                        onChange={(value) => setFormData(prev => ({ ...prev, resellerId: Number(value) }))}
-                                        placeholder="Select Reseller"
-                                        searchPlaceholder="Search resellers..."
-                                        emptyMessage="No reseller found."
+                                        options={customers?.map(customer => ({ label: customer.customerName, value: customer.id })) || []}
+                                        value={formData.customerId}
+                                        onChange={(value) => setFormData(prev => ({ ...prev, customerId: Number(value) }))}
+                                        placeholder="Select Customer"
+                                        searchPlaceholder="Search customers..."
+                                        emptyMessage="No customer found."
                                     />
                                 </div>
                             </div>
@@ -437,14 +423,14 @@ export const OrderForm: React.FC = () => {
                                 </div>
 
                                 <div>
-                                    <label htmlFor="orderResellerPrice" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Reseller Price</label>
+                                    <label htmlFor="orderCustomerPrice" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Customer Price</label>
                                     <div className="relative">
                                         <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground font-black text-sm">₱</span>
                                         <input
                                             type="number"
-                                            id="orderResellerPrice"
-                                            name="orderResellerPrice"
-                                            value={displayNumber(formData.orderResellerPrice)}
+                                            id="orderCustomerPrice"
+                                            name="orderCustomerPrice"
+                                            value={displayNumber(formData.orderCustomerPrice)}
                                             onChange={handleChange}
                                             placeholder="0.00"
                                             step="0.01"
@@ -452,7 +438,7 @@ export const OrderForm: React.FC = () => {
                                             required
                                         />
                                     </div>
-                                    <p className="mt-2 text-[10px] text-muted-foreground px-1 uppercase tracking-widest font-black opacity-40">Amount you bill the reseller</p>
+                                    <p className="mt-2 text-[10px] text-muted-foreground px-1 uppercase tracking-widest font-black opacity-40">Amount you bill the customer</p>
                                 </div>
                             </div>
                         </div>

@@ -1,10 +1,26 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
+
+// Mock middlewares before importing the app
+vi.mock('../middleware/auth', () => ({
+    requireAuth: vi.fn(async (c, next) => {
+        c.set('user', { id: 'test-user' });
+        return next();
+    })
+}))
+
+vi.mock('../middleware/organization', () => ({
+    requireOrganization: vi.fn(async (c, next) => {
+        c.set('organizationId', 'test-org');
+        return next();
+    })
+}))
+
 import paymentsApp from './payments'
 
 // Mock the database module
 vi.mock('../db', () => ({
     createDb: vi.fn(() => mockDb),
-    payments: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt', resellerId: 'resellerId', paymentStatus: 'paymentStatus' },
+    payments: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt', customerId: 'customerId', paymentStatus: 'paymentStatus' },
 }))
 
 // Mock database instance
@@ -95,7 +111,7 @@ describe('Payments API', () => {
                 body: JSON.stringify({}),
             })
 
-            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
 
@@ -105,7 +121,7 @@ describe('Payments API', () => {
                 paymentAmount: 500,
                 paymentMethod: 'gcash',
                 paymentStatus: 'pending',
-                resellerId: 1,
+                customerId: 1,
                 createdAt: new Date().toISOString(),
             }])
 
@@ -115,11 +131,11 @@ describe('Payments API', () => {
                 body: JSON.stringify({
                     paymentAmount: 500,
                     paymentMethod: 'gcash',
-                    resellerId: 1,
+                    customerId: 1,
                 }),
             })
 
-            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(201)
 
             const data = await res.json()
@@ -134,7 +150,7 @@ describe('Payments API', () => {
                     id: 1,
                     paymentAmount: 100,
                     paymentMethod: method,
-                    resellerId: 1,
+                    customerId: 1,
                 }])
 
                 const req = new Request('http://localhost/', {
@@ -143,11 +159,11 @@ describe('Payments API', () => {
                     body: JSON.stringify({
                         paymentAmount: 100,
                         paymentMethod: method,
-                        resellerId: 1,
+                        customerId: 1,
                     }),
                 })
 
-                const res = await paymentsApp.fetch(req, { DB: {} } as unknown as Env)
+                const res = await paymentsApp.fetch(req, { DB: {} } as unknown as any)
                 expect(res.status).toBe(201)
             }
         })
@@ -159,11 +175,11 @@ describe('Payments API', () => {
                 body: JSON.stringify({
                     paymentAmount: 100,
                     paymentMethod: 'bitcoin',
-                    resellerId: 1,
+                    customerId: 1,
                 }),
             })
 
-            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
     })
@@ -179,7 +195,7 @@ describe('Payments API', () => {
                 method: 'PATCH',
             })
 
-            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(200)
 
             const data = await res.json()
@@ -193,7 +209,7 @@ describe('Payments API', () => {
                 method: 'PATCH',
             })
 
-            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(404)
 
             const data = await res.json()
@@ -207,7 +223,7 @@ describe('Payments API', () => {
                 method: 'GET',
             })
 
-            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
@@ -222,7 +238,7 @@ describe('Payments API', () => {
                 method: 'GET',
             })
 
-            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(404)
 
             const data = await res.json()
@@ -236,11 +252,11 @@ describe('Payments API', () => {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     paymentAmount: -100,
-                    resellerId: 1,
+                    customerId: 1,
                 }),
             })
 
-            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as Env)
+            const res = await paymentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
     })

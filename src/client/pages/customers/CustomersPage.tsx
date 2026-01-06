@@ -2,8 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     RefreshCcw,
-    PlusCircle,
-    Plus,
+    UserPlus,
 } from 'lucide-react';
 import {
     AlertDialog,
@@ -15,20 +14,18 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { usePayments, usePaymentMutations } from '@/hooks/usePayments';
-import { PaymentCard } from './PaymentCard';
+import { useCustomers, useCustomerMutations } from '@/hooks/useCustomers';
+import { CustomerCard } from './CustomerCard';
 import { Button } from '@/components/ui/button';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 import { EmptyState } from '@/components/index';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
-import { FilterPills } from '@/components/ui/FilterPills';
 
-export const PaymentsPage: React.FC = () => {
+export const CustomersPage: React.FC = () => {
     const navigate = useNavigate();
-    const { data: payments, loading, error, refetch } = usePayments();
-    const { deleteAction, confirmAction } = usePaymentMutations();
+    const { data: customers, loading, error, refetch } = useCustomers();
+    const { deleteAction } = useCustomerMutations();
     const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
     const [deleteId, setDeleteId] = useState<number | null>(null);
 
     const handleDeleteClick = (id: number) => {
@@ -43,36 +40,17 @@ export const PaymentsPage: React.FC = () => {
         }
     };
 
-    const handleConfirm = async (id: number) => {
-        if (window.confirm('Confirm this payment?')) {
-            await confirmAction(id);
-            refetch();
-        }
-    };
-
-    const filteredPayments = payments?.filter(p => {
-        const customerName = p.customerName || '';
-        const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.paymentReference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            p.paymentAmount.toString().includes(searchQuery);
-        const matchesStatus = statusFilter === 'all' ? true : p.paymentStatus === statusFilter;
-        return matchesSearch && matchesStatus;
-    });
-
-    const statusList = ['all', 'pending', 'confirmed', 'rejected'];
-
-    const filterOptions = statusList.map(f => ({
-        label: f,
-        value: f,
-        count: payments?.filter(p => f === 'all' ? true : p.paymentStatus === f).length || 0
-    }));
+    const filteredCustomers = customers?.filter(c =>
+        c.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        (c.customerEmail && c.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()))
+    );
 
     return (
         <div className="relative pb-24">
             <HeaderContent
-                title="Payments"
+                title="Customers"
                 showSearch={true}
-                searchPlaceholder="Search payments, reference..."
+                searchPlaceholder="Search customers..."
                 searchQuery={searchQuery}
                 onSearchChange={setSearchQuery}
                 actions={
@@ -80,17 +58,9 @@ export const PaymentsPage: React.FC = () => {
                         <RefreshCcw className="h-5 w-5 text-muted-foreground" />
                     </Button>
                 }
-                filterContent={
-                    <FilterPills
-                        options={filterOptions}
-                        activeValue={statusFilter}
-                        onChange={setStatusFilter}
-                    />
-                }
             />
 
-            {/* Main Content */}
-            <main className="space-y-4 pt-14">
+            <main className="space-y-4 pt-6">
                 {loading ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (
@@ -98,54 +68,49 @@ export const PaymentsPage: React.FC = () => {
                         ))}
                     </div>
                 ) : error ? (
-                    <div className="p-8 text-center bg-surface-light dark:bg-surface-dark rounded-2xl shadow-soft border border-border/50">
-                        <p className="text-destructive mb-4">{error}</p>
-                        <Button onClick={refetch}>Retry</Button>
+                    <div className="bg-destructive/10 text-destructive p-8 rounded-xl border border-destructive/20 text-center">
+                        <p className="font-medium mb-4">{error}</p>
+                        <Button variant="outline" onClick={refetch}>Retry</Button>
                     </div>
-                ) : filteredPayments && filteredPayments.length > 0 ? (
+                ) : filteredCustomers && filteredCustomers.length > 0 ? (
                     <div className="space-y-4">
-                        {filteredPayments.map((payment) => (
-                            <PaymentCard
-                                key={payment.id}
-                                payment={payment}
-                                onDelete={handleDeleteClick}
-                                onConfirm={handleConfirm}
-                            />
+                        {filteredCustomers.map((customer) => (
+                            <CustomerCard key={customer.id} customer={customer} onDelete={handleDeleteClick} />
                         ))}
                         <Button
                             variant="outline"
                             className="w-full py-8 border-dashed border-2 text-muted-foreground hover:text-primary hover:border-primary/50 hover:bg-primary/5 transition-all mt-4 mb-8"
-                            onClick={() => navigate('/payments/new')}
+                            onClick={() => navigate('/customers/new')}
                         >
-                            <Plus className="h-5 w-5 mr-2" />
-                            Record Payment
+                            <UserPlus className="h-5 w-5 mr-2" />
+                            Add New Customer
                         </Button>
                     </div>
                 ) : (
                     <EmptyState
-                        title={searchQuery ? "No matching payments" : "No payments found"}
+                        title={searchQuery ? "No matching customers" : "No customers found"}
                         description={searchQuery
-                            ? `We couldn't find any payments matching "${searchQuery}".`
-                            : "You haven't recorded any payments yet."
+                            ? `We couldn't find any customers matching "${searchQuery}".`
+                            : "You haven't added any customers yet. Build your network by adding your first customer!"
                         }
-                        actionLabel={!searchQuery ? "Record Payment" : undefined}
-                        onAction={() => navigate('/payments/new')}
-                        icon={<PlusCircle className="h-10 w-10 opacity-40" />}
+                        actionLabel={!searchQuery ? "Add Customer" : undefined}
+                        onAction={() => navigate('/customers/new')}
                     />
                 )}
             </main>
 
             {/* Floating Action Button */}
             <FloatingActionButton
-                onClick={() => navigate('/payments/new')}
+                onClick={() => navigate('/customers/new')}
+                icon={<UserPlus className="h-6 w-6" />}
             />
 
             <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
                 <AlertDialogContent>
                     <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Payment?</AlertDialogTitle>
+                        <AlertDialogTitle>Delete Customer?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Are you sure you want to delete this payment? This action cannot be undone.
+                            Are you sure you want to delete this customer? This action cannot be undone.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

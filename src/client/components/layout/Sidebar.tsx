@@ -20,7 +20,7 @@ const navItems = [
     { label: 'Orders', to: '/orders', icon: ShoppingBag },
     { label: 'Stores', to: '/stores', icon: Store },
     { label: 'Payments', to: '/payments', icon: CreditCard },
-    { label: 'Resellers', to: '/resellers', icon: Users },
+    { label: 'Customers', to: '/customers', icon: Users },
     { label: 'Invoices', to: '/invoices', icon: FileText },
 ];
 

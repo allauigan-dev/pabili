@@ -1,4 +1,4 @@
-import type { ApiResponse, Order, Store, Reseller, Payment, Invoice, CreateOrderDto, CreateStoreDto, CreateResellerDto, CreatePaymentDto, CreateInvoiceDto } from './types';
+import type { ApiResponse, Order, Store, Customer, Payment, Invoice, CreateOrderDto, CreateStoreDto, CreateCustomerDto, CreatePaymentDto, CreateInvoiceDto } from './types';
 
 /**
  * Base fetch wrapper for API calls
@@ -94,22 +94,22 @@ export const storesApi = {
 };
 
 /**
- * Resellers API
+ * Customers API
  */
-export const resellersApi = {
-    list: () => fetchApi<Reseller[]>('/api/resellers'),
-    get: (id: number) => fetchApi<Reseller>(`/api/resellers/${id}`),
-    getOrders: (id: number) => fetchApi<Order[]>(`/api/resellers/${id}/orders`),
-    getBalance: (id: number) => fetchApi<{ totalOrders: number; totalPayments: number; balance: number }>(`/api/resellers/${id}/balance`),
-    create: (data: CreateResellerDto) => fetchApi<Reseller>('/api/resellers', {
+export const customersApi = {
+    list: () => fetchApi<Customer[]>('/api/customers'),
+    get: (id: number) => fetchApi<Customer>(`/api/customers/${id}`),
+    getOrders: (id: number) => fetchApi<Order[]>(`/api/customers/${id}/orders`),
+    getBalance: (id: number) => fetchApi<{ totalOrders: number; totalPayments: number; balance: number }>(`/api/customers/${id}/balance`),
+    create: (data: CreateCustomerDto) => fetchApi<Customer>('/api/customers', {
         method: 'POST',
         body: JSON.stringify(data),
     }),
-    update: (id: number, data: Partial<CreateResellerDto>) => fetchApi<Reseller>(`/api/resellers/${id}`, {
+    update: (id: number, data: Partial<CreateCustomerDto>) => fetchApi<Customer>(`/api/customers/${id}`, {
         method: 'PUT',
         body: JSON.stringify(data),
     }),
-    delete: (id: number) => fetchApi<void>(`/api/resellers/${id}`, {
+    delete: (id: number) => fetchApi<void>(`/api/customers/${id}`, {
         method: 'DELETE',
     }),
 };

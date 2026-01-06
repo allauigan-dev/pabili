@@ -4,13 +4,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 /**
  * Custom hook to handle mobile horizontal swipe gestures for navigation with visual feedback.
  * Navigates between main pages in the bottom navigation.
+ * Only activates for predominantly horizontal swipes to avoid interfering with scrolling.
  */
 export const useSwipeNavigation = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
-    const [touchStart, setTouchStart] = useState<number | null>(null);
+    const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
     const [currentTouchX, setCurrentTouchX] = useState<number | null>(null);
+    const [isHorizontalSwipe, setIsHorizontalSwipe] = useState<boolean | null>(null);
     const startTime = useRef<number>(0);
 
     // Minimum distance for a swipe to be recognized (pixels)
@@ -55,25 +57,44 @@ export const useSwipeNavigation = () => {
 
         if (isInsideBlockedElement(target) || hasHorizontalScroll(target)) return;
 
-        setTouchStart(e.targetTouches[0].clientX);
+        setTouchStart({ x: e.targetTouches[0].clientX, y: e.targetTouches[0].clientY });
         setCurrentTouchX(e.targetTouches[0].clientX);
+        setIsHorizontalSwipe(null); // Reset direction detection
         startTime.current = Date.now();
     }, [isMainRoute]);
 
     const onTouchMove = useCallback((e: React.TouchEvent) => {
         if (!isMainRoute || window.innerWidth >= 768 || touchStart === null) return;
 
-        setCurrentTouchX(e.targetTouches[0].clientX);
-    }, [isMainRoute, touchStart]);
+        const currentX = e.targetTouches[0].clientX;
+        const currentY = e.targetTouches[0].clientY;
+
+        // Determine swipe direction on first significant move
+        if (isHorizontalSwipe === null) {
+            const deltaX = Math.abs(currentX - touchStart.x);
+            const deltaY = Math.abs(currentY - touchStart.y);
+
+            // Only set direction once we have enough movement to determine
+            if (deltaX > 10 || deltaY > 10) {
+                setIsHorizontalSwipe(deltaX > deltaY * 1.5); // Must be predominantly horizontal
+            }
+        }
+
+        // Only track horizontal movement if we've confirmed it's a horizontal swipe
+        if (isHorizontalSwipe === true) {
+            setCurrentTouchX(currentX);
+        }
+    }, [isMainRoute, touchStart, isHorizontalSwipe]);
 
     const onTouchEnd = useCallback(() => {
-        if (touchStart === null || currentTouchX === null || !isMainRoute || window.innerWidth >= 768) {
+        if (touchStart === null || currentTouchX === null || !isMainRoute || window.innerWidth >= 768 || isHorizontalSwipe !== true) {
             setTouchStart(null);
             setCurrentTouchX(null);
+            setIsHorizontalSwipe(null);
             return;
         }
 
-        const distance = touchStart - currentTouchX;
+        const distance = touchStart.x - currentTouchX;
         const duration = Date.now() - startTime.current;
         const velocity = Math.abs(distance) / duration;
 
@@ -92,31 +113,31 @@ export const useSwipeNavigation = () => {
 
         setTouchStart(null);
         setCurrentTouchX(null);
-    }, [touchStart, currentTouchX, location.pathname, navigate, isMainRoute, navRoutes]);
+        setIsHorizontalSwipe(null);
+    }, [touchStart, currentTouchX, location.pathname, navigate, isMainRoute, navRoutes, isHorizontalSwipe]);
 
     // Calculate translation style for visual feedback
+    // Only apply visual feedback for confirmed horizontal swipes
     const style = useMemo(() => {
-        if (touchStart === null || currentTouchX === null) {
+        if (touchStart === null || currentTouchX === null || isHorizontalSwipe !== true) {
             return {
-                transition: 'transform 0.4s cubic-bezier(0.2, 0.8, 0.2, 1)',
+                transition: 'transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1)',
                 transform: 'translateX(0)'
             };
         }
 
-        const distance = currentTouchX - touchStart;
+        const distance = currentTouchX - touchStart.x;
         // Dampen the drag behavior - feels more premium
-        const dampenedDistance = distance * 0.8;
+        const dampenedDistance = distance * 0.4; // Reduced from 0.8 for subtler effect
 
         return {
             transform: `translateX(${dampenedDistance}px)`,
-            transition: 'none',
-            filter: `blur(${Math.min(Math.abs(distance) / 100, 2)}px)`,
-            opacity: Math.max(1 - Math.abs(distance) / 1000, 0.9)
+            transition: 'none'
         };
-    }, [touchStart, currentTouchX]);
+    }, [touchStart, currentTouchX, isHorizontalSwipe]);
 
-    const direction = touchStart !== null && currentTouchX !== null
-        ? (currentTouchX > touchStart ? 'right' : 'left')
+    const direction = touchStart !== null && currentTouchX !== null && isHorizontalSwipe === true
+        ? (currentTouchX > touchStart.x ? 'right' : 'left')
         : null;
 
     return {
@@ -126,8 +147,8 @@ export const useSwipeNavigation = () => {
             onTouchEnd,
         },
         style,
-        isSwiping: touchStart !== null,
+        isSwiping: touchStart !== null && isHorizontalSwipe === true,
         direction,
-        distance: touchStart !== null && currentTouchX !== null ? currentTouchX - touchStart : 0
+        distance: touchStart !== null && currentTouchX !== null ? currentTouchX - touchStart.x : 0
     };
 };
