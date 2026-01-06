@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Bell, Search, X } from 'lucide-react';
+import { Bell, Search, X, Moon, Sun, Smartphone } from 'lucide-react';
+import { useTheme } from '@/hooks/useTheme';
 import { Button } from '@/components/ui/button';
 import {
     DropdownMenu,
@@ -22,9 +23,11 @@ import { useHeader } from './HeaderProvider';
 import { Input } from '@/components/ui/input';
 import { useSession, signOut } from '@/lib/auth-client';
 
+
 export const Header: React.FC = () => {
     const navigate = useNavigate();
     const [open, setOpen] = useState(false);
+    const { isDark, toggleTheme, isAmoled, toggleAmoled } = useTheme();
     const {
         title,
         actions,
@@ -186,6 +189,31 @@ export const Header: React.FC = () => {
                             >
                                 Settings
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                                className="px-4 py-3 cursor-pointer focus:bg-primary/5 rounded-xl mx-1"
+                                onClick={toggleTheme}
+                            >
+                                {isDark ? (
+                                    <>
+                                        <Sun className="h-4 w-4 mr-2" />
+                                        Light Mode
+                                    </>
+                                ) : (
+                                    <>
+                                        <Moon className="h-4 w-4 mr-2" />
+                                        Dark Mode
+                                    </>
+                                )}
+                            </DropdownMenuItem>
+                            {isDark && (
+                                <DropdownMenuItem
+                                    className="px-4 py-3 cursor-pointer focus:bg-primary/5 rounded-xl mx-1"
+                                    onClick={toggleAmoled}
+                                >
+                                    <Smartphone className="h-4 w-4 mr-2" />
+                                    AMOLED Mode {isAmoled ? '(On)' : '(Off)'}
+                                </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem
                                 className="px-4 py-3 cursor-pointer text-destructive focus:bg-destructive/5 rounded-xl mx-1"
                                 onClick={() => signOut()}

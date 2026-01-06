@@ -81,6 +81,22 @@
   --ring: 262 83% 58%;
 }
 
+/* AMOLED Mode - Pure black for OLED screens */
+.amoled {
+  --background: 0 0% 0%;
+  /* Pure black #000000 */
+  --card: 0 0% 5%;
+  /* Near black #0D0D0D */
+  --popover: 0 0% 5%;
+  --secondary: 0 0% 12%;
+  /* #1F1F1F */
+  --muted: 0 0% 12%;
+  --accent: 0 0% 12%;
+  --border: 0 0% 15%;
+  /* Slightly lighter border for visibility */
+  --input: 0 0% 12%;
+}
+
 @theme {
   --font-sans: "Inter",
     system-ui,

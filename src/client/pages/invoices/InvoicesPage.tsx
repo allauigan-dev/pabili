@@ -130,9 +130,12 @@ export const InvoicesPage: React.FC = () => {
                                     <span>Loading more...</span>
                                 </div>
                             )}
-                            {!hasMore && invoices.length > 0 && (
+                            {!hasMore && filteredInvoices.length > 0 && (
                                 <span className="text-sm text-muted-foreground">
-                                    All {invoices.length} invoices loaded
+                                    {statusFilter === 'all' && !searchQuery
+                                        ? `All ${filteredInvoices.length} invoices loaded`
+                                        : `Showing ${filteredInvoices.length} of ${invoices.length} invoices`
+                                    }
                                 </span>
                             )}
                         </div>

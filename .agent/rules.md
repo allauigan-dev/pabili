@@ -72,6 +72,171 @@ Pabili is a **multi-tenant SaaS platform** for pasabuy (buy-on-behalf) businesse
 - Always include `created_at`, `updated_at`, `deleted_at` timestamps
 - Use prepared statements to prevent SQL injection
 
+## UI/Component Design Patterns
+
+When creating new components, UI elements, or pages, follow these design patterns to maintain consistency across the application.
+
+### Design System
+
+- **Color Scheme**: Use CSS variables defined in `src/client/styles/theme.css`
+  - Primary: `--primary` (Violet-600)
+  - Backgrounds: `bg-background`, `bg-surface-light`, `bg-surface-dark`
+  - Text: `text-foreground`, `text-muted-foreground`
+  - Borders: `border-border/50`
+- **Typography**: Use Inter font family (loaded via theme)
+- **Border Radius**: Use `rounded-2xl` for cards/containers, `rounded-xl` for smaller elements
+- **Shadows**: Use `shadow-soft` for elevated surfaces
+
+### Page Structure
+
+All list pages should follow this structure:
+
+```tsx
+import { HeaderContent } from '@/components/layout/HeaderProvider';
+import { FilterPills } from '@/components/ui/FilterPills';
+import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
+import { EmptyState } from '@/components/index';
+
+export const ExamplePage: React.FC = () => {
+  return (
+    <div className="relative pb-24">
+      {/* Header with search and filter */}
+      <HeaderContent
+        title="Page Title"
+        showSearch={true}
+        searchPlaceholder="Search..."
+        searchQuery={searchQuery}
+        onSearchChange={setSearchQuery}
+        actions={<Button variant="ghost" size="icon">...</Button>}
+        filterContent={<FilterPills options={filterOptions} activeValue={filter} onChange={setFilter} />}
+      />
+      
+      {/* Main content with pt-14 for header offset */}
+      <main className="space-y-4 pt-14">
+        {/* Loading skeleton */}
+        {isLoading && items.length === 0 ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 h-32 animate-pulse" />
+            ))}
+          </div>
+        ) : error ? (
+          /* Error state */
+          <div className="bg-destructive/10 text-destructive p-6 rounded-xl border border-destructive/20 text-center">...</div>
+        ) : items.length > 0 ? (
+          /* Items list */
+          <>
+            {items.map(item => <ItemCard key={item.id} item={item} />)}
+            {/* Infinite scroll sentinel */}
+            <div ref={sentinelRef}>...</div>
+            {/* Add new button */}
+            <Button variant="outline" className="w-full py-8 border-dashed border-2...">Add New</Button>
+          </>
+        ) : (
+          /* Empty state */
+          <EmptyState title="No items" description="..." actionLabel="Add Item" onAction={() => navigate('/new')} />
+        )}
+      </main>
+
+      {/* Floating action button */}
+      <FloatingActionButton onClick={() => navigate('/new')} />
+      
+      {/* Delete confirmation dialog */}
+      <AlertDialog>...</AlertDialog>
+    </div>
+  );
+};
+```
+
+### Card Components
+
+Cards should follow this pattern:
+
+```tsx
+<div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden">
+  {/* Optional status strip */}
+  <div className="absolute left-0 top-0 bottom-0 w-1 bg-[status-color] rounded-l-2xl" />
+  
+  <div className="flex gap-4">
+    {/* Image section */}
+    <div className="flex-shrink-0 w-20 h-20 bg-secondary/30 rounded-xl overflow-hidden border border-border/50">
+      ...
+    </div>
+    
+    {/* Content section */}
+    <div className="flex-1 min-w-0 flex flex-col justify-center">
+      <h3 className="text-base font-bold text-foreground truncate">Title</h3>
+      <span className="text-xs text-muted-foreground">Subtitle</span>
+      
+      {/* Action buttons */}
+      <div className="flex items-center space-x-0.5">
+        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-lg">...</Button>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+### Required UI Components
+
+Always use these pre-built components from `@/components/ui/`:
+
+| Component | Usage |
+|-----------|-------|
+| `Button` | All buttons (variants: default, destructive, outline, secondary, ghost, link) |
+| `AlertDialog` | Confirmation dialogs (delete, destructive actions) |
+| `Dialog` | Modal dialogs |
+| `FloatingActionButton` | Primary action FAB on list pages |
+| `FilterPills` | Filter options below header |
+| `EmptyState` | Empty/no-results states |
+| `HeaderContent` | Page headers with search/filter |
+| `ImageGallery` | Image previews and galleries |
+| `Combobox` | Searchable select dropdowns |
+
+### Icons
+
+Use `lucide-react` icons consistently:
+
+```tsx
+import { Plus, Edit, Trash2, RefreshCcw, Search, Loader2, User, Store, CheckCircle } from 'lucide-react';
+```
+
+- Size in buttons: `h-4 w-4` or `h-5 w-5`
+- Size in FAB: `h-7 w-7` or `h-8 w-8`
+- Color: `text-muted-foreground` for secondary, inherit for primary
+
+### Loading States
+
+- **Skeleton**: Use `animate-pulse` with matching card dimensions
+- **Spinner**: Use `<Loader2 className="h-5 w-5 animate-spin" />`
+- **Loading more**: Show centered below list with "Loading more..." text
+
+### Mobile-First Patterns
+
+- Container padding: `pb-24` for FAB clearance
+- Touch targets: Minimum `h-8 w-8` for buttons
+- Bottom navigation clearance: Account for mobile nav bar
+- Responsive breakpoints: `md:` for desktop adjustments
+
+### Hooks to Use
+
+| Hook | Purpose |
+|------|---------|
+| `useInfiniteScroll` | Paginated lists with scroll loading |
+| `use[Entity]Mutations` | CRUD operations (e.g., `useOrderMutations`) |
+| `useHeader` | Access header context |
+| `useScroll` | Scroll position tracking |
+
+### Form Pages
+
+For create/edit forms, follow these patterns:
+
+- Use controlled form state with `useState`
+- Include `FormActions` component for Save/Cancel buttons
+- Validate with inline error messages
+- Show loading state on submit button
+- Navigate back on success with `useNavigate`
+
 ## Multi-Tenancy Rules
 
 ### Critical: Organization Scoping

@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Theme System**: Implemented a comprehensive theme management system with light, dark, and AMOLED modes.
+  - Created `useTheme` hook for persistent theme state and system preference detection in `src/client/hooks/useTheme.ts`.
+  - Added AMOLED mode specifically for OLED devices with pure black (#000000) backgrounds.
+  - Updated `src/client/styles/theme.css` with dark and AMOLED color palettes and CSS variables.
+- **UI Design Guidelines**: Documented comprehensive UI/Component Design Patterns in `.agent/rules.md` to ensure design consistency across the application.
+
+### Changed
+- **Mobile-First UI Refactor**: Enhanced mobile responsiveness and premium UI across core pages:
+  - Updated `Dashboard`, `Orders`, `Customers`, `Invoices`, `Payments`, and `Stores` pages with improved layouts and mobile-optimized interactions.
+  - Refined `Header` and `Sidebar` components to support the new theme system and improve navigation.
+- **Improved Quick Actions**: Updated Dashboard quick actions with persistence and customization options.
 - **Infinite Scroll**: Replaced pagination with auto-loading infinite scroll across all list pages:
   - Created `useInfiniteScroll` hook using Intersection Observer API
   - Added `listPaginated` functions to all API objects (`ordersApi`, `storesApi`, etc.)

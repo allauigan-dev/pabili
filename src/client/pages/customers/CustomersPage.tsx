@@ -102,9 +102,12 @@ export const CustomersPage: React.FC = () => {
                                     <span>Loading more...</span>
                                 </div>
                             )}
-                            {!hasMore && customers.length > 0 && (
+                            {!hasMore && filteredCustomers.length > 0 && (
                                 <span className="text-sm text-muted-foreground">
-                                    All {customers.length} customers loaded
+                                    {!searchQuery
+                                        ? `All ${filteredCustomers.length} customers loaded`
+                                        : `Showing ${filteredCustomers.length} of ${customers.length} customers`
+                                    }
                                 </span>
                             )}
                         </div>

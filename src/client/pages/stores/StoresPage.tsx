@@ -123,9 +123,12 @@ export const StoresPage: React.FC = () => {
                                     <span>Loading more...</span>
                                 </div>
                             )}
-                            {!hasMore && stores.length > 0 && (
+                            {!hasMore && filteredStores.length > 0 && (
                                 <span className="text-sm text-muted-foreground">
-                                    All {stores.length} stores loaded
+                                    {statusFilter === 'all' && !searchQuery
+                                        ? `All ${filteredStores.length} stores loaded`
+                                        : `Showing ${filteredStores.length} of ${stores.length} stores`
+                                    }
                                 </span>
                             )}
                         </div>

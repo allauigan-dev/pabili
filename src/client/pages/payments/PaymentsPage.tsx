@@ -139,9 +139,12 @@ export const PaymentsPage: React.FC = () => {
                                     <span>Loading more...</span>
                                 </div>
                             )}
-                            {!hasMore && payments.length > 0 && (
+                            {!hasMore && filteredPayments.length > 0 && (
                                 <span className="text-sm text-muted-foreground">
-                                    All {payments.length} payments loaded
+                                    {statusFilter === 'all' && !searchQuery
+                                        ? `All ${filteredPayments.length} payments loaded`
+                                        : `Showing ${filteredPayments.length} of ${payments.length} payments`
+                                    }
                                 </span>
                             )}
                         </div>
