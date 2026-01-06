@@ -1,10 +1,6 @@
 @import './client/styles/theme.css';
 @import './client/styles/layout.css';
 
-:root {
-  /* You can add app-specific overrides here */
-}
-
 body {
   margin: 0;
   padding: 0;

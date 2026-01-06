@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **PWA Best Practices Implementation**:
+  - Enhanced `manifest.json` with multiple icon sizes (48-512px), maskable icons, and app shortcuts
+  - Rewrote `sw.js` with intelligent caching strategies (cache-first, network-first, stale-while-revalidate)
+  - Created `offline.html` styled fallback page with auto-reconnection
+  - Added `useOfflineStorage.ts` hook for IndexedDB with background sync support
+  - Added `useInstallPrompt.ts` hook for custom install prompt handling
+  - Created `OfflineIndicator.tsx` component for online/offline status display
+  - Created `InstallBanner.tsx` component for custom PWA install prompts
+  - iOS-specific splash screen support and meta tags in `index.html`
+  - Service worker update detection with user notification in `main.tsx`
+
 ### Changed
 - **Deployment Workflow**: Integrated automatic D1 migrations into the `deploy` script to ensure database schema synchronization during application deployment.
 - **Database Configuration**: Updated `wrangler.jsonc` with the new production D1 database instance ID.

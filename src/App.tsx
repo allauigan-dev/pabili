@@ -17,11 +17,17 @@ import { LoginPage } from './client/pages/auth/LoginPage';
 import { OnboardingPage } from './client/pages/onboarding/OnboardingPage';
 
 import { ScrollToTop } from './client/components/ScrollToTop';
+import { OfflineIndicator } from './client/components/OfflineIndicator';
+import { InstallBanner } from './client/components/InstallBanner';
 
 function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+      {/* PWA Components */}
+      <OfflineIndicator />
+      <InstallBanner delay={5000} />
+
       <Routes>
         <Route path="/login" element={<LoginPage />} />
 
@@ -54,3 +60,4 @@ function App() {
 }
 
 export default App;
+

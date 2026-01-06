@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-Pabili is a PWA-based order management system for pasabuy (buy-on-behalf) businesses in the Philippines. The system manages orders, tracks payments, and generates invoices for resellers.
+Pabili is a **multi-tenant SaaS platform** for pasabuy (buy-on-behalf) businesses in the Philippines. Each business operates as an **Organization** with isolated data, team members, and settings. The system manages orders, tracks payments, and generates invoices for customers.
 
 ## Tech Stack
 
@@ -12,6 +12,7 @@ Pabili is a PWA-based order management system for pasabuy (buy-on-behalf) busine
 | **Backend** | Hono (Cloudflare Workers) |
 | **Database** | Cloudflare D1 (SQLite) |
 | **ORM** | Drizzle ORM |
+| **Authentication** | Better Auth (with Organization plugin) |
 | **Hosting** | Cloudflare Workers |
 | **File Storage** | Cloudflare R2 |
 | **Testing** | Vitest + React Testing Library |
@@ -20,7 +21,7 @@ Pabili is a PWA-based order management system for pasabuy (buy-on-behalf) busine
 ## Project Structure
 
 ```
-/home/henry/pabili/
+/home/hallauigan/pabili/
 ├── src/
 │   ├── client/           # React frontend
 │   │   ├── components/   # Reusable UI components
@@ -31,11 +32,12 @@ Pabili is a PWA-based order management system for pasabuy (buy-on-behalf) busine
 │   ├── server/           # Hono backend
 │   │   ├── routes/       # API route handlers
 │   │   ├── db/           # Drizzle schema and migrations
+│   │   ├── auth/         # Better Auth configuration
 │   │   └── lib/          # Server utilities
 │   └── index.ts          # Main entry point
 ├── public/               # Static assets
 ├── drizzle/              # Drizzle migrations
-├── wrangler.toml         # Cloudflare Workers config
+├── wrangler.jsonc        # Cloudflare Workers config
 └── package.json
 ```
 
@@ -70,11 +72,110 @@ Pabili is a PWA-based order management system for pasabuy (buy-on-behalf) busine
 - Always include `created_at`, `updated_at`, `deleted_at` timestamps
 - Use prepared statements to prevent SQL injection
 
+## Multi-Tenancy Rules
+
+### Critical: Organization Scoping
+
+**All data queries MUST be scoped by `organizationId`:**
+
+```typescript
+// ✅ CORRECT - Always filter by org
+const orders = await db.select()
+  .from(ordersTable)
+  .where(eq(ordersTable.organizationId, session.activeOrganizationId));
+
+// ❌ WRONG - Never query without org filter
+const orders = await db.select().from(ordersTable);
+```
+
+### Getting Organization Context
+
+```typescript
+// From auth session
+const session = await auth.api.getSession({ headers: c.req.raw.headers });
+const orgId = session?.session.activeOrganizationId;
+
+if (!orgId) {
+  return c.json({ success: false, error: 'No active organization' }, 401);
+}
+```
+
+### Insert with Organization
+
+```typescript
+// Always include organizationId on insert
+await db.insert(ordersTable).values({
+  ...orderData,
+  organizationId: session.activeOrganizationId,
+});
+```
+
+### Cross-Org Access Prevention
+
+- Never allow queries across organizations
+- Validate resource ownership before update/delete
+- Use middleware to enforce org scoping
+
+## Authentication Patterns
+
+### Protected Routes
+
+```typescript
+// Apply auth middleware to protected routes
+app.use('/api/*', async (c, next) => {
+  const session = await auth.api.getSession({ headers: c.req.raw.headers });
+  if (!session) {
+    return c.json({ success: false, error: 'Unauthorized' }, 401);
+  }
+  c.set('session', session);
+  return next();
+});
+```
+
+### Public Routes
+
+Auth routes are public by default:
+- `/api/auth/sign-in/*`
+- `/api/auth/sign-up/*`
+- `/api/auth/callback/*`
+
 ## Common Commands
 
 ```bash
 # Development
-npm run dev          # Start dev server
+> [!IMPORTANT]
+> You must apply migrations to the local D1 database before running the dev server for the first time, otherwise you'll get "no such table" errors.
+
+### Full Database Setup (For New Projects)
+
+If you're setting up the project from scratch, follow these additional steps:
+
+1. Create a D1 database:
+```bash
+wrangler d1 create pabili-db
+```
+
+2. Update `wrangler.jsonc` with your database ID
+
+3. Create an R2 bucket:
+```bash
+wrangler r2 bucket create pabili-uploads
+```
+
+4. Generate migrations from schema (if schema changes):
+```bash
+npm run db:generate
+```
+
+5. Apply migrations:
+```bash
+# For local development
+npx wrangler d1 migrations apply pabili-db --local
+
+# For production
+npm run db:migrate
+```
+
 
 # Testing
 npm test             # Run tests in watch mode
@@ -86,9 +187,6 @@ npx drizzle-kit generate    # Generate migrations
 npx drizzle-kit push        # Apply migrations locally
 npx wrangler d1 migrations apply pabili-db --remote  # Apply to production
 
-# Reset Local Data (deletes all local D1 data and re-applies migrations)
-rm -rf .wrangler/state/v3/d1 && npx wrangler d1 migrations apply pabili-db --local
-
 # Deployment
 npm run deploy       # Deploy to Cloudflare Workers
 ```
@@ -97,11 +195,12 @@ npm run deploy       # Deploy to Cloudflare Workers
 
 - Max file size: 10MB
 - Allowed types: JPEG, PNG, WebP, GIF
-- Store in R2 with organized paths:
-  - `orders/{order_id}/primary_{uuid}.{ext}`
-  - `stores/{store_id}/logo_{uuid}.{ext}`
-  - `resellers/{reseller_id}/photo_{uuid}.{ext}`
-  - `payments/{payment_id}/proof_{uuid}.{ext}`
+- **Always scope R2 paths by organization ID:**
+  - `{org_id}/orders/{order_id}/primary_{uuid}.{ext}`
+  - `{org_id}/stores/{store_id}/logo_{uuid}.{ext}`
+  - `{org_id}/customers/{customer_id}/photo_{uuid}.{ext}`
+  - `{org_id}/payments/{payment_id}/proof_{uuid}.{ext}`
+  - `{org_id}/org/logo_{uuid}.{ext}`
 
 ## API Response Format
 
@@ -129,11 +228,12 @@ All API responses should follow this structure:
 
 ## Important Notes
 
-1. **PWA First**: Always consider offline capabilities and service worker caching
-2. **Philippine Locale**: Use PHP currency formatting, Philippine time zone
-3. **Mobile Priority**: Design for mobile-first, most users access via smartphone
-4. **Data Integrity**: Use soft deletes, never hard delete business data
-5. **Image Optimization**: Compress and resize images before R2 upload
+1. **Multi-Tenant First**: Always scope data by organization
+2. **PWA First**: Consider offline capabilities and service worker caching
+3. **Philippine Locale**: Use PHP currency formatting, Philippine time zone
+4. **Mobile Priority**: Design for mobile-first, most users access via smartphone
+5. **Data Integrity**: Use soft deletes, never hard delete business data
+6. **Image Optimization**: Compress and resize images before R2 upload
 
 ## Testing Conventions
 
@@ -147,9 +247,11 @@ All API responses should follow this structure:
 - Test route definitions, validation, and error handling
 - Mock database with `vi.mock('../db')`
 - Use `beforeEach` to reset mocks between tests
+- **Mock auth session for org-scoped tests**
 
 ### Test Categories
 1. **Route definitions** - Verify endpoints exist
 2. **Validation** - Test required fields and data types
-3. **Error handling** - Test 400/404 responses
-4. **Feature tests** - Status updates, calculations, etc.
+3. **Error handling** - Test 400/401/403/404 responses
+4. **Multi-tenancy** - Test org isolation
+5. **Feature tests** - Status updates, calculations, etc.
