@@ -1,0 +1,11 @@
+# Better Auth Configuration
+BETTER_AUTH_SECRET=your_random_32_character_secret_here
+BETTER_AUTH_URL=http://localhost:5173
+
+# Google OAuth (from Google Cloud Console)
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# Facebook OAuth (from Facebook Developer Portal)
+FACEBOOK_CLIENT_ID=your-facebook-app-id
+FACEBOOK_CLIENT_SECRET=your-facebook-app-secret

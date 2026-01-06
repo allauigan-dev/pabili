@@ -24,15 +24,22 @@ A PWA-based order management system for pasabuy (buy-on-behalf) businesses, desi
 # Install dependencies
 npm install
 
+# Setup local environment variables
+cp .dev.vars.example .dev.vars
+# Edit .dev.vars with your own secrets!
+
 # Apply database migrations locally (required before first run)
 npx wrangler d1 migrations apply pabili-db --local
+
+# Seed local database (optional - for sample data)
+npx wrangler d1 execute pabili-db --local --file=scripts/seed.sql && npx wrangler d1 execute pabili-db --local --file=scripts/seed-orders.sql
 
 # Start development server
 npm run dev
 ```
 
 > [!IMPORTANT]
-> You must apply migrations to the local D1 database before running the dev server for the first time, otherwise you'll get "no such table" errors.
+> **Before Seeding**: You must first run the app, sign in, and create an organization. Then, update the `organization_id` in `scripts/seed.sql` and `scripts/seed-orders.sql` with your actual organization ID from the database before running the seed command.
 
 ### Full Database Setup (For New Projects)
 

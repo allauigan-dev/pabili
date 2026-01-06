@@ -12,29 +12,41 @@ description: How to run the development server and common development tasks
 npm install
 ```
 
-// turbo
-2. Start the development server:
+2. Create local environment variables:
+```bash
+cp .dev.vars.example .dev.vars
+```
+> **Note**: Edit `.dev.vars` with your own secrets. You can generate a `BETTER_AUTH_SECRET` using `openssl rand -base64 32`.
+
+3. Start the development server:
 ```bash
 npm run dev
 ```
 
-3. Open the app in browser at http://localhost:5173
+4. Open the app in browser at http://localhost:5173
 
 ## Database Operations
 
 // turbo
-4. Generate a new migration after schema changes:
+5. Generate a new migration after schema changes:
 ```bash
 npx drizzle-kit generate
 ```
 
 // turbo
-5. Apply migrations to local D1:
+6. Apply migrations to local D1:
 ```bash
-npx drizzle-kit push
+npx wrangler d1 migrations apply pabili-db --local
 ```
 
-6. Apply migrations to production D1:
+// turbo
+7. Seed local database (optional):
+```bash
+npx wrangler d1 execute pabili-db --local --file=scripts/seed.sql && npx wrangler d1 execute pabili-db --local --file=scripts/seed-orders.sql
+```
+> **Important**: Before seeding, you must sign in to the app and create an organization. You then need to manually update the `organization_id` in the `.sql` files with your actual organization ID.
+
+8. Apply migrations to production D1:
 ```bash
 npx wrangler d1 migrations apply pabili-db --remote
 ```
@@ -42,7 +54,7 @@ npx wrangler d1 migrations apply pabili-db --remote
 ## Resetting Local Data
 
 // turbo
-7. Reset local D1 database (deletes all local data and re-applies migrations):
+9. Reset local D1 database (deletes all local data and re-applies migrations):
 ```bash
 rm -rf .wrangler/state/v3/d1 && npx wrangler d1 migrations apply pabili-db --local
 ```
@@ -51,7 +63,7 @@ rm -rf .wrangler/state/v3/d1 && npx wrangler d1 migrations apply pabili-db --loc
 
 ## Deployment
 
-7. Build and deploy to Cloudflare Workers:
+10. Build and deploy to Cloudflare Workers:
 ```bash
 npm run deploy
 ```
@@ -59,7 +71,7 @@ npm run deploy
 ## Type Checking
 
 // turbo
-8. Run TypeScript type check:
+11. Run TypeScript type check:
 ```bash
 npx tsc --noEmit
 ```
@@ -67,7 +79,7 @@ npx tsc --noEmit
 ## Linting
 
 // turbo
-9. Run ESLint:
+12. Run ESLint:
 ```bash
 npm run lint
 ```

@@ -15,7 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Shows loading spinner at bottom when fetching more items
   - Displays "All X items loaded" when complete
 - **Backend Pagination**: Added `page` and `limit` query params to all list endpoints with `meta` response containing total count
-- **Seed Scripts**: Added `scripts/seed.sql` and `scripts/seed-orders.sql` for generating sample data
+- **Local Dev Seeding Docs**: Updated `README.md` and `.agent/workflows/dev.md` with instructions for local database seeding and mandatory organization setup.
+- **Improved Seeding Workflow**: Added requirement for developers to sign in and create an organization before seeding.
+
+### Changed
+- **Seed Scripts**: Updated `scripts/seed.sql` and `scripts/seed-orders.sql` with a valid organization ID and improved instructions.
 
 ### Changed
 - **Customer Balance Optimization**: Fixed N+1 query issue where each `CustomerCard` made a separate API call for balance:
