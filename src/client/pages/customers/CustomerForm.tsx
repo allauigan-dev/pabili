@@ -175,7 +175,7 @@ export const CustomerForm: React.FC = () => {
                 </form>
             </main>
             <FormActions
-                onCancel={() => navigate('/customers')}
+                onCancel={() => navigate(-1)}
                 onSave={handleSubmit}
                 isSaving={mutationLoading}
                 saveLabel={isEdit ? 'Update' : 'Save'}

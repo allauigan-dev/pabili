@@ -304,7 +304,7 @@ export const PaymentForm: React.FC = () => {
                 </form>
             </main>
             <FormActions
-                onCancel={() => navigate('/payments')}
+                onCancel={() => navigate(-1)}
                 onSave={handleSubmit}
                 isSaving={mutationLoading || uploading}
                 saveLabel={isEdit ? 'Update' : 'Save'}

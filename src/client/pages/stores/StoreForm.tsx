@@ -208,7 +208,7 @@ export const StoreForm: React.FC = () => {
                 </form>
             </main>
             <FormActions
-                onCancel={() => navigate('/stores')}
+                onCancel={() => navigate(-1)}
                 onSave={handleSubmit}
                 isSaving={mutationLoading}
                 saveLabel={isEdit ? 'Update' : 'Save'}

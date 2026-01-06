@@ -94,7 +94,10 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
     };
 
     return (
-        <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4">
+        <div
+            className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4 cursor-pointer transition-shadow hover:shadow-md"
+            onClick={() => navigate(`/orders/${order.id}`)}
+        >
             {/* Status Strip */}
             <div className={`absolute left-0 top-0 bottom-0 w-1 ${status.bar} rounded-l-2xl`}></div>
 
@@ -107,7 +110,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
 
                     {images.length > 0 ? (
                         <>
-                            <div className="w-full h-full cursor-zoom-in" onClick={() => setGalleryOpen(true)}>
+                            <div className="w-full h-full cursor-zoom-in" onClick={(e) => { e.stopPropagation(); setGalleryOpen(true); }}>
                                 <img
                                     src={images[0]}
                                     alt={order.orderName}
@@ -158,7 +161,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
                                 {formatCurrency(order.orderCustomerTotal ?? 0)}
                             </p>
 
-                            <div className="flex items-center mt-2 space-x-0.5">
+                            <div className="flex items-center mt-2 space-x-0.5" onClick={(e) => e.stopPropagation()}>
                                 {validStatuses.length > 0 && (
                                     <Dialog open={open} onOpenChange={setOpen}>
                                         <DialogTrigger asChild>

@@ -49,7 +49,10 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({ payment, onDelete, onC
     const isConfirmed = payment.paymentStatus === 'confirmed';
 
     return (
-        <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4">
+        <div
+            className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4 cursor-pointer transition-shadow hover:shadow-md"
+            onClick={() => navigate(`/payments/${payment.id}`)}
+        >
             {/* Status Strip */}
             <div className={`absolute left-0 top-0 bottom-0 w-1 ${status.bar} rounded-l-2xl`}></div>
 
@@ -61,25 +64,27 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({ payment, onDelete, onC
                     </span>
 
                     {payment.paymentProof ? (
-                        <Dialog>
-                            <DialogTrigger asChild>
-                                <img
-                                    src={payment.paymentProof}
-                                    alt="Payment Proof"
-                                    className="w-full h-full object-cover cursor-zoom-in"
-                                />
-                            </DialogTrigger>
-                            <DialogContent className="max-w-[95vw] sm:max-w-[90vw] h-auto max-h-[90vh] p-1 border-none bg-transparent shadow-none">
-                                <DialogTitle className="sr-only">Payment Proof</DialogTitle>
-                                <div className="relative w-full h-full flex items-center justify-center">
+                        <div onClick={(e) => e.stopPropagation()}>
+                            <Dialog>
+                                <DialogTrigger asChild>
                                     <img
                                         src={payment.paymentProof}
-                                        alt="Proof"
-                                        className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                                        alt="Payment Proof"
+                                        className="w-full h-full object-cover cursor-zoom-in"
                                     />
-                                </div>
-                            </DialogContent>
-                        </Dialog>
+                                </DialogTrigger>
+                                <DialogContent className="max-w-[95vw] sm:max-w-[90vw] h-auto max-h-[90vh] p-1 border-none bg-transparent shadow-none">
+                                    <DialogTitle className="sr-only">Payment Proof</DialogTitle>
+                                    <div className="relative w-full h-full flex items-center justify-center">
+                                        <img
+                                            src={payment.paymentProof}
+                                            alt="Proof"
+                                            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                                        />
+                                    </div>
+                                </DialogContent>
+                            </Dialog>
+                        </div>
                     ) : (
                         <div className="w-full h-full flex items-center justify-center bg-secondary/30">
                             <ImageIcon className="h-6 w-6 text-muted-foreground opacity-50" />
@@ -108,7 +113,7 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({ payment, onDelete, onC
                         </p>
                     </div>
 
-                    <div className="flex justify-end items-center mt-3 gap-2">
+                    <div className="flex justify-end items-center mt-3 gap-2" onClick={(e) => e.stopPropagation()}>
                         {!isConfirmed && (
                             <Button
                                 variant="ghost"

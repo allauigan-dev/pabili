@@ -490,7 +490,7 @@ export const OrderForm: React.FC = () => {
                 </form>
             </main>
             <FormActions
-                onCancel={() => navigate('/orders')}
+                onCancel={() => navigate(-1)}
                 onSave={handleSubmit}
                 isSaving={mutationLoading || uploading}
                 saveLabel={isEdit ? 'Update' : 'Save'}

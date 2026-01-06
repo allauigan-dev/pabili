@@ -3,14 +3,19 @@ import { Layout } from './client/components/layout/Layout';
 import { Dashboard } from './client/pages/Dashboard';
 import { OrdersPage } from './client/pages/orders/OrdersPage';
 import { OrderForm } from './client/pages/orders/OrderForm';
+import { OrderDetails } from './client/pages/orders/OrderDetails';
 import { StoresPage } from './client/pages/stores/StoresPage';
 import { StoreForm } from './client/pages/stores/StoreForm';
+import { StoreDetails } from './client/pages/stores/StoreDetails';
 import { CustomersPage } from './client/pages/customers/CustomersPage';
 import { CustomerForm } from './client/pages/customers/CustomerForm';
+import { CustomerDetails } from './client/pages/customers/CustomerDetails';
 import { PaymentsPage } from './client/pages/payments/PaymentsPage';
 import { PaymentForm } from './client/pages/payments/PaymentForm';
+import { PaymentDetails } from './client/pages/payments/PaymentDetails';
 import { InvoicesPage } from './client/pages/invoices/InvoicesPage';
 import { InvoiceForm } from './client/pages/invoices/InvoiceForm';
+import { InvoiceDetails } from './client/pages/invoices/InvoiceDetails';
 import { ProtectedRoute } from './client/components/ProtectedRoute';
 import { OrgGuard } from './client/components/OrgGuard';
 import { LoginPage } from './client/pages/auth/LoginPage';
@@ -39,17 +44,24 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/orders/new" element={<OrderForm />} />
+              <Route path="/orders/:id" element={<OrderDetails />} />
               <Route path="/orders/:id/edit" element={<OrderForm />} />
               <Route path="/stores" element={<StoresPage />} />
               <Route path="/stores/new" element={<StoreForm />} />
+              <Route path="/stores/:id" element={<StoreDetails />} />
               <Route path="/stores/:id/edit" element={<StoreForm />} />
               <Route path="/customers" element={<CustomersPage />} />
               <Route path="/customers/new" element={<CustomerForm />} />
+              <Route path="/customers/:id" element={<CustomerDetails />} />
               <Route path="/customers/:id/edit" element={<CustomerForm />} />
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/payments/new" element={<PaymentForm />} />
+              <Route path="/payments/:id" element={<PaymentDetails />} />
+              <Route path="/payments/:id/edit" element={<PaymentForm />} />
               <Route path="/invoices" element={<InvoicesPage />} />
               <Route path="/invoices/new" element={<InvoiceForm />} />
+              <Route path="/invoices/:id" element={<InvoiceDetails />} />
+              <Route path="/invoices/:id/edit" element={<InvoiceForm />} />
               <Route path="*" element={<Dashboard />} />
             </Route>
           </Route>

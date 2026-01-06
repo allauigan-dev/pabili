@@ -12,6 +12,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - **Natural Language Formatting**: Updated Dashboard activity feed to display events as natural sentences (e.g., "Order #123 was placed", "Customer John added") instead of generic titles.
   - **Deletion Tracking**: Implemented logging for deleted items (Orders, Customers, Stores, Payments) so they appear in the activity feed.
   - **Auto-Refresh**: Implemented real-time updates for the activity feed using a cache invalidation system in `api.ts`, ensuring the feed updates instantly without manual refresh.
+- **Detail View UI Implementation**:
+  - Created dedicated read-only **Detail Pages** for Orders, Customers, Stores, Invoices, and Payments (accessed via `/:id` paths).
+  - Implemented clickable card rows in all list pages that automatically navigate to their respective Detail views.
+  - Added event propagation prevention on cards to allow interacting with buttons, status selectors, and image galleries without accidental navigation.
+  - Updated all form and detail pages to support "Navigate Back" behavior on Cancel, improving UX flow from details to list.
+  - Refined Detail View UI with high-fidelity summaries, full-screen image previews, and financial breakdowns.
 
 ### Added
 - **Phase 8 Planning**: Created comprehensive documentation for Settings page implementation in `docs/phase-8-settings/`.

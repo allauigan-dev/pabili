@@ -311,7 +311,7 @@ export const InvoiceForm: React.FC = () => {
                 </form>
             </main>
             <FormActions
-                onCancel={() => navigate('/invoices')}
+                onCancel={() => navigate(-1)}
                 isSaving={mutationLoading}
                 saveLabel={isEdit ? 'Update' : 'Generate'}
                 saveIcon={FileCheck}

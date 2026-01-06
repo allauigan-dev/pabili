@@ -29,7 +29,10 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onDelete }
     const statusLabel = hasBalance ? 'OWING' : 'GOOD';
 
     return (
-        <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4">
+        <div
+            className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4 cursor-pointer transition-shadow hover:shadow-md"
+            onClick={() => navigate(`/customers/${customer.id}`)}
+        >
             {/* Status Strip */}
             <div className={`absolute left-0 top-0 bottom-0 w-1 ${statusColor} rounded-l-2xl`}></div>
 
@@ -76,7 +79,7 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onDelete }
                         </div>
                     </div>
 
-                    <div className="flex justify-end items-center mt-3 gap-2">
+                    <div className="flex justify-end items-center mt-3 gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button
                             variant="ghost"
                             size="icon"

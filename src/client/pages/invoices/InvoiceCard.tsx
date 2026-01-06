@@ -60,7 +60,10 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({ invoice, onDelete }) =
     const status = statusConfig[invoice.invoiceStatus as keyof typeof statusConfig] || statusConfig.draft;
 
     return (
-        <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4">
+        <div
+            className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4 cursor-pointer transition-shadow hover:shadow-md"
+            onClick={() => navigate(`/invoices/${invoice.id}`)}
+        >
             {/* Status Strip */}
             <div className={`absolute left-0 top-0 bottom-0 w-1 ${status.color} rounded-l-2xl`}></div>
 
@@ -94,7 +97,7 @@ export const InvoiceCard: React.FC<InvoiceCardProps> = ({ invoice, onDelete }) =
                         </p>
                     </div>
 
-                    <div className="flex justify-end items-center mt-3 gap-2">
+                    <div className="flex justify-end items-center mt-3 gap-2" onClick={(e) => e.stopPropagation()}>
                         <Button
                             variant="ghost"
                             size="icon"
