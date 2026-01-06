@@ -21,6 +21,7 @@ Each phase has an `IMPLEMENTATION.md` (technical details) and `TASKS.md` (checkl
 | **5** | Billing & Subscription | 🔴 Critical | [Implementation](./phase-5-billing/IMPLEMENTATION.md) / [Tasks](./phase-5-billing/TASKS.md) |
 | **6** | Advanced Features | 🟢 Nice to Have | [Implementation](./phase-6-advanced-features/IMPLEMENTATION.md) / [Tasks](./phase-6-advanced-features/TASKS.md) |
 | **7** | Localization & PH Market | 🟢 Nice to Have | [Implementation](./phase-7-localization/IMPLEMENTATION.md) / [Tasks](./phase-7-localization/TASKS.md) |
+| **8** | Settings Page | 🟠 High | [Implementation](./phase-8-settings/IMPLEMENTATION.md) / [Tasks](./phase-8-settings/TASKS.md) |
 
 ---
 

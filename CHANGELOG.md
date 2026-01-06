@@ -8,6 +8,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Phase 8 Planning**: Created comprehensive documentation for Settings page implementation in `docs/phase-8-settings/`.
+
+### Fixed
+- **Search Component**: Fixed search functionality in header that was not filtering results when typing.
+  - Refactored `HeaderProvider.tsx` to store the search callback in context and call it directly from `Header.tsx`.
+  - Eliminated infinite loop issues caused by bidirectional sync between page state and context.
+
+### Added
 - **Theme System**: Implemented a comprehensive theme management system with light, dark, and AMOLED modes.
   - Created `useTheme` hook for persistent theme state and system preference detection in `src/client/hooks/useTheme.ts`.
   - Added AMOLED mode specifically for OLED devices with pure black (#000000) backgrounds.

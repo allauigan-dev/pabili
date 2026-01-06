@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, type ReactNode } from 'react';
+import React, { createContext, useContext, useState, useRef, type ReactNode } from 'react';
 
 interface HeaderContextType {
     title: string;
@@ -13,6 +13,8 @@ interface HeaderContextType {
     setSearchPlaceholder: (placeholder: string) => void;
     filterContent: ReactNode | null;
     setFilterContent: (content: ReactNode | null) => void;
+    // Callback for when search changes in Header - called directly by Header
+    onSearchChangeRef: React.MutableRefObject<((query: string) => void) | undefined>;
 }
 
 const HeaderContext = createContext<HeaderContextType | undefined>(undefined);
@@ -24,6 +26,7 @@ export const HeaderProvider: React.FC<{ children: ReactNode }> = ({ children }) 
     const [searchQuery, setSearchQuery] = useState('');
     const [searchPlaceholder, setSearchPlaceholder] = useState('Search...');
     const [filterContent, setFilterContent] = useState<ReactNode | null>(null);
+    const onSearchChangeRef = useRef<((query: string) => void) | undefined>(undefined);
 
     return (
         <HeaderContext.Provider value={{
@@ -32,7 +35,8 @@ export const HeaderProvider: React.FC<{ children: ReactNode }> = ({ children }) 
             showSearch, setShowSearch,
             searchQuery, setSearchQuery,
             searchPlaceholder, setSearchPlaceholder,
-            filterContent, setFilterContent
+            filterContent, setFilterContent,
+            onSearchChangeRef
         }}>
             {children}
         </HeaderContext.Provider>
@@ -70,27 +74,47 @@ export const HeaderContent: React.FC<{
             setShowSearch,
             setSearchPlaceholder,
             setSearchQuery,
-            setFilterContent
+            setFilterContent,
+            onSearchChangeRef
         } = useHeader();
 
+        // Register the callback so Header can call it directly
+        onSearchChangeRef.current = onSearchChange;
+
+        // Sync title
         React.useEffect(() => {
             if (title !== undefined) setTitle(title);
-            setActions(actions || null);
-            setShowSearch(showSearch);
-            if (searchPlaceholder !== undefined) setSearchPlaceholder(searchPlaceholder);
-            if (searchQuery !== undefined) setSearchQuery(searchQuery);
-            setFilterContent(filterContent || null);
+        }, [title, setTitle]);
 
-            // We don't want to reset everything on every render, but we want to clean up if needed
-            // However, usually pages will just overwrite these.
-        }, [title, actions, showSearch, searchPlaceholder, searchQuery, filterContent]);
-
-        // Handle search query updates from within the component if provided
+        // Sync showSearch
         React.useEffect(() => {
-            if (onSearchChange && searchQuery !== undefined) {
-                onSearchChange(searchQuery);
-            }
-        }, [searchQuery, onSearchChange]);
+            setShowSearch(showSearch);
+        }, [showSearch, setShowSearch]);
+
+        // Sync searchPlaceholder
+        React.useEffect(() => {
+            if (searchPlaceholder !== undefined) setSearchPlaceholder(searchPlaceholder);
+        }, [searchPlaceholder, setSearchPlaceholder]);
+
+        // Sync searchQuery from page to context (one-way: page → context)
+        React.useEffect(() => {
+            if (searchQuery !== undefined) setSearchQuery(searchQuery);
+        }, [searchQuery, setSearchQuery]);
+
+        // Sync actions - use ref to avoid triggering on every render
+        const actionsRef = useRef(actions);
+        React.useEffect(() => {
+            actionsRef.current = actions;
+            setActions(actions || null);
+        });
+
+        // Sync filterContent - use ref to avoid triggering on every render  
+        const filterRef = useRef(filterContent);
+        React.useEffect(() => {
+            filterRef.current = filterContent;
+            setFilterContent(filterContent || null);
+        });
 
         return null;
     };
+

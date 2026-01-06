@@ -35,7 +35,8 @@ export const Header: React.FC = () => {
         searchQuery,
         setSearchQuery,
         searchPlaceholder,
-        filterContent
+        filterContent,
+        onSearchChangeRef
     } = useHeader();
     const [isMobileSearchVisible, setIsMobileSearchVisible] = useState(false);
 
@@ -128,11 +129,17 @@ export const Header: React.FC = () => {
                             className="pl-10 pr-10 h-10 w-full bg-secondary/50 border-none rounded-xl focus-visible:ring-primary"
                             placeholder={searchPlaceholder}
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                onSearchChangeRef.current?.(e.target.value);
+                            }}
                         />
                         {searchQuery && (
                             <button
-                                onClick={() => setSearchQuery('')}
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    onSearchChangeRef.current?.('');
+                                }}
                                 className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded-full transition-colors"
                             >
                                 <X className="h-3 w-3 text-muted-foreground" />
@@ -244,11 +251,17 @@ export const Header: React.FC = () => {
                             className="pl-10 pr-10 h-10 w-full bg-secondary/50 border-none rounded-xl focus-visible:ring-primary"
                             placeholder={searchPlaceholder}
                             value={searchQuery}
-                            onChange={(e) => setSearchQuery(e.target.value)}
+                            onChange={(e) => {
+                                setSearchQuery(e.target.value);
+                                onSearchChangeRef.current?.(e.target.value);
+                            }}
                         />
                         {searchQuery && (
                             <button
-                                onClick={() => setSearchQuery('')}
+                                onClick={() => {
+                                    setSearchQuery('');
+                                    onSearchChangeRef.current?.('');
+                                }}
                                 className="absolute right-3 top-1/2 -translate-y-1/2 p-0.5 hover:bg-muted rounded-full transition-colors"
                             >
                                 <X className="h-3 w-3 text-muted-foreground" />
