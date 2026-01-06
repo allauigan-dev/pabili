@@ -187,3 +187,50 @@ export function useSyncListener(onSync?: (type: string, data: unknown) => void) 
         };
     }, [onSync]);
 }
+
+// Hook to listen for custom sync events dispatched by main.tsx
+export function useSyncEvents(onOrderSync?: (data: unknown) => void, onPaymentSync?: (data: unknown) => void) {
+    useEffect(() => {
+        const handleOrderSync = (event: Event) => {
+            onOrderSync?.((event as CustomEvent).detail);
+        };
+
+        const handlePaymentSync = (event: Event) => {
+            onPaymentSync?.((event as CustomEvent).detail);
+        };
+
+        window.addEventListener('order-synced', handleOrderSync);
+        window.addEventListener('payment-synced', handlePaymentSync);
+
+        return () => {
+            window.removeEventListener('order-synced', handleOrderSync);
+            window.removeEventListener('payment-synced', handlePaymentSync);
+        };
+    }, [onOrderSync, onPaymentSync]);
+}
+
+// Utility to manually trigger background sync
+export async function triggerBackgroundSync(tag: 'sync-orders' | 'sync-payments' | 'sync-all') {
+    if ('serviceWorker' in navigator && 'SyncManager' in window) {
+        try {
+            const registration = await navigator.serviceWorker.ready;
+            await (registration as any).sync.register(tag);
+            console.log('[Offline] Background sync registered:', tag);
+            return true;
+        } catch (error) {
+            console.error('[Offline] Background sync registration failed:', error);
+            return false;
+        }
+    }
+    return false;
+}
+
+// Utility to request manual sync via SW message
+export function requestManualSync() {
+    if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: 'SYNC_NOW' });
+        return true;
+    }
+    return false;
+}
+

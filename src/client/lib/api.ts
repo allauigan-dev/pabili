@@ -1,9 +1,119 @@
 import type { ApiResponse, Order, Store, Customer, Payment, Invoice, CreateOrderDto, CreateStoreDto, CreateCustomerDto, CreatePaymentDto, CreateInvoiceDto } from './types';
 
+// ============================================
+// API CACHE LAYER
+// ============================================
+
+interface CacheEntry<T> {
+    data: ApiResponse<T>;
+    timestamp: number;
+    ttl: number;
+}
+
+interface CacheOptions {
+    /** Time-to-live in milliseconds. Default: 30000 (30 seconds) */
+    ttl?: number;
+    /** Skip cache and force network request */
+    skipCache?: boolean;
+}
+
+// In-memory cache storage
+const apiCache = new Map<string, CacheEntry<unknown>>();
+
+// Default TTL: 30 seconds
+const DEFAULT_TTL = 30 * 1000;
+
 /**
- * Base fetch wrapper for API calls
+ * Generate cache key from URL
  */
-async function fetchApi<T>(url: string, options?: RequestInit): Promise<ApiResponse<T>> {
+function getCacheKey(url: string): string {
+    return url;
+}
+
+/**
+ * Check if cache entry is still valid
+ */
+function isCacheValid<T>(entry: CacheEntry<T>): boolean {
+    return Date.now() - entry.timestamp < entry.ttl;
+}
+
+/**
+ * Get cached response if valid
+ */
+export function getCachedResponse<T>(url: string): ApiResponse<T> | null {
+    const key = getCacheKey(url);
+    const entry = apiCache.get(key) as CacheEntry<T> | undefined;
+
+    if (entry && isCacheValid(entry)) {
+        return entry.data;
+    }
+
+    // Remove expired entry
+    if (entry) {
+        apiCache.delete(key);
+    }
+
+    return null;
+}
+
+/**
+ * Set cached response
+ */
+function setCacheResponse<T>(url: string, data: ApiResponse<T>, ttl: number): void {
+    const key = getCacheKey(url);
+    apiCache.set(key, {
+        data,
+        timestamp: Date.now(),
+        ttl,
+    });
+}
+
+/**
+ * Invalidate cache entries matching a pattern
+ * @param pattern - URL prefix to match (e.g., '/api/orders' invalidates all order-related cache)
+ */
+export function invalidateCache(pattern?: string): void {
+    if (!pattern) {
+        apiCache.clear();
+        return;
+    }
+
+    for (const key of apiCache.keys()) {
+        if (key.startsWith(pattern)) {
+            apiCache.delete(key);
+        }
+    }
+}
+
+/**
+ * Get all cache keys (for debugging)
+ */
+export function getCacheKeys(): string[] {
+    return Array.from(apiCache.keys());
+}
+
+// ============================================
+// FETCH API WRAPPER
+// ============================================
+
+/**
+ * Base fetch wrapper for API calls with caching
+ */
+async function fetchApi<T>(url: string, options?: RequestInit & CacheOptions): Promise<ApiResponse<T>> {
+    const method = options?.method || 'GET';
+    const isGetRequest = method === 'GET';
+    const isMutation = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method);
+    const ttl = options?.ttl ?? DEFAULT_TTL;
+    const skipCache = options?.skipCache ?? false;
+
+    // Check cache for GET requests (unless skipCache is true)
+    if (isGetRequest && !skipCache) {
+        const cached = getCachedResponse<T>(url);
+        if (cached) {
+            return cached;
+        }
+    }
+
     try {
         // Don't set Content-Type for FormData - browser will set it automatically
         // with the correct multipart boundary
@@ -39,6 +149,29 @@ async function fetchApi<T>(url: string, options?: RequestInit): Promise<ApiRespo
                 success: false,
                 error: errorMessage,
             };
+        }
+
+        // Cache successful GET responses
+        if (isGetRequest && data.success) {
+            setCacheResponse(url, data, ttl);
+        }
+
+        // Invalidate related caches on successful mutations
+        if (isMutation && data.success) {
+            // Extract the base resource path (e.g., /api/orders from /api/orders/1)
+            const pathParts = url.split('/');
+            const basePath = pathParts.slice(0, 3).join('/'); // /api/resource
+            invalidateCache(basePath);
+
+            // Also invalidate related resources that might be affected
+            // e.g., when creating an order, customer balance might change
+            if (basePath.includes('/orders')) {
+                invalidateCache('/api/customers'); // Customer balances may change
+            }
+            if (basePath.includes('/payments')) {
+                invalidateCache('/api/customers'); // Customer balances may change
+                invalidateCache('/api/invoices');  // Invoice status may change
+            }
         }
 
         return data;

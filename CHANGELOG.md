@@ -7,7 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Client-Side API Cache**: Implemented in-memory caching for API responses to eliminate skeleton loading on page navigation:
+  - GET requests are cached with 30-second TTL
+  - Mutations (POST/PUT/DELETE) automatically invalidate related caches
+  - Related resources are also invalidated (e.g., order changes invalidate customer balances)
+
 ### Changed
+- **Enhanced PWA Service Worker** (`sw.js`):
+  - Added cache size limits to prevent storage issues
+  - Implemented Google Fonts caching for offline use
+  - Improved SPA fallback for offline navigation
+  - Added client communication for cache management (`SKIP_WAITING`, `GET_VERSION`, `CLEAR_CACHE`, `SYNC_NOW`)
+  - Extended precaching to include all icon sizes
+- **Improved Service Worker Registration** (`main.tsx`):
+  - Replaced browser `confirm()` with styled update notification banner
+  - Added visibility-based update checks (checks when user returns to tab)
+  - Exposed `window.pwaUtils` for debugging (`checkForUpdate`, `clearCache`, `syncNow`, `getVersion`)
+  - Added periodic sync registration for supported browsers
+- **API Hook Optimization** (`useApi.ts`): Hook now starts with `loading: false` when cached data may exist, preventing unnecessary skeleton states
+- **Offline Storage Utilities** (`useOfflineStorage.ts`): Added `useSyncEvents` hook and `triggerBackgroundSync`/`requestManualSync` utilities
 - **Build Optimization**: Configured Vite code splitting with manual chunks to separate React, React Router, Radix UI, and Lucide icons into vendor bundles. Reduced main application bundle size by ~70% (569KB to 176KB).
 - **PWA UI**: Updated `offline.html` and `InstallBanner.tsx` to align with the app's Violet design system, replacing the legacy Teal theme and adding Inter font support.
 

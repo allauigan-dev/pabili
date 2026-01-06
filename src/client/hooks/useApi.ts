@@ -1,8 +1,12 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import type { ApiResponse } from '../lib/types';
 
 /**
- * Generic hook for API data fetching
+ * Generic hook for API data fetching with cache awareness
+ * 
+ * The hook works with the API cache layer to avoid showing loading skeletons
+ * when data is already cached. The cache is handled at the API layer, so
+ * this hook just needs to handle the async state properly.
  */
 export function useApi<T>(
     fetcher: () => Promise<ApiResponse<T>>,
@@ -10,13 +14,19 @@ export function useApi<T>(
     enabled: boolean = true
 ) {
     const [data, setData] = useState<T | null>(null);
-    const [loading, setLoading] = useState<boolean>(enabled);
+    const [loading, setLoading] = useState<boolean>(false);
     const [error, setError] = useState<string | null>(null);
+    const isFirstMount = useRef(true);
 
-    const execute = useCallback(async () => {
+    const execute = useCallback(async (showLoading = true) => {
         if (!enabled) return;
-        setLoading(true);
+
+        // Only show loading skeleton on first mount or explicit refresh
+        if (showLoading && data === null) {
+            setLoading(true);
+        }
         setError(null);
+
         try {
             const result = await fetcher();
             if (result.success && result.data !== undefined) {
@@ -29,13 +39,22 @@ export function useApi<T>(
         } finally {
             setLoading(false);
         }
-    }, [fetcher, enabled]);
+    }, [fetcher, enabled, data]);
 
     useEffect(() => {
-        execute();
+        // On first mount, fetch data (which will be fast if cached)
+        // Show loading only if we don't have data yet
+        execute(isFirstMount.current);
+        isFirstMount.current = false;
     }, [execute, ...deps]);
 
-    return { data, loading, error, refetch: execute, setData };
+    // Refetch function that always shows loading indicator
+    const refetch = useCallback(() => {
+        setLoading(true);
+        return execute(true);
+    }, [execute]);
+
+    return { data, loading, error, refetch, setData };
 }
 
 /**
