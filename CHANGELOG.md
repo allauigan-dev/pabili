@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- **Deployment Workflow**: Integrated automatic D1 migrations into the `deploy` script to ensure database schema synchronization during application deployment.
+- **Database Configuration**: Updated `wrangler.jsonc` with the new production D1 database instance ID.
+
+### Fixed
+- **Documentation**: Corrected migration commands in `README.md` for remote database management.
+
+
 ### Fixed
 - **Order Form Improvements**:
     - Redesigned Quantity stepper with larger touch targets and centered display for better mobile UX.

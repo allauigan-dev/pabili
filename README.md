@@ -58,7 +58,7 @@ npm run db:generate
 5. Apply migrations:
 ```bash
 # For local development
-npx wrangler d1 migrations apply pabili-db --local
+npx wrangler d1 migrations apply pabili-db --remote
 
 # For production
 npm run db:migrate
