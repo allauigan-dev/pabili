@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    Save,
     CreditCard,
     Calendar,
     Trash2,
@@ -35,6 +34,7 @@ import { Separator } from '@/components/ui/separator';
 import { Combobox } from '@/components/ui/combobox';
 import type { CreatePaymentDto } from '@/lib/types';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
+import { FormActions } from '@/components/ui/FormActions';
 
 export const PaymentForm: React.FC = () => {
     const { id } = useParams();
@@ -106,8 +106,8 @@ export const PaymentForm: React.FC = () => {
         }
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         setLocalError(null);
 
         if (!formData.customerId) {
@@ -300,38 +300,16 @@ export const PaymentForm: React.FC = () => {
                                 <p className="text-[10px] text-center w-full text-muted-foreground">Screenshots preferred (max. 10MB)</p>
                             </CardFooter>
                         </Card>
-
-                        <div className="space-y-3">
-                            <Button
-                                type="submit"
-                                className="w-full h-11 shadow-lg shadow-primary/20"
-                                disabled={mutationLoading || uploading}
-                            >
-                                {mutationLoading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Saving...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save className="mr-2 h-4 w-4" />
-                                        {isEdit ? 'Update Record' : 'Log Payment'}
-                                    </>
-                                )}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                className="w-full h-11"
-                                onClick={() => navigate('/payments')}
-                                disabled={mutationLoading}
-                            >
-                                Cancel
-                            </Button>
-                        </div>
                     </div>
                 </form>
             </main>
+            <FormActions
+                onCancel={() => navigate('/payments')}
+                onSave={handleSubmit}
+                isSaving={mutationLoading || uploading}
+                saveLabel={isEdit ? 'Update' : 'Save'}
+                disabled={mutationLoading || uploading}
+            />
         </div>
     );
 };

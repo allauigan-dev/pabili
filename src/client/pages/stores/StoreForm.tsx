@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
-    Save,
     Store as StoreIcon,
     MapPin,
     Phone,
@@ -11,7 +10,6 @@ import {
     Info
 } from 'lucide-react';
 import { useStore, useStoreMutations } from '@/hooks/useStores';
-import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import {
@@ -25,13 +23,13 @@ import {
     Card,
     CardContent,
     CardDescription,
-    CardFooter,
     CardHeader,
     CardTitle,
 } from '@/components/ui/card';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { CreateStoreDto } from '@/lib/types';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
+import { FormActions } from '@/components/ui/FormActions';
 
 export const StoreForm: React.FC = () => {
     const { id } = useParams();
@@ -70,8 +68,8 @@ export const StoreForm: React.FC = () => {
         setFormData(prev => ({ ...prev, storeStatus: value as 'active' | 'inactive' }));
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent) => {
+        if (e) e.preventDefault();
         setLocalError(null);
 
         let result;
@@ -206,37 +204,16 @@ export const StoreForm: React.FC = () => {
                                 </AlertDescription>
                             </Alert>
                         </CardContent>
-                        <CardFooter className="p-8 pt-0 flex flex-col sm:flex-row gap-4">
-                            <Button
-                                type="submit"
-                                className="w-full sm:flex-1 h-11"
-                                disabled={mutationLoading}
-                            >
-                                {mutationLoading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Saving...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Save className="mr-2 h-4 w-4" />
-                                        {isEdit ? 'Update Store' : 'Add Store'}
-                                    </>
-                                )}
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="ghost"
-                                className="w-full sm:w-auto h-11"
-                                onClick={() => navigate('/stores')}
-                                disabled={mutationLoading}
-                            >
-                                Cancel
-                            </Button>
-                        </CardFooter>
                     </Card>
                 </form>
             </main>
+            <FormActions
+                onCancel={() => navigate('/stores')}
+                onSave={handleSubmit}
+                isSaving={mutationLoading}
+                saveLabel={isEdit ? 'Update' : 'Save'}
+                disabled={mutationLoading}
+            />
         </div>
     );
 };

@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Order Form Improvements**:
+    - Redesigned Quantity stepper with larger touch targets and centered display for better mobile UX.
+    - Improved Status dropdown by converting to full-width and removing redundant status dots.
+    - Fixed quantity button order to follow standard minus/plus positioning.
+- **Form Submission**: Fixed "Save" button in the global sticky footer (`FormActions`) to correctly trigger form submission across `OrderForm`, `CustomerForm`, `StoreForm`, and `PaymentForm`.
+- **TypeScript**: Refactored form submission handlers to be event-optional, resolving type errors when called programmatically.
+- **Quantity Validation**: Added fallback for potentially undefined quantity and disabled decrement button when quantity is 1.
+
 ### Changed
 - **Resellers → Customers Rename**: Refactored the entire application to use "Customers" terminology instead of "Resellers":
   - Renamed database table `resellers` → `customers` with updated column names (`customer_name`, `customer_id`, etc.)

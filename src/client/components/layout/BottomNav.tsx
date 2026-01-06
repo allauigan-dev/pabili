@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard,
     ShoppingBag,
@@ -41,6 +41,13 @@ export const BottomNav: React.FC = () => {
             },
         });
     };
+
+    const location = useLocation();
+    const isFormPage = location.pathname.endsWith('/new') || location.pathname.endsWith('/edit');
+
+    if (isFormPage) {
+        return null;
+    }
 
     return (
         <>
