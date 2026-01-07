@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     CreditCard,
@@ -53,6 +53,10 @@ export const PaymentForm: React.FC = () => {
         paymentProof: '',
         customerId: 0,
     });
+
+    const activeCustomers = useMemo(() => customers?.filter(customer =>
+        customer.customerStatus === 'active' || customer.id === formData.customerId
+    ) || [], [customers, formData.customerId]);
 
     const [uploading, setUploading] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
@@ -174,7 +178,7 @@ export const PaymentForm: React.FC = () => {
                                 <div className="space-y-2">
                                     <Label htmlFor="customerId">Customer</Label>
                                     <Combobox
-                                        options={customers?.map(customer => ({ label: customer.customerName, value: customer.id })) || []}
+                                        options={activeCustomers.map(customer => ({ label: customer.customerName, value: customer.id }))}
                                         value={formData.customerId}
                                         onChange={(value) => handleSelectChange('customerId', value.toString())}
                                         placeholder="Select a customer"

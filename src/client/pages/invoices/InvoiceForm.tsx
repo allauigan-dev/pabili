@@ -53,6 +53,10 @@ export const InvoiceForm: React.FC = () => {
         orderIds: [],
     });
 
+    const activeCustomers = useMemo(() => customers?.filter(customer =>
+        customer.customerStatus === 'active' || customer.id === formData.customerId
+    ) || [], [customers, formData.customerId]);
+
     const [localError, setLocalError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -178,7 +182,7 @@ export const InvoiceForm: React.FC = () => {
                                     <div className="space-y-2">
                                         <Label htmlFor="customerId">Customer / Bill To</Label>
                                         <Combobox
-                                            options={customers?.map(customer => ({ label: customer.customerName, value: customer.id })) || []}
+                                            options={activeCustomers.map(customer => ({ label: customer.customerName, value: customer.id }))}
                                             value={formData.customerId}
                                             onChange={(value) => handleSelectChange('customerId', value.toString())}
                                             disabled={isEdit}

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import {
     Image as ImageIcon,
@@ -49,6 +49,14 @@ export const OrderForm: React.FC = () => {
         storeId: 0,
         customerId: 0,
     });
+
+    const activeStores = useMemo(() => stores?.filter(store =>
+        store.storeStatus === 'active' || store.id === formData.storeId
+    ) || [], [stores, formData.storeId]);
+
+    const activeCustomers = useMemo(() => customers?.filter(customer =>
+        customer.customerStatus === 'active' || customer.id === formData.customerId
+    ) || [], [customers, formData.customerId]);
 
     const [uploading, setUploading] = useState(false);
     const [localError, setLocalError] = useState<string | null>(null);
@@ -323,7 +331,7 @@ export const OrderForm: React.FC = () => {
                                     <div className="space-y-2">
                                         <label htmlFor="storeId" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Store</label>
                                         <Combobox
-                                            options={stores?.map(store => ({ label: store.storeName, value: store.id })) || []}
+                                            options={activeStores.map(store => ({ label: store.storeName, value: store.id }))}
                                             value={formData.storeId}
                                             onChange={(value) => setFormData(prev => ({ ...prev, storeId: Number(value) }))}
                                             placeholder="Select Store"
@@ -335,7 +343,7 @@ export const OrderForm: React.FC = () => {
                                     <div className="space-y-2">
                                         <label htmlFor="customerId" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Customer</label>
                                         <Combobox
-                                            options={customers?.map(customer => ({ label: customer.customerName, value: customer.id })) || []}
+                                            options={activeCustomers.map(customer => ({ label: customer.customerName, value: customer.id }))}
                                             value={formData.customerId}
                                             onChange={(value) => setFormData(prev => ({ ...prev, customerId: Number(value) }))}
                                             placeholder="Select Customer"

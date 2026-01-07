@@ -81,6 +81,31 @@
   <!-- Favicon -->
   <link rel="icon" type="image/png" sizes="32x32" href="/icons_and_manifest/icons/icon-48x48.png" />
   <link rel="icon" type="image/png" sizes="16x16" href="/icons_and_manifest/icons/icon-48x48.png" />
+
+  <!-- Blocking script to apply theme/accent before render to prevent FOUC -->
+  <script>
+    (function() {
+      // Apply theme
+      const storedTheme = localStorage.getItem('pabili-theme');
+      const theme = storedTheme ? JSON.parse(storedTheme) : 'system';
+      const isDark = theme === 'dark' || 
+        (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
+      
+      if (isDark) {
+        document.documentElement.classList.add('dark');
+        // Check for AMOLED
+        const amoled = localStorage.getItem('pabili-amoled');
+        if (amoled && JSON.parse(amoled)) {
+          document.documentElement.classList.add('amoled');
+        }
+      }
+      
+      // Apply accent color
+      const storedAccent = localStorage.getItem('pabili-accent');
+      const accent = storedAccent ? JSON.parse(storedAccent) : 'violet';
+      document.documentElement.setAttribute('data-accent', accent);
+    })();
+  </script>
 </head>
 
 <body>

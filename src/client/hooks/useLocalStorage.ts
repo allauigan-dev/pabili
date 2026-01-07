@@ -1,24 +1,27 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 // Custom event name for same-tab localStorage sync
 const STORAGE_SYNC_EVENT = 'pabili-storage-sync';
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
+    // Use ref to track the initial value to avoid re-creating readValue
+    const initialValueRef = useRef(initialValue);
+
     // Get from local storage then
     // parse stored json or if none return initialValue
     const readValue = useCallback(() => {
         if (typeof window === 'undefined') {
-            return initialValue;
+            return initialValueRef.current;
         }
 
         try {
             const item = window.localStorage.getItem(key);
-            return item ? (JSON.parse(item) as T) : initialValue;
+            return item ? (JSON.parse(item) as T) : initialValueRef.current;
         } catch (error) {
             console.warn(`Error reading localStorage key "${key}":`, error);
-            return initialValue;
+            return initialValueRef.current;
         }
-    }, [key, initialValue]);
+    }, [key]);
 
     const [storedValue, setStoredValue] = useState<T>(readValue);
 
@@ -45,9 +48,11 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
         }
     }, [key]);
 
+    // Sync from localStorage on mount (handles SSR hydration)
     useEffect(() => {
-        setStoredValue(readValue());
-    }, [readValue]);
+        const stored = readValue();
+        setStoredValue(stored);
+    }, []);  // eslint-disable-line react-hooks/exhaustive-deps
 
     // Listen for changes from other tabs (storage event)
     // and same-tab changes (custom event)
@@ -64,7 +69,10 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
 
         const handleSyncEvent = (event: CustomEvent<{ key: string; value: T }>) => {
             if (event.detail.key === key) {
-                setStoredValue(event.detail.value);
+                // Defer state update to avoid updating during render
+                setTimeout(() => {
+                    setStoredValue(event.detail.value);
+                }, 0);
             }
         };
 

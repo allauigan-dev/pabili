@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- **Dropdown Filtering**:
+  - Implemented automatic filtering in `OrderForm`, `PaymentForm`, and `InvoiceForm` to hide inactive customers and stores.
+  - Ensured historical data remains visible by allowing the currently selected inactive item to still appear in the list during edits.
+- **UI Error Fixes**:
+  - Resolved `ReferenceError` in form components caused by accessing `formData` state before initialization.
+  - Fixed "Maximum update depth exceeded" error in `AppearanceSection` by optimizing `useLocalStorage` with `useRef` for initial values and `setTimeout` for state sync.
+- **Theme Rendering**:
+  - Added a blocking script in `index.html` to apply theme and accent color preferences before the first paint, effectively eliminating FOUC.
+
 ### Added
 - **Accent Color Theming**:
   - Added 6 premium accent color options (Violet, Blue, Teal, Rose, Amber, Emerald) in Appearance settings.
