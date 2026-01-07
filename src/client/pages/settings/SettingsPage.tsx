@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChevronLeft, User, Palette, Building2, ChevronRight } from 'lucide-react';
+import { ChevronLeft, User, Palette, Building2, ChevronRight, Navigation } from 'lucide-react';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { ProfileSection } from './ProfileSection';
 import { AppearanceSection } from './AppearanceSection';
 import { OrganizationSection } from './OrganizationSection';
+import { NavigationSection } from './NavigationSection';
 
-type SettingsTab = 'profile' | 'appearance' | 'organization';
+type SettingsTab = 'profile' | 'appearance' | 'navigation' | 'organization';
 
 const tabs: { id: SettingsTab; label: string; icon: React.ElementType; description: string }[] = [
     { id: 'profile', label: 'Profile', icon: User, description: 'Manage your account info' },
     { id: 'appearance', label: 'Appearance', icon: Palette, description: 'Theme and display settings' },
+    { id: 'navigation', label: 'Navigation', icon: Navigation, description: 'Customize bottom nav' },
     { id: 'organization', label: 'Organization', icon: Building2, description: 'Team and business settings' },
 ];
 
@@ -34,6 +36,8 @@ export const SettingsPage: React.FC = () => {
                 return <ProfileSection />;
             case 'appearance':
                 return <AppearanceSection />;
+            case 'navigation':
+                return <NavigationSection />;
             case 'organization':
                 return <OrganizationSection />;
             default:

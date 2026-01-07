@@ -1,14 +1,9 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import {
-    LayoutDashboard,
-    ShoppingBag,
-    Store,
-    CreditCard,
     MoreHorizontal,
     Settings,
     LogOut,
-    Users
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import {
@@ -19,17 +14,12 @@ import {
 } from '../ui/sheet';
 import { OrganizationSwitcher } from '../OrganizationSwitcher';
 import { authClient } from '../../lib/auth-client';
-
-const navItems = [
-    { label: 'Dashboard', to: '/', icon: LayoutDashboard },
-    { label: 'Orders', to: '/orders', icon: ShoppingBag },
-    { label: 'Stores', to: '/stores', icon: Store },
-    { label: 'Payments', to: '/payments', icon: CreditCard },
-];
+import { useNavConfig } from '@/hooks/useNavConfig';
 
 export const BottomNav: React.FC = () => {
     const [isMoreOpen, setIsMoreOpen] = useState(false);
     const navigate = useNavigate();
+    const { bottomNavItems, moreMenuItems } = useNavConfig();
 
     const handleSignOut = async () => {
         await authClient.signOut({
@@ -52,7 +42,7 @@ export const BottomNav: React.FC = () => {
     return (
         <>
             <nav className="fixed bottom-0 left-0 right-0 z-50 flex h-16 items-center justify-around border-t bg-card/80 backdrop-blur-lg md:hidden px-2 pb-safe">
-                {navItems.map((item) => (
+                {bottomNavItems.map((item) => (
                     <NavLink
                         key={item.to}
                         to={item.to}
@@ -74,7 +64,7 @@ export const BottomNav: React.FC = () => {
                 <button
                     onClick={() => setIsMoreOpen(true)}
                     className={cn(
-                        "flex flex-col items-center justify-center gap-1 transition-colors px-3 py-1 rounded-lg",
+                        "flex flex-col items-center justify-center gap-1 transition-colors px-3 py-1 rounded-lg relative",
                         isMoreOpen
                             ? "text-primary"
                             : "text-muted-foreground hover:text-foreground"
@@ -84,6 +74,9 @@ export const BottomNav: React.FC = () => {
                     <span className="text-[10px] font-medium transition-opacity uppercase tracking-wider">
                         More
                     </span>
+                    {moreMenuItems.length > 0 && (
+                        <span className="absolute top-0 right-2 w-2 h-2 bg-primary rounded-full" />
+                    )}
                 </button>
             </nav>
 
@@ -102,27 +95,32 @@ export const BottomNav: React.FC = () => {
                             <OrganizationSwitcher />
                         </div>
 
-                        {/* Additional Navigation */}
-                        <div className="border-t pt-4">
-                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                                Quick Links
-                            </p>
-                            <NavLink
-                                to="/customers"
-                                onClick={() => setIsMoreOpen(false)}
-                                className={({ isActive }) =>
-                                    cn(
-                                        "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors",
-                                        isActive
-                                            ? "bg-primary text-primary-foreground"
-                                            : "text-foreground hover:bg-secondary"
-                                    )
-                                }
-                            >
-                                <Users className="h-5 w-5" />
-                                <span className="font-medium">Customers</span>
-                            </NavLink>
-                        </div>
+                        {/* Additional Navigation Items (not in bottom nav) */}
+                        {moreMenuItems.length > 0 && (
+                            <div className="border-t pt-4">
+                                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-2 px-1">
+                                    More Pages
+                                </p>
+                                {moreMenuItems.map((item) => (
+                                    <NavLink
+                                        key={item.to}
+                                        to={item.to}
+                                        onClick={() => setIsMoreOpen(false)}
+                                        className={({ isActive }) =>
+                                            cn(
+                                                "flex items-center gap-3 px-3 py-3 rounded-lg transition-colors",
+                                                isActive
+                                                    ? "bg-primary text-primary-foreground"
+                                                    : "text-foreground hover:bg-secondary"
+                                            )
+                                        }
+                                    >
+                                        <item.icon className="h-5 w-5" />
+                                        <span className="font-medium">{item.label}</span>
+                                    </NavLink>
+                                ))}
+                            </div>
+                        )}
 
                         {/* Settings & Logout */}
                         <div className="border-t pt-4 space-y-1">
@@ -135,7 +133,7 @@ export const BottomNav: React.FC = () => {
                             </button>
                             <button
                                 onClick={handleSignOut}
-                                className="w-full flex items-center gap-3 px-3 py-3 text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                                className="w-full flex items-center gap-3 px-3 py-3 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
                             >
                                 <LogOut className="h-5 w-5" />
                                 <span className="font-medium">Logout</span>

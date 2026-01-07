@@ -1,6 +1,7 @@
 import React from 'react';
-import { Sun, Moon, Monitor, Smartphone } from 'lucide-react';
+import { Sun, Moon, Monitor, Smartphone, Check } from 'lucide-react';
 import { useTheme, type Theme } from '@/hooks/useTheme';
+import { useAccentColor } from '@/hooks/useAccentColor';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
@@ -13,6 +14,7 @@ const themeOptions: { value: Theme; label: string; icon: React.ElementType }[] =
 
 export const AppearanceSection: React.FC = () => {
     const { theme, setTheme, isDark, isAmoled, toggleAmoled } = useTheme();
+    const { accent, setAccent, accentOptions } = useAccentColor();
 
     return (
         <div className="space-y-6">
@@ -57,6 +59,43 @@ export const AppearanceSection: React.FC = () => {
                         );
                     })}
                 </div>
+            </div>
+
+            {/* Accent Color */}
+            <div className="space-y-4">
+                <div>
+                    <h3 className="text-sm font-semibold text-foreground">Accent Color</h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">Choose your app's accent color</p>
+                </div>
+
+                <div className="grid grid-cols-6 gap-3">
+                    {accentOptions.map((option) => {
+                        const isSelected = accent === option.value;
+
+                        return (
+                            <button
+                                key={option.value}
+                                onClick={() => setAccent(option.value)}
+                                className={cn(
+                                    "relative aspect-square rounded-xl transition-all flex items-center justify-center",
+                                    "border-2",
+                                    isSelected
+                                        ? "border-foreground scale-110 shadow-lg"
+                                        : "border-transparent hover:scale-105"
+                                )}
+                                style={{ backgroundColor: option.color }}
+                                title={option.label}
+                            >
+                                {isSelected && (
+                                    <Check className="h-5 w-5 text-white drop-shadow-md" />
+                                )}
+                            </button>
+                        );
+                    })}
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                    {accentOptions.find(o => o.value === accent)?.label}
+                </p>
             </div>
 
             {/* AMOLED Mode */}

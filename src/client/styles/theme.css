@@ -97,6 +97,51 @@
   --input: 0 0% 12%;
 }
 
+/* ===== Accent Color Palettes ===== */
+/* Default: Violet */
+:root,
+[data-accent="violet"] {
+  --primary: 262 83% 58%;
+  /* #7C3AED */
+  --ring: 262 83% 58%;
+  --primary-hsl: 262, 83%, 58%;
+}
+
+[data-accent="blue"] {
+  --primary: 217 91% 60%;
+  /* #3B82F6 */
+  --ring: 217 91% 60%;
+  --primary-hsl: 217, 91%, 60%;
+}
+
+[data-accent="teal"] {
+  --primary: 173 80% 40%;
+  /* #14B8A6 */
+  --ring: 173 80% 40%;
+  --primary-hsl: 173, 80%, 40%;
+}
+
+[data-accent="rose"] {
+  --primary: 350 89% 60%;
+  /* #F43F5E */
+  --ring: 350 89% 60%;
+  --primary-hsl: 350, 89%, 60%;
+}
+
+[data-accent="amber"] {
+  --primary: 38 92% 50%;
+  /* #F59E0B */
+  --ring: 38 92% 50%;
+  --primary-hsl: 38, 92%, 50%;
+}
+
+[data-accent="emerald"] {
+  --primary: 152 69% 45%;
+  /* #10B981 */
+  --ring: 152 69% 45%;
+  --primary-hsl: 152, 69%, 45%;
+}
+
 @theme {
   --font-sans: "Inter",
     system-ui,

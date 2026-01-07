@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Accent Color Theming**:
+  - Added 6 premium accent color options (Violet, Blue, Teal, Rose, Amber, Emerald) in Appearance settings.
+  - Created `useAccentColor` hook for persistent accent color selection.
+  - Updated `theme.css` with accent color palettes using `data-accent` attribute selectors.
+- **Configurable Mobile Navigation**:
+  - Users can now customize which items appear in the mobile bottom navigation (up to 4 items).
+  - Dashboard is always visible and cannot be removed.
+  - Implemented drag-and-drop reordering for navigation items in Settings.
+  - Created `useNavConfig` hook for persistent navigation configuration.
+  - Enhanced `useLocalStorage` hook to support real-time sync across components using custom events.
+  - Added new "Navigation" tab in Settings page with live preview.
 - **Auto-Organization Creation**:
   - Implemented automatic organization creation for new users (e.g., "John's PaOrders") during initial sign-in.
   - Updated `OrgGuard` and application routing to remove the mandatory onboarding step, providing a seamless multi-tenant entry.
