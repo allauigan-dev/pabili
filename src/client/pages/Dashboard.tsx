@@ -253,24 +253,28 @@ export const Dashboard: React.FC = () => {
                         <Pencil className="h-4 w-4" />
                     </Button>
                 </div>
-                <div className="flex gap-6 overflow-x-auto pb-6 no-scrollbar snap-x snap-mandatory">
-                    {quickActions
-                        .filter(action => visibleActionIds.includes(action.label))
-                        .map((action) => (
-                            <button
-                                key={action.label}
-                                className="snap-start shrink-0 flex flex-col items-center gap-3 group w-20 sm:w-24"
-                                onClick={() => navigate(action.path)}
-                            >
-                                <div className={`w-14 h-14 sm:w-16 sm:h-16 rounded-2xl ${action.bg} ${action.color} flex items-center justify-center shadow-sm group-active:scale-95 group-hover:shadow-md transition-all`}>
-                                    <action.icon className="h-7 w-7 sm:h-8 sm:w-8" />
-                                </div>
-                                <span className="text-[10px] sm:text-xs font-semibold text-center leading-tight text-foreground/80 group-hover:text-foreground">
-                                    {action.label}
-                                </span>
-                            </button>
-                        ))}
-                    <div className="w-4 shrink-0"></div>
+                <div className="relative -mx-4">
+                    <div className="flex gap-4 overflow-x-auto px-4 pb-6 no-scrollbar snap-x snap-mandatory">
+                        {quickActions
+                            .filter(action => visibleActionIds.includes(action.label))
+                            .map((action) => (
+                                <button
+                                    key={action.label}
+                                    className="snap-start shrink-0 flex flex-col items-center gap-3 group w-24"
+                                    onClick={() => navigate(action.path)}
+                                >
+                                    <div className={`w-16 h-16 rounded-2xl ${action.bg} ${action.color} flex items-center justify-center shadow-sm group-active:scale-95 group-hover:shadow-md transition-all`}>
+                                        <action.icon className="h-8 w-8" />
+                                    </div>
+                                    <span className="text-[10px] sm:text-xs font-semibold text-center leading-tight text-foreground/80 group-hover:text-foreground">
+                                        {action.label}
+                                    </span>
+                                </button>
+                            ))}
+                        <div className="w-4 shrink-0"></div>
+                    </div>
+                    {/* Fade Indicator to show more content */}
+                    <div className="absolute right-0 top-0 bottom-6 w-12 bg-gradient-to-l from-background to-transparent pointer-events-none" />
                 </div>
             </section>
 

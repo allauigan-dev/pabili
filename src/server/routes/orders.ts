@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, isNull, count, sql } from 'drizzle-orm';
+import { eq, desc, and, isNull, count } from 'drizzle-orm';
 import { createDb, orders, stores, customers } from '../db';
 
 import type { AppEnv } from '../types';

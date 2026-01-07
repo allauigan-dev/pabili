@@ -8,6 +8,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Auto-Organization Creation**:
+  - Implemented automatic organization creation for new users (e.g., "John's PaOrders") during initial sign-in.
+  - Updated `OrgGuard` and application routing to remove the mandatory onboarding step, providing a seamless multi-tenant entry.
+  - Repurposed the onboarding page into a "Create Organization" page for manual growth and fallback scenarios.
+  - Updated database schema (`organization` table) to support creator tracking and user-specific organization slugs.
+- **Collapsible Desktop Sidebar**:
+  - Implemented a persistent, collapsible sidebar system using `SidebarProvider` and `useLocalStorage`.
+  - Refactored `Sidebar`, `Layout`, and `Header` to support dynamic width transitions using CSS variables.
+  - Added tooltips and icon-only mode for collapsed state to maximize workspace area on desktop.
+- **Mobile UI Enhancements**:
+  - Improved Dashboard quick actions on mobile with clear visual cues for horizontal scrollability.
+- **Invoice Management**:
+  - Refined `InvoiceForm` to only display orders with a `delivered` status as available options, ensuring business process consistency.
+- **Developer Tools**:
+  - Created `scripts/generate-seed.cjs`, a robust multi-tenant utility for seeding sample data across isolated organizations while preventing constraint violations.
+- **Settings & Personalization**:
+  - Implemented a dedicated Settings section with Appearance, Profile, and Organization management sub-pages.
+
+### Added
 - **Activity Feed Improvements**:
   - **Natural Language Formatting**: Updated Dashboard activity feed to display events as natural sentences (e.g., "Order #123 was placed", "Customer John added") instead of generic titles.
   - **Deletion Tracking**: Implemented logging for deleted items (Orders, Customers, Stores, Payments) so they appear in the activity feed.

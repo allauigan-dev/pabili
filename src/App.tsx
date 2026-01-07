@@ -16,10 +16,11 @@ import { PaymentDetails } from './client/pages/payments/PaymentDetails';
 import { InvoicesPage } from './client/pages/invoices/InvoicesPage';
 import { InvoiceForm } from './client/pages/invoices/InvoiceForm';
 import { InvoiceDetails } from './client/pages/invoices/InvoiceDetails';
+import { SettingsPage } from './client/pages/settings/SettingsPage';
 import { ProtectedRoute } from './client/components/ProtectedRoute';
 import { OrgGuard } from './client/components/OrgGuard';
 import { LoginPage } from './client/pages/auth/LoginPage';
-import { OnboardingPage } from './client/pages/onboarding/OnboardingPage';
+import { CreateOrganizationPage } from './client/pages/organizations/CreateOrganizationPage';
 
 import { ScrollToTop } from './client/components/ScrollToTop';
 import { OfflineIndicator } from './client/components/OfflineIndicator';
@@ -37,7 +38,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
 
         <Route element={<ProtectedRoute />}>
-          <Route path="/onboarding" element={<OnboardingPage />} />
+          <Route path="/organizations/new" element={<CreateOrganizationPage />} />
 
           <Route element={<OrgGuard />}>
             <Route element={<Layout />}>
@@ -62,6 +63,7 @@ function App() {
               <Route path="/invoices/new" element={<InvoiceForm />} />
               <Route path="/invoices/:id" element={<InvoiceDetails />} />
               <Route path="/invoices/:id/edit" element={<InvoiceForm />} />
+              <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<Dashboard />} />
             </Route>
           </Route>

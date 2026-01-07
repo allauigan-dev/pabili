@@ -59,11 +59,14 @@ export const verification = sqliteTable('verification', {
 export const organization = sqliteTable('organization', {
     id: text('id').primaryKey(),
     name: text('name').notNull(),
-    slug: text('slug').unique(),
+    slug: text('slug'), // Removed unique constraint - slug uniqueness achieved via user-specific suffix
     logo: text('logo'),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     metadata: text('metadata'),
-});
+    createdBy: text('created_by').references(() => user.id), // Track creator for subscription tier limits
+}, (table) => [
+    index('idx_organization_created_by').on(table.createdBy),
+]);
 
 export const member = sqliteTable('member', {
     id: text('id').primaryKey(),

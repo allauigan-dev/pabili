@@ -8,6 +8,8 @@ export function OrgGuard() {
     const { data: activeOrg, isPending: isOrgPending } = useActiveOrganization();
     const [isCheckingOrgs, setIsCheckingOrgs] = useState(true);
     const [hasOrgs, setHasOrgs] = useState<boolean | null>(null);
+    const [retryCount, setRetryCount] = useState(0);
+    const MAX_RETRIES = 3;
 
     useEffect(() => {
         const checkAndSetOrg = async () => {
@@ -42,8 +44,17 @@ export function OrgGuard() {
                     setHasOrgs(true);
                     // Reload to refresh the active org state
                     window.location.reload();
+                } else if (retryCount < MAX_RETRIES) {
+                    // Organization might not be created yet (race condition with databaseHook)
+                    // Wait a bit and retry
+                    console.log(`[OrgGuard] No orgs found, retrying... (${retryCount + 1}/${MAX_RETRIES})`);
+                    setTimeout(() => {
+                        setRetryCount(prev => prev + 1);
+                    }, 1000);
                 } else {
-                    // User truly has no organizations
+                    // After retries, user truly has no organizations
+                    // This is a fallback - should rarely happen with auto-creation
+                    console.warn("[OrgGuard] No orgs after retries, redirecting to create org");
                     setHasOrgs(false);
                     setIsCheckingOrgs(false);
                 }
@@ -55,14 +66,16 @@ export function OrgGuard() {
         };
 
         checkAndSetOrg();
-    }, [session, activeOrg, isSessionPending, isOrgPending]);
+    }, [session, activeOrg, isSessionPending, isOrgPending, retryCount]);
 
     // Show loading while checking session, org, or fetching orgs list
     if (isSessionPending || isOrgPending || isCheckingOrgs) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-screen bg-slate-50">
-                <Loader2 className="w-10 h-10 text-blue-600 animate-spin mb-4" />
-                <p className="text-slate-500 font-medium animate-pulse">Checking organization...</p>
+            <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+                <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
+                <p className="text-muted-foreground font-medium animate-pulse">
+                    {retryCount > 0 ? "Setting up your workspace..." : "Loading..."}
+                </p>
             </div>
         );
     }
@@ -72,9 +85,10 @@ export function OrgGuard() {
         return <Navigate to="/login" replace />;
     }
 
-    // If logged in but no organizations at all, redirect to onboarding
+    // If logged in but no organizations after retries, redirect to create org page
+    // This is a fallback for edge cases where auto-creation failed
     if (!activeOrg && hasOrgs === false) {
-        return <Navigate to="/onboarding" replace />;
+        return <Navigate to="/organizations/new" replace />;
     }
 
     return <Outlet />;

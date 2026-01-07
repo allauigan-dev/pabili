@@ -11,13 +11,15 @@ import {
     LogOut,
     Moon,
     Sun,
-    Smartphone
+    PanelLeftClose,
+    PanelLeftOpen
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OrganizationSwitcher } from '../OrganizationSwitcher';
 import { authClient } from '../../lib/auth-client';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
+import { useSidebar } from './SidebarProvider';
 
 const navItems = [
     { label: 'Dashboard', to: '/', icon: LayoutDashboard },
@@ -29,9 +31,13 @@ const navItems = [
 ];
 
 
-export const SidebarContent: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick }) => {
+export const SidebarContent: React.FC<{ onLinkClick?: () => void, isMobile?: boolean }> = ({ onLinkClick, isMobile }) => {
     const navigate = useNavigate();
-    const { isDark, toggleTheme, isAmoled, toggleAmoled } = useTheme();
+    const { isDark, toggleTheme } = useTheme();
+    const { isCollapsed, toggleCollapsed } = useSidebar();
+
+    // Use actual collapsed state for desktop, always expanded for mobile
+    const collapsed = isMobile ? false : isCollapsed;
 
     const handleSignOut = async () => {
         await authClient.signOut({
@@ -45,18 +51,22 @@ export const SidebarContent: React.FC<{ onLinkClick?: () => void }> = ({ onLinkC
     };
 
     return (
-        <div className="flex h-full flex-col">
-            <div className="flex h-16 items-center px-6 border-b">
-                <span className="text-xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                    Pabili
-                </span>
+        <div className="flex h-full flex-col overflow-hidden">
+            <div className={cn(
+                "flex h-16 items-center border-b transition-all duration-300 justify-center",
+                collapsed ? "px-0" : "px-6"
+            )}>
+                <div className="app-header-logo-icon shrink-0">P</div>
             </div>
 
-            <div className="p-4 border-b bg-slate-50/50 dark:bg-secondary/30">
-                <OrganizationSwitcher />
+            <div className={cn(
+                "p-4 border-b bg-slate-50/50 dark:bg-secondary/30 transition-all",
+                collapsed ? "px-2" : "px-4"
+            )}>
+                <OrganizationSwitcher isCollapsed={collapsed} />
             </div>
 
-            <nav className="flex-1 space-y-1 p-4">
+            <nav className="flex-1 space-y-1 p-4 overflow-y-auto no-scrollbar">
                 {navItems.map((item) => (
                     <NavLink
                         key={item.to}
@@ -64,61 +74,90 @@ export const SidebarContent: React.FC<{ onLinkClick?: () => void }> = ({ onLinkC
                         onClick={onLinkClick}
                         className={({ isActive }) =>
                             cn(
-                                "flex items-center gap-3 px-3 py-2 rounded-md transition-colors",
+                                "flex items-center gap-3 py-2 rounded-md transition-all duration-300",
+                                collapsed ? "justify-center px-0" : "px-3",
                                 isActive
                                     ? "bg-primary text-primary-foreground shadow-sm"
                                     : "text-muted-foreground hover:bg-secondary hover:text-foreground"
                             )
                         }
                     >
-                        <item.icon className="h-5 w-5" />
-                        <span className="font-medium">{item.label}</span>
+                        <item.icon className="h-5 w-5 shrink-0" />
+                        {!collapsed && (
+                            <span className="font-medium truncate animate-in fade-in slide-in-from-left-2 duration-300">
+                                {item.label}
+                            </span>
+                        )}
                     </NavLink>
                 ))}
             </nav>
 
-            <div className="p-4 border-t space-y-2">
+            <div className={cn(
+                "p-4 border-t space-y-2 mt-auto",
+                collapsed ? "px-2" : "px-4"
+            )}>
                 <div
-                    className="flex items-center gap-3 px-3 py-2 text-muted-foreground hover:bg-secondary hover:text-foreground rounded-md transition-colors cursor-pointer text-sm"
+                    className={cn(
+                        "flex items-center gap-3 py-2 text-muted-foreground hover:bg-secondary hover:text-foreground rounded-md transition-all cursor-pointer text-sm",
+                        collapsed ? "justify-center px-0" : "px-3"
+                    )}
                     onClick={() => {
                         navigate('/settings');
                         onLinkClick?.();
                     }}
                 >
-                    <Settings className="h-4 w-4" />
-                    <span className="font-medium">Settings</span>
+                    <Settings className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span className="font-medium animate-in fade-in duration-300">Settings</span>}
                 </div>
+
+                {!isMobile && (
+                    <button
+                        onClick={toggleCollapsed}
+                        className={cn(
+                            "flex items-center gap-3 py-2 text-muted-foreground hover:bg-secondary hover:text-foreground rounded-md transition-all text-sm w-full",
+                            collapsed ? "justify-center px-0" : "px-3"
+                        )}
+                    >
+                        {collapsed ? (
+                            <PanelLeftOpen className="h-4 w-4 shrink-0" />
+                        ) : (
+                            <>
+                                <PanelLeftClose className="h-4 w-4 shrink-0" />
+                                <span className="font-medium animate-in fade-in duration-300">Collapse</span>
+                            </>
+                        )}
+                    </button>
+                )}
+
                 <button
                     onClick={toggleTheme}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-muted-foreground hover:bg-secondary hover:text-foreground rounded-md transition-colors text-sm"
+                    className={cn(
+                        "w-full flex items-center gap-3 py-2 text-muted-foreground hover:bg-secondary hover:text-foreground rounded-md transition-all text-sm",
+                        collapsed ? "justify-center px-0" : "px-3"
+                    )}
                 >
                     {isDark ? (
                         <>
-                            <Sun className="h-4 w-4" />
-                            <span className="font-medium">Light Mode</span>
+                            <Sun className="h-4 w-4 shrink-0" />
+                            {!collapsed && <span className="font-medium animate-in fade-in duration-300">Light Mode</span>}
                         </>
                     ) : (
                         <>
-                            <Moon className="h-4 w-4" />
-                            <span className="font-medium">Dark Mode</span>
+                            <Moon className="h-4 w-4 shrink-0" />
+                            {!collapsed && <span className="font-medium animate-in fade-in duration-300">Dark Mode</span>}
                         </>
                     )}
                 </button>
-                {isDark && (
-                    <button
-                        onClick={toggleAmoled}
-                        className="w-full flex items-center gap-3 px-3 py-2 text-muted-foreground hover:bg-secondary hover:text-foreground rounded-md transition-colors text-sm"
-                    >
-                        <Smartphone className="h-4 w-4" />
-                        <span className="font-medium">AMOLED Mode {isAmoled ? '(On)' : '(Off)'}</span>
-                    </button>
-                )}
+
                 <button
                     onClick={handleSignOut}
-                    className="w-full flex items-center gap-3 px-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-colors text-sm"
+                    className={cn(
+                        "w-full flex items-center gap-3 py-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-md transition-all text-sm",
+                        collapsed ? "justify-center px-0" : "px-3"
+                    )}
                 >
-                    <LogOut className="h-4 w-4" />
-                    <span className="font-medium">Logout</span>
+                    <LogOut className="h-4 w-4 shrink-0" />
+                    {!collapsed && <span className="font-medium animate-in fade-in duration-300">Logout</span>}
                 </button>
             </div>
         </div>
@@ -126,8 +165,12 @@ export const SidebarContent: React.FC<{ onLinkClick?: () => void }> = ({ onLinkC
 };
 
 export const Sidebar: React.FC = () => {
+    const { isCollapsed } = useSidebar();
     return (
-        <aside className="fixed left-0 top-0 hidden h-full w-64 border-r bg-card flex-col md:flex">
+        <aside className={cn(
+            "fixed left-0 top-0 hidden h-full border-r bg-card flex-col md:flex transition-all duration-300 z-40",
+            isCollapsed ? "w-20" : "w-64"
+        )}>
             <SidebarContent />
         </aside>
     );

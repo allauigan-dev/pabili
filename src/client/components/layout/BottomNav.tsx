@@ -127,7 +127,7 @@ export const BottomNav: React.FC = () => {
                         {/* Settings & Logout */}
                         <div className="border-t pt-4 space-y-1">
                             <button
-                                onClick={() => setIsMoreOpen(false)}
+                                onClick={() => { navigate('/settings'); setIsMoreOpen(false); }}
                                 className="w-full flex items-center gap-3 px-3 py-3 text-foreground hover:bg-secondary rounded-lg transition-colors"
                             >
                                 <Settings className="h-5 w-5" />

@@ -15,12 +15,13 @@
 
 /* Sidebar - Desktop Only */
 .app-sidebar {
-    width: 256px;
+    width: var(--sidebar-width, 256px);
     background-color: hsl(var(--card));
     border-right: 1px solid hsl(var(--border));
     display: none;
     flex-direction: column;
     overflow-y: auto;
+    transition: width 0.3s ease;
 }
 
 .app-sidebar-nav {
@@ -63,6 +64,7 @@
     /* Account for fixed header height only */
     padding-bottom: 80px;
     /* Space for bottom nav on mobile */
+    transition: margin-left 0.3s ease;
 }
 
 .app-container {
@@ -133,6 +135,7 @@
     background-color: hsl(var(--card));
     border-bottom: 1px solid hsl(var(--border));
     box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.05);
+    transition: left 0.3s ease;
 }
 
 .app-header-container {
@@ -215,11 +218,11 @@
     }
 
     .app-header {
-        left: 256px;
+        left: var(--sidebar-width, 256px);
     }
 
     .app-main {
-        margin-left: 256px;
+        margin-left: var(--sidebar-width, 256px);
         padding-bottom: 2rem;
     }
 

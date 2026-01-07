@@ -3,7 +3,7 @@
  */
 
 import { Hono } from 'hono';
-import { eq, desc, and, isNull } from 'drizzle-orm';
+import { eq, desc } from 'drizzle-orm';
 import { createDb, activities } from '../db';
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';

@@ -66,11 +66,14 @@ export const InvoiceForm: React.FC = () => {
         }
     }, [isEdit, invoice]);
 
-    // Filter orders by selected customer
+    // Filter orders by selected customer and delivered status
     const availableOrders = useMemo(() => {
         if (!formData.customerId) return [];
-        return orders?.filter(o => o.customerId === formData.customerId) || [];
-    }, [orders, formData.customerId]);
+        return orders?.filter(o =>
+            o.customerId === formData.customerId &&
+            (o.orderStatus === 'delivered' || (formData.orderIds || []).includes(o.id))
+        ) || [];
+    }, [orders, formData.customerId, formData.orderIds]);
 
     useEffect(() => {
         const total = availableOrders

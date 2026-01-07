@@ -97,16 +97,14 @@ export const Header: React.FC = () => {
                                 <SheetDescription className="sr-only">
                                     Access navigation links, settings, and organizations.
                                 </SheetDescription>
-                                <SidebarContent onLinkClick={() => setOpen(false)} />
+                                <SidebarContent onLinkClick={() => setOpen(false)} isMobile={true} />
                             </SheetContent>
                         </Sheet>
                     </div>
 
                     {/* Desktop Logo */}
                     <NavLink to="/" className="hidden md:flex items-center gap-2">
-                        <div className="app-header-logo-icon">P</div>
-                        <span className="app-header-brand">Pabili</span>
-                        <h1 className="text-lg font-bold truncate max-w-[120px] sm:max-w-none ml-2 border-l pl-4">
+                        <h1 className="text-lg font-bold truncate max-w-[120px] sm:max-w-none">
                             {title}
                         </h1>
                     </NavLink>
