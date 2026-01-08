@@ -22,9 +22,8 @@ import {
     DialogDescription,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { useOrders } from '@/hooks/useOrders';
-import { useStores } from '@/hooks/useStores';
-import { useCustomers } from '@/hooks/useCustomers';
+import { useApi } from '@/hooks/useApi';
+import { statsApi } from '@/lib/api';
 
 import { useActivities } from '@/hooks/useActivities';
 import { useLocalStorage } from '@/hooks/useLocalStorage';
@@ -48,21 +47,19 @@ interface Activity {
 export const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const { data: session } = useSession();
-    const { data: orders } = useOrders();
-    const { data: stores } = useStores();
-    const { data: customers } = useCustomers();
+    const { data: stats } = useApi(statsApi.get);
 
     const { data: activitiesData } = useActivities(10);
 
     // Get user's first name for greeting
     const userName = session?.user?.name?.split(' ')[0] || 'there';
 
-    // Calculate stats
-    const stats = {
-        orders: orders?.length || 0,
-        activeStores: stores?.filter(s => s.storeStatus === 'active').length || 0,
-        customers: customers?.length || 0,
-        pending: orders?.filter(o => o.orderStatus === 'pending').length || 0,
+    // Stats from API (accurate counts)
+    const dashboardStats = {
+        orders: stats?.orders || 0,
+        activeStores: stats?.activeStores || 0,
+        customers: stats?.customers || 0,
+        pending: stats?.pending || 0,
     };
 
     // Helper to format activity into a sentence
@@ -195,7 +192,7 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
                         <div className="z-10 text-white">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{stats.orders}</span>
+                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{dashboardStats.orders}</span>
                         </div>
                     </div>
 
@@ -208,7 +205,7 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
                         <div className="z-10 text-white">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{stats.activeStores}</span>
+                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{dashboardStats.activeStores}</span>
                         </div>
                     </div>
 
@@ -221,7 +218,7 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
                         <div className="z-10 text-white">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{stats.customers}</span>
+                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{dashboardStats.customers}</span>
                         </div>
                     </div>
 
@@ -234,7 +231,7 @@ export const Dashboard: React.FC = () => {
                             </div>
                         </div>
                         <div className="z-10 text-white">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{stats.pending}</span>
+                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{dashboardStats.pending}</span>
                         </div>
                     </div>
                 </div>

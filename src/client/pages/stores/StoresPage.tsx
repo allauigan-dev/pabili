@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useStoreMutations } from '@/hooks/useStores';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useStatusCounts } from '@/hooks/useStatusCounts';
 import { storesApi } from '@/lib/api';
 import { StoreCard } from './StoreCard';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,10 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const StoresPage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+
     const {
         items: stores,
         isLoading,
@@ -37,12 +42,20 @@ export const StoresPage: React.FC = () => {
         reset
     } = useInfiniteScroll({
         fetcher: storesApi.listPaginated,
+        cacheKey: 'stores',
         pageSize: 20,
+        search: searchQuery,
     });
     const { deleteAction } = useStoreMutations();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [deleteId, setDeleteId] = useState<number | null>(null);
+
+    const statusList = ['all', 'active', 'inactive'];
+
+    // Use server-side counts for filter pills
+    const { counts } = useStatusCounts({
+        fetcher: storesApi.getCounts,
+        cacheKey: 'stores',
+        statusList,
+    });
 
     const handleDeleteClick = (id: number) => {
         setDeleteId(id);
@@ -56,24 +69,19 @@ export const StoresPage: React.FC = () => {
         }
     };
 
+    // Filter by status is still done client-side on loaded data
     const filteredStores = useMemo(() => {
-        return stores.filter(s => {
-            const matchesSearch = s.storeName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                s.storeAddress?.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesStatus = statusFilter === 'all' ? true : s.storeStatus === statusFilter;
-            return matchesSearch && matchesStatus;
-        });
-    }, [stores, searchQuery, statusFilter]);
-
-    const statusList = ['all', 'active', 'inactive'];
+        if (statusFilter === 'all') return stores;
+        return stores.filter(s => s.storeStatus === statusFilter);
+    }, [stores, statusFilter]);
 
     const filterOptions = useMemo(() => {
         return statusList.map(f => ({
             label: f,
             value: f,
-            count: stores.filter(s => f === 'all' ? true : s.storeStatus === f).length
+            count: counts[f] ?? 0
         }));
-    }, [stores]);
+    }, [counts]);
 
     return (
         <div className="relative pb-24">

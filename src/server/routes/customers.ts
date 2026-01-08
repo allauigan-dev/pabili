@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, isNull, sum, count } from 'drizzle-orm';
+import { eq, desc, and, isNull, sum, count, or, sql } from 'drizzle-orm';
 import { createDb, customers, orders, payments } from '../db';
 
 import type { AppEnv } from '../types';
@@ -32,7 +32,7 @@ const createCustomerSchema = z.object({
 
 const updateCustomerSchema = createCustomerSchema.partial();
 
-// GET /api/customers - List customers with pagination and balance
+// GET /api/customers - List customers with pagination, search, and balance
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
     const organizationId = c.get('organizationId');
@@ -42,25 +42,39 @@ app.get('/', async (c) => {
     const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
     const offset = (page - 1) * limit;
 
+    // Search param
+    const search = c.req.query('search')?.trim() || '';
+    const searchPattern = search ? `%${search}%` : null;
+
+    // Build where conditions
+    const baseConditions = and(
+        eq(customers.organizationId, organizationId),
+        isNull(customers.deletedAt)
+    );
+
+    const whereConditions = searchPattern
+        ? and(
+            baseConditions,
+            or(
+                sql`LOWER(${customers.customerName}) LIKE LOWER(${searchPattern})`,
+                sql`LOWER(${customers.customerEmail}) LIKE LOWER(${searchPattern})`
+            )
+        )
+        : baseConditions;
+
     try {
-        // Get total count
+        // Get total count (with search filter)
         const [countResult] = await db
             .select({ total: count() })
             .from(customers)
-            .where(and(
-                eq(customers.organizationId, organizationId),
-                isNull(customers.deletedAt)
-            ));
+            .where(whereConditions);
         const total = countResult?.total || 0;
 
-        // Get paginated customers
+        // Get paginated customers (with search filter)
         const allCustomers = await db
             .select()
             .from(customers)
-            .where(and(
-                eq(customers.organizationId, organizationId),
-                isNull(customers.deletedAt)
-            ))
+            .where(whereConditions)
             .orderBy(desc(customers.createdAt))
             .limit(limit)
             .offset(offset);
@@ -109,6 +123,47 @@ app.get('/', async (c) => {
     } catch (error) {
         console.error('Error fetching customers:', error);
         return c.json({ success: false, error: 'Failed to fetch customers' }, 500);
+    }
+});
+
+// GET /api/customers/counts - Get counts per status
+app.get('/counts', async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+
+    const statusList = ['active', 'inactive'] as const;
+
+    try {
+        // Get total count
+        const [totalResult] = await db
+            .select({ total: count() })
+            .from(customers)
+            .where(and(
+                eq(customers.organizationId, organizationId),
+                isNull(customers.deletedAt)
+            ));
+
+        const counts: Record<string, number> = {
+            all: totalResult?.total || 0,
+        };
+
+        // Get count for each status
+        for (const status of statusList) {
+            const [result] = await db
+                .select({ total: count() })
+                .from(customers)
+                .where(and(
+                    eq(customers.organizationId, organizationId),
+                    eq(customers.customerStatus, status),
+                    isNull(customers.deletedAt)
+                ));
+            counts[status] = result?.total || 0;
+        }
+
+        return c.json({ success: true, data: counts });
+    } catch (error) {
+        console.error('Error fetching customer counts:', error);
+        return c.json({ success: false, error: 'Failed to fetch customer counts' }, 500);
     }
 });
 

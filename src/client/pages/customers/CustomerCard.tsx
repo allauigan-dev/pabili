@@ -5,7 +5,8 @@ import {
     Mail,
     Phone,
     Edit,
-    Trash2
+    Trash2,
+    UserX
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { formatCurrency } from '@/lib/utils';
@@ -23,24 +24,27 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onDelete }
     const outstandingBalance = customer.balance ?? 0;
     const hasBalance = outstandingBalance > 0;
 
-    // Status Logic
-    const statusColor = hasBalance ? 'bg-amber-400' : 'bg-emerald-500';
-    const statusBadge = hasBalance ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800';
-    const statusLabel = hasBalance ? 'OWING' : 'GOOD';
+    // Balance status
+    const balanceBadge = hasBalance ? 'bg-amber-100 text-amber-800' : 'bg-emerald-100 text-emerald-800';
+    const balanceLabel = hasBalance ? 'OWING' : 'GOOD';
+
+    // Customer status - determines the left strip color
+    const isActive = customer.customerStatus === 'active';
+    const statusStripColor = isActive ? (hasBalance ? 'bg-amber-400' : 'bg-emerald-500') : 'bg-gray-400';
 
     return (
         <div
             className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4 cursor-pointer transition-shadow hover:shadow-md"
             onClick={() => navigate(`/customers/${customer.id}`)}
         >
-            {/* Status Strip */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${statusColor} rounded-l-2xl`}></div>
+            {/* Status Strip - gray for inactive customers */}
+            <div className={`absolute left-0 top-0 bottom-0 w-1 ${statusStripColor} rounded-l-2xl`}></div>
 
             <div className="flex gap-4">
                 {/* Icon/Image Section */}
                 <div className="flex-shrink-0 w-20 h-20 bg-secondary/30 rounded-xl overflow-hidden border border-border/50 relative flex items-center justify-center">
-                    <span className={`absolute top-0 right-0 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md z-10 uppercase ${statusBadge}`}>
-                        {statusLabel}
+                    <span className={`absolute top-0 right-0 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md z-10 uppercase ${balanceBadge}`}>
+                        {balanceLabel}
                     </span>
                     {customer.customerPhoto ? (
                         <img
@@ -57,7 +61,16 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onDelete }
                 <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
                     <div className="flex justify-between items-start">
                         <div className="min-w-0 pr-2">
-                            <h3 className="text-base font-bold text-foreground truncate">{customer.customerName}</h3>
+                            <div className="flex items-center gap-2">
+                                <h3 className="text-base font-bold text-foreground truncate">{customer.customerName}</h3>
+                                {/* Customer status badge */}
+                                {!isActive && (
+                                    <span className="flex items-center gap-0.5 text-[9px] font-bold px-1.5 py-0.5 rounded-md bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 uppercase">
+                                        <UserX className="h-2.5 w-2.5" />
+                                        Inactive
+                                    </span>
+                                )}
+                            </div>
                             <div className="flex flex-col gap-1 mt-1">
                                 <div className="items-center text-xs text-muted-foreground flex">
                                     <Mail className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />

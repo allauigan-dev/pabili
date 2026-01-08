@@ -5,8 +5,8 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, isNull, count } from 'drizzle-orm';
-import { createDb, payments } from '../db';
+import { eq, desc, and, isNull, count, or, sql } from 'drizzle-orm';
+import { createDb, payments, customers } from '../db';
 
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
@@ -33,7 +33,7 @@ const createPaymentSchema = z.object({
 
 const updatePaymentSchema = createPaymentSchema.partial();
 
-// GET /api/payments - List payments with pagination
+// GET /api/payments - List payments with pagination and search
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
     const organizationId = c.get('organizationId');
@@ -43,24 +43,74 @@ app.get('/', async (c) => {
     const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
     const offset = (page - 1) * limit;
 
+    // Search param
+    const search = c.req.query('search')?.trim() || '';
+    const searchPattern = search ? `%${search}%` : null;
+
+    // Build base where conditions
+    const baseConditions = and(
+        eq(payments.organizationId, organizationId),
+        isNull(payments.deletedAt)
+    );
+
     try {
-        // Get total count
-        const [countResult] = await db
-            .select({ total: count() })
-            .from(payments)
-            .where(and(
-                eq(payments.organizationId, organizationId),
-                isNull(payments.deletedAt)
-            ));
-        const total = countResult?.total || 0;
+        // Get total count (with search filter if applicable)
+        let total: number;
+        if (searchPattern) {
+            const [countResult] = await db
+                .select({ total: count() })
+                .from(payments)
+                .leftJoin(customers, eq(payments.customerId, customers.id))
+                .where(and(
+                    baseConditions,
+                    or(
+                        sql`LOWER(${payments.paymentReference}) LIKE LOWER(${searchPattern})`,
+                        sql`LOWER(${customers.customerName}) LIKE LOWER(${searchPattern})`,
+                        sql`CAST(${payments.paymentAmount} AS TEXT) LIKE ${searchPattern}`
+                    )
+                ));
+            total = countResult?.total || 0;
+        } else {
+            const [countResult] = await db
+                .select({ total: count() })
+                .from(payments)
+                .where(baseConditions);
+            total = countResult?.total || 0;
+        }
+
+        // Build where conditions
+        const whereConditions = searchPattern
+            ? and(
+                baseConditions,
+                or(
+                    sql`LOWER(${payments.paymentReference}) LIKE LOWER(${searchPattern})`,
+                    sql`LOWER(${customers.customerName}) LIKE LOWER(${searchPattern})`,
+                    sql`CAST(${payments.paymentAmount} AS TEXT) LIKE ${searchPattern}`
+                )
+            )
+            : baseConditions;
 
         const allPayments = await db
-            .select()
+            .select({
+                id: payments.id,
+                paymentAmount: payments.paymentAmount,
+                paymentMethod: payments.paymentMethod,
+                paymentStatus: payments.paymentStatus,
+                paymentReference: payments.paymentReference,
+                paymentProof: payments.paymentProof,
+                paymentNotes: payments.paymentNotes,
+                paymentDate: payments.paymentDate,
+                customerId: payments.customerId,
+                invoiceId: payments.invoiceId,
+                organizationId: payments.organizationId,
+                createdAt: payments.createdAt,
+                updatedAt: payments.updatedAt,
+                deletedAt: payments.deletedAt,
+                customerName: customers.customerName,
+            })
             .from(payments)
-            .where(and(
-                eq(payments.organizationId, organizationId),
-                isNull(payments.deletedAt)
-            ))
+            .leftJoin(customers, eq(payments.customerId, customers.id))
+            .where(whereConditions)
             .orderBy(desc(payments.createdAt))
             .limit(limit)
             .offset(offset);
@@ -73,6 +123,47 @@ app.get('/', async (c) => {
     } catch (error) {
         console.error('Error fetching payments:', error);
         return c.json({ success: false, error: 'Failed to fetch payments' }, 500);
+    }
+});
+
+// GET /api/payments/counts - Get counts per status
+app.get('/counts', async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+
+    const statusList = ['pending', 'confirmed', 'rejected'] as const;
+
+    try {
+        // Get total count
+        const [totalResult] = await db
+            .select({ total: count() })
+            .from(payments)
+            .where(and(
+                eq(payments.organizationId, organizationId),
+                isNull(payments.deletedAt)
+            ));
+
+        const counts: Record<string, number> = {
+            all: totalResult?.total || 0,
+        };
+
+        // Get count for each status
+        for (const status of statusList) {
+            const [result] = await db
+                .select({ total: count() })
+                .from(payments)
+                .where(and(
+                    eq(payments.organizationId, organizationId),
+                    eq(payments.paymentStatus, status),
+                    isNull(payments.deletedAt)
+                ));
+            counts[status] = result?.total || 0;
+        }
+
+        return c.json({ success: true, data: counts });
+    } catch (error) {
+        console.error('Error fetching payment counts:', error);
+        return c.json({ success: false, error: 'Failed to fetch payment counts' }, 500);
     }
 });
 

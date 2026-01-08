@@ -16,6 +16,7 @@ import invoicesRoutes from './routes/invoices';
 import uploadRoutes from './routes/upload';
 import filesRoutes from './routes/files';
 import activitiesRoutes from './routes/activities';
+import statsRoutes from './routes/stats';
 
 import { authMiddleware } from './middleware/auth';
 import { getAuth } from './lib/auth';
@@ -53,6 +54,7 @@ app.route('/api/payments', paymentsRoutes);
 app.route('/api/invoices', invoicesRoutes);
 app.route('/api/upload', uploadRoutes);
 app.route('/api/activities', activitiesRoutes);
+app.route('/api/stats', statsRoutes);
 app.route('/files', filesRoutes);
 
 // 404 handler for API routes

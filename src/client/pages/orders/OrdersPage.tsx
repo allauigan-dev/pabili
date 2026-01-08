@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useOrderMutations } from '@/hooks/useOrders';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useStatusCounts } from '@/hooks/useStatusCounts';
 import { ordersApi } from '@/lib/api';
 import { OrderCard } from './OrderCard';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,10 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const OrdersPage: React.FC = () => {
     const navigate = useNavigate();
+    const [filter, setFilter] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+
     const {
         items: orders,
         isLoading,
@@ -38,12 +43,20 @@ export const OrdersPage: React.FC = () => {
         reset
     } = useInfiniteScroll({
         fetcher: ordersApi.listPaginated,
+        cacheKey: 'orders',
         pageSize: 20,
+        search: searchQuery,
     });
     const { deleteAction, updateStatusAction } = useOrderMutations();
-    const [filter, setFilter] = useState('all');
-    const [searchQuery, setSearchQuery] = useState('');
-    const [deleteId, setDeleteId] = useState<number | null>(null);
+
+    const statusList = ['all', 'pending', 'bought', 'packed', 'delivered', 'cancelled', 'no_stock'];
+
+    // Use server-side counts for filter pills
+    const { counts } = useStatusCounts({
+        fetcher: ordersApi.getCounts,
+        cacheKey: 'orders',
+        statusList,
+    });
 
     const handleDeleteClick = (id: number) => {
         setDeleteId(id);
@@ -62,26 +75,19 @@ export const OrdersPage: React.FC = () => {
         reset();
     };
 
-    // Client-side filtering on loaded items
+    // Filter by status is still done client-side on loaded data
     const filteredOrders = useMemo(() => {
-        return orders.filter(o => {
-            const matchesFilter = filter === 'all' ? true : o.orderStatus === filter;
-            const matchesSearch = o.orderName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                o.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                o.storeName.toLowerCase().includes(searchQuery.toLowerCase());
-            return matchesFilter && matchesSearch;
-        });
-    }, [orders, filter, searchQuery]);
-
-    const statusList = ['all', 'pending', 'bought', 'packed', 'delivered', 'cancelled', 'no_stock'];
+        if (filter === 'all') return orders;
+        return orders.filter(o => o.orderStatus === filter);
+    }, [orders, filter]);
 
     const filterOptions = useMemo(() => {
         return statusList.map(f => ({
             label: f,
             value: f,
-            count: orders.filter(o => f === 'all' ? true : o.orderStatus === f).length
+            count: counts[f] ?? 0
         }));
-    }, [orders]);
+    }, [counts]);
 
     return (
         <div className="relative pb-24">

@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, isNull, count } from 'drizzle-orm';
+import { eq, desc, and, isNull, count, or, sql } from 'drizzle-orm';
 import { createDb, stores } from '../db';
 
 import type { AppEnv } from '../types';
@@ -34,7 +34,7 @@ const createStoreSchema = z.object({
 
 const updateStoreSchema = createStoreSchema.partial();
 
-// GET /api/stores - List stores with pagination
+// GET /api/stores - List stores with pagination and search
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
     const organizationId = c.get('organizationId');
@@ -44,24 +44,38 @@ app.get('/', async (c) => {
     const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
     const offset = (page - 1) * limit;
 
+    // Search param
+    const search = c.req.query('search')?.trim() || '';
+    const searchPattern = search ? `%${search}%` : null;
+
+    // Build where conditions
+    const baseConditions = and(
+        eq(stores.organizationId, organizationId),
+        isNull(stores.deletedAt)
+    );
+
+    const whereConditions = searchPattern
+        ? and(
+            baseConditions,
+            or(
+                sql`LOWER(${stores.storeName}) LIKE LOWER(${searchPattern})`,
+                sql`LOWER(${stores.storeAddress}) LIKE LOWER(${searchPattern})`
+            )
+        )
+        : baseConditions;
+
     try {
-        // Get total count
+        // Get total count (with search filter)
         const [countResult] = await db
             .select({ total: count() })
             .from(stores)
-            .where(and(
-                eq(stores.organizationId, organizationId),
-                isNull(stores.deletedAt)
-            ));
+            .where(whereConditions);
         const total = countResult?.total || 0;
 
         const allStores = await db
             .select()
             .from(stores)
-            .where(and(
-                eq(stores.organizationId, organizationId),
-                isNull(stores.deletedAt)
-            ))
+            .where(whereConditions)
             .orderBy(desc(stores.createdAt))
             .limit(limit)
             .offset(offset);
@@ -74,6 +88,47 @@ app.get('/', async (c) => {
     } catch (error) {
         console.error('Error fetching stores:', error);
         return c.json({ success: false, error: 'Failed to fetch stores' }, 500);
+    }
+});
+
+// GET /api/stores/counts - Get counts per status
+app.get('/counts', async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+
+    const statusList = ['active', 'inactive'] as const;
+
+    try {
+        // Get total count
+        const [totalResult] = await db
+            .select({ total: count() })
+            .from(stores)
+            .where(and(
+                eq(stores.organizationId, organizationId),
+                isNull(stores.deletedAt)
+            ));
+
+        const counts: Record<string, number> = {
+            all: totalResult?.total || 0,
+        };
+
+        // Get count for each status
+        for (const status of statusList) {
+            const [result] = await db
+                .select({ total: count() })
+                .from(stores)
+                .where(and(
+                    eq(stores.organizationId, organizationId),
+                    eq(stores.storeStatus, status),
+                    isNull(stores.deletedAt)
+                ));
+            counts[status] = result?.total || 0;
+        }
+
+        return c.json({ success: true, data: counts });
+    } catch (error) {
+        console.error('Error fetching store counts:', error);
+        return c.json({ success: false, error: 'Failed to fetch store counts' }, 500);
     }
 });
 

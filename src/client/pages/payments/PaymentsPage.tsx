@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { usePaymentMutations } from '@/hooks/usePayments';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useStatusCounts } from '@/hooks/useStatusCounts';
 import { paymentsApi } from '@/lib/api';
 import { PaymentCard } from './PaymentCard';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,10 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const PaymentsPage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+
     const {
         items: payments,
         isLoading,
@@ -38,12 +43,20 @@ export const PaymentsPage: React.FC = () => {
         reset
     } = useInfiniteScroll({
         fetcher: paymentsApi.listPaginated,
+        cacheKey: 'payments',
         pageSize: 20,
+        search: searchQuery,
     });
     const { deleteAction, confirmAction } = usePaymentMutations();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [deleteId, setDeleteId] = useState<number | null>(null);
+
+    const statusList = ['all', 'pending', 'confirmed', 'rejected'];
+
+    // Use server-side counts for filter pills
+    const { counts } = useStatusCounts({
+        fetcher: paymentsApi.getCounts,
+        cacheKey: 'payments',
+        statusList,
+    });
 
     const handleDeleteClick = (id: number) => {
         setDeleteId(id);
@@ -64,26 +77,19 @@ export const PaymentsPage: React.FC = () => {
         }
     };
 
+    // Filter by status is still done client-side on loaded data
     const filteredPayments = useMemo(() => {
-        return payments.filter(p => {
-            const customerName = p.customerName || '';
-            const matchesSearch = customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                p.paymentReference?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                p.paymentAmount.toString().includes(searchQuery);
-            const matchesStatus = statusFilter === 'all' ? true : p.paymentStatus === statusFilter;
-            return matchesSearch && matchesStatus;
-        });
-    }, [payments, searchQuery, statusFilter]);
-
-    const statusList = ['all', 'pending', 'confirmed', 'rejected'];
+        if (statusFilter === 'all') return payments;
+        return payments.filter(p => p.paymentStatus === statusFilter);
+    }, [payments, statusFilter]);
 
     const filterOptions = useMemo(() => {
         return statusList.map(f => ({
             label: f,
             value: f,
-            count: payments.filter(p => f === 'all' ? true : p.paymentStatus === f).length
+            count: counts[f] ?? 0
         }));
-    }, [payments]);
+    }, [counts]);
 
     return (
         <div className="relative pb-24">

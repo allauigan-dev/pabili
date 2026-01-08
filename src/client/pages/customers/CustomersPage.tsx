@@ -17,15 +17,20 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useCustomerMutations } from '@/hooks/useCustomers';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useStatusCounts } from '@/hooks/useStatusCounts';
 import { customersApi } from '@/lib/api';
 import { CustomerCard } from './CustomerCard';
 import { Button } from '@/components/ui/button';
 import { FloatingActionButton } from '@/components/ui/FloatingActionButton';
 import { EmptyState } from '@/components/index';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
+import { FilterPills } from '@/components/ui/FilterPills';
 
 export const CustomersPage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+
     const {
         items: customers,
         isLoading,
@@ -33,14 +38,24 @@ export const CustomersPage: React.FC = () => {
         hasMore,
         error,
         sentinelRef,
-        reset
+        reset,
     } = useInfiniteScroll({
         fetcher: customersApi.listPaginated,
+        cacheKey: 'customers',
         pageSize: 20,
+        search: searchQuery,
     });
     const { deleteAction } = useCustomerMutations();
-    const [searchQuery, setSearchQuery] = useState('');
     const [deleteId, setDeleteId] = useState<number | null>(null);
+
+    const statusList = ['all', 'active', 'inactive'];
+
+    // Use server-side counts for filter pills
+    const { counts } = useStatusCounts({
+        fetcher: customersApi.getCounts,
+        cacheKey: 'customers',
+        statusList,
+    });
 
     const handleDeleteClick = (id: number) => {
         setDeleteId(id);
@@ -54,12 +69,19 @@ export const CustomersPage: React.FC = () => {
         }
     };
 
+    // Filter by status is done client-side on loaded data
     const filteredCustomers = useMemo(() => {
-        return customers.filter(c =>
-            c.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            (c.customerEmail && c.customerEmail.toLowerCase().includes(searchQuery.toLowerCase()))
-        );
-    }, [customers, searchQuery]);
+        if (statusFilter === 'all') return customers;
+        return customers.filter(c => c.customerStatus === statusFilter);
+    }, [customers, statusFilter]);
+
+    const filterOptions = useMemo(() => {
+        return statusList.map(f => ({
+            label: f,
+            value: f,
+            count: counts[f] ?? 0
+        }));
+    }, [counts]);
 
     return (
         <div className="relative pb-24">
@@ -74,9 +96,16 @@ export const CustomersPage: React.FC = () => {
                         <RefreshCcw className="h-5 w-5 text-muted-foreground" />
                     </Button>
                 }
+                filterContent={
+                    <FilterPills
+                        options={filterOptions}
+                        activeValue={statusFilter}
+                        onChange={setStatusFilter}
+                    />
+                }
             />
 
-            <main className="space-y-4 pt-6">
+            <main className="space-y-4 pt-14">
                 {isLoading && customers.length === 0 ? (
                     <div className="space-y-4">
                         {[1, 2, 3].map(i => (
@@ -104,7 +133,7 @@ export const CustomersPage: React.FC = () => {
                             )}
                             {!hasMore && filteredCustomers.length > 0 && (
                                 <span className="text-sm text-muted-foreground">
-                                    {!searchQuery
+                                    {statusFilter === 'all' && !searchQuery
                                         ? `All ${filteredCustomers.length} customers loaded`
                                         : `Showing ${filteredCustomers.length} of ${customers.length} customers`
                                     }

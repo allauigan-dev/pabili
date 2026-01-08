@@ -5,8 +5,8 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, isNull, count } from 'drizzle-orm';
-import { createDb, invoices } from '../db';
+import { eq, desc, and, isNull, count, or, sql } from 'drizzle-orm';
+import { createDb, invoices, customers } from '../db';
 
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
@@ -44,7 +44,7 @@ const updateStatusSchema = z.object({
     status: z.enum(['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled']),
 });
 
-// GET /api/invoices - List invoices with pagination
+// GET /api/invoices - List invoices with pagination and search
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
     const organizationId = c.get('organizationId');
@@ -54,24 +54,70 @@ app.get('/', async (c) => {
     const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
     const offset = (page - 1) * limit;
 
+    // Search param
+    const search = c.req.query('search')?.trim() || '';
+    const searchPattern = search ? `%${search}%` : null;
+
+    // Build base where conditions
+    const baseConditions = and(
+        eq(invoices.organizationId, organizationId),
+        isNull(invoices.deletedAt)
+    );
+
     try {
-        // Get total count
-        const [countResult] = await db
-            .select({ total: count() })
-            .from(invoices)
-            .where(and(
-                eq(invoices.organizationId, organizationId),
-                isNull(invoices.deletedAt)
-            ));
-        const total = countResult?.total || 0;
+        // Get total count (with search filter if applicable)
+        let total: number;
+        if (searchPattern) {
+            const [countResult] = await db
+                .select({ total: count() })
+                .from(invoices)
+                .leftJoin(customers, eq(invoices.customerId, customers.id))
+                .where(and(
+                    baseConditions,
+                    or(
+                        sql`LOWER(${invoices.invoiceNumber}) LIKE LOWER(${searchPattern})`,
+                        sql`LOWER(${customers.customerName}) LIKE LOWER(${searchPattern})`
+                    )
+                ));
+            total = countResult?.total || 0;
+        } else {
+            const [countResult] = await db
+                .select({ total: count() })
+                .from(invoices)
+                .where(baseConditions);
+            total = countResult?.total || 0;
+        }
+
+        // Build where conditions
+        const whereConditions = searchPattern
+            ? and(
+                baseConditions,
+                or(
+                    sql`LOWER(${invoices.invoiceNumber}) LIKE LOWER(${searchPattern})`,
+                    sql`LOWER(${customers.customerName}) LIKE LOWER(${searchPattern})`
+                )
+            )
+            : baseConditions;
 
         const allInvoices = await db
-            .select()
+            .select({
+                id: invoices.id,
+                invoiceNumber: invoices.invoiceNumber,
+                invoiceTotal: invoices.invoiceTotal,
+                invoicePaid: invoices.invoicePaid,
+                invoiceNotes: invoices.invoiceNotes,
+                dueDate: invoices.dueDate,
+                invoiceStatus: invoices.invoiceStatus,
+                customerId: invoices.customerId,
+                organizationId: invoices.organizationId,
+                createdAt: invoices.createdAt,
+                updatedAt: invoices.updatedAt,
+                deletedAt: invoices.deletedAt,
+                customerName: customers.customerName,
+            })
             .from(invoices)
-            .where(and(
-                eq(invoices.organizationId, organizationId),
-                isNull(invoices.deletedAt)
-            ))
+            .leftJoin(customers, eq(invoices.customerId, customers.id))
+            .where(whereConditions)
             .orderBy(desc(invoices.createdAt))
             .limit(limit)
             .offset(offset);
@@ -84,6 +130,47 @@ app.get('/', async (c) => {
     } catch (error) {
         console.error('Error fetching invoices:', error);
         return c.json({ success: false, error: 'Failed to fetch invoices' }, 500);
+    }
+});
+
+// GET /api/invoices/counts - Get counts per status
+app.get('/counts', async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+
+    const statusList = ['draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'] as const;
+
+    try {
+        // Get total count
+        const [totalResult] = await db
+            .select({ total: count() })
+            .from(invoices)
+            .where(and(
+                eq(invoices.organizationId, organizationId),
+                isNull(invoices.deletedAt)
+            ));
+
+        const counts: Record<string, number> = {
+            all: totalResult?.total || 0,
+        };
+
+        // Get count for each status
+        for (const status of statusList) {
+            const [result] = await db
+                .select({ total: count() })
+                .from(invoices)
+                .where(and(
+                    eq(invoices.organizationId, organizationId),
+                    eq(invoices.invoiceStatus, status),
+                    isNull(invoices.deletedAt)
+                ));
+            counts[status] = result?.total || 0;
+        }
+
+        return c.json({ success: true, data: counts });
+    } catch (error) {
+        console.error('Error fetching invoice counts:', error);
+        return c.json({ success: false, error: 'Failed to fetch invoice counts' }, 500);
     }
 });
 

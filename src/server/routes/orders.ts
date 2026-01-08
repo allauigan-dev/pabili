@@ -5,7 +5,7 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
-import { eq, desc, and, isNull, count } from 'drizzle-orm';
+import { eq, desc, and, isNull, count, or, sql } from 'drizzle-orm';
 import { createDb, orders, stores, customers } from '../db';
 
 import type { AppEnv } from '../types';
@@ -49,7 +49,7 @@ function generateOrderNumber() {
     return `ORD-${timestamp}-${random}`;
 }
 
-// GET /api/orders - List orders with pagination
+// GET /api/orders - List orders with pagination and search
 app.get('/', async (c) => {
     const db = createDb(c.env.DB);
     const organizationId = c.get('organizationId');
@@ -59,16 +59,54 @@ app.get('/', async (c) => {
     const limit = Math.min(100, Math.max(1, parseInt(c.req.query('limit') || '20')));
     const offset = (page - 1) * limit;
 
+    // Search param
+    const search = c.req.query('search')?.trim() || '';
+    const searchPattern = search ? `%${search}%` : null;
+
+    // Build base where conditions
+    const baseConditions = and(
+        eq(orders.organizationId, organizationId),
+        isNull(orders.deletedAt)
+    );
+
     try {
-        // Get total count
-        const [countResult] = await db
-            .select({ total: count() })
-            .from(orders)
-            .where(and(
-                eq(orders.organizationId, organizationId),
-                isNull(orders.deletedAt)
-            ));
-        const total = countResult?.total || 0;
+        // Get total count (with search filter if applicable)
+        // For count, we need to do a join if searching
+        let total: number;
+        if (searchPattern) {
+            const [countResult] = await db
+                .select({ total: count() })
+                .from(orders)
+                .leftJoin(stores, eq(orders.storeId, stores.id))
+                .leftJoin(customers, eq(orders.customerId, customers.id))
+                .where(and(
+                    baseConditions,
+                    or(
+                        sql`LOWER(${orders.orderName}) LIKE LOWER(${searchPattern})`,
+                        sql`LOWER(${customers.customerName}) LIKE LOWER(${searchPattern})`,
+                        sql`LOWER(${stores.storeName}) LIKE LOWER(${searchPattern})`
+                    )
+                ));
+            total = countResult?.total || 0;
+        } else {
+            const [countResult] = await db
+                .select({ total: count() })
+                .from(orders)
+                .where(baseConditions);
+            total = countResult?.total || 0;
+        }
+
+        // Build the main query with optional search filter
+        const whereConditions = searchPattern
+            ? and(
+                baseConditions,
+                or(
+                    sql`LOWER(${orders.orderName}) LIKE LOWER(${searchPattern})`,
+                    sql`LOWER(${customers.customerName}) LIKE LOWER(${searchPattern})`,
+                    sql`LOWER(${stores.storeName}) LIKE LOWER(${searchPattern})`
+                )
+            )
+            : baseConditions;
 
         // Get paginated orders
         const allOrders = await db
@@ -100,10 +138,7 @@ app.get('/', async (c) => {
             .from(orders)
             .leftJoin(stores, eq(orders.storeId, stores.id))
             .leftJoin(customers, eq(orders.customerId, customers.id))
-            .where(and(
-                eq(orders.organizationId, organizationId),
-                isNull(orders.deletedAt)
-            ))
+            .where(whereConditions)
             .orderBy(desc(orders.createdAt))
             .limit(limit)
             .offset(offset);
@@ -121,6 +156,47 @@ app.get('/', async (c) => {
     } catch (error) {
         console.error('Error fetching orders:', error);
         return c.json({ success: false, error: 'Failed to fetch orders' }, 500);
+    }
+});
+
+// GET /api/orders/counts - Get counts per status
+app.get('/counts', async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+
+    const statusList = ['pending', 'bought', 'packed', 'delivered', 'cancelled', 'no_stock'] as const;
+
+    try {
+        // Get total count (all non-deleted orders)
+        const [totalResult] = await db
+            .select({ total: count() })
+            .from(orders)
+            .where(and(
+                eq(orders.organizationId, organizationId),
+                isNull(orders.deletedAt)
+            ));
+
+        const counts: Record<string, number> = {
+            all: totalResult?.total || 0,
+        };
+
+        // Get count for each status
+        for (const status of statusList) {
+            const [result] = await db
+                .select({ total: count() })
+                .from(orders)
+                .where(and(
+                    eq(orders.organizationId, organizationId),
+                    eq(orders.orderStatus, status),
+                    isNull(orders.deletedAt)
+                ));
+            counts[status] = result?.total || 0;
+        }
+
+        return c.json({ success: true, data: counts });
+    } catch (error) {
+        console.error('Error fetching order counts:', error);
+        return c.json({ success: false, error: 'Failed to fetch order counts' }, 500);
     }
 });
 

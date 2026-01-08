@@ -7,7 +7,9 @@ import {
     Edit,
     ArrowLeft,
     Wallet,
-    History
+    History,
+    UserCheck,
+    UserX
 } from 'lucide-react';
 import { useCustomer } from '@/hooks/useCustomers';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
@@ -30,6 +32,7 @@ export const CustomerDetails: React.FC = () => {
 
     const outstandingBalance = customer.balance ?? 0;
     const hasBalance = outstandingBalance > 0;
+    const isActive = customer.customerStatus === 'active';
 
     return (
         <div className="bg-background text-foreground font-sans min-h-screen pb-24">
@@ -59,9 +62,23 @@ export const CustomerDetails: React.FC = () => {
                             )}
                         </div>
                         <div className="text-center md:text-left">
-                            <h2 className="text-3xl font-black text-foreground tracking-tight mb-2">
-                                {customer.customerName}
-                            </h2>
+                            <div className="flex items-center justify-center md:justify-start gap-3 mb-2">
+                                <h2 className="text-3xl font-black text-foreground tracking-tight">
+                                    {customer.customerName}
+                                </h2>
+                                {/* Customer status badge */}
+                                {isActive ? (
+                                    <span className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 uppercase">
+                                        <UserCheck className="h-3.5 w-3.5" />
+                                        Active
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300 uppercase">
+                                        <UserX className="h-3.5 w-3.5" />
+                                        Inactive
+                                    </span>
+                                )}
+                            </div>
                             <div className="flex flex-wrap justify-center md:justify-start gap-4">
                                 <div className="flex items-center text-sm font-medium text-muted-foreground bg-background/50 px-3 py-1.5 rounded-full backdrop-blur-sm">
                                     <Mail className="h-4 w-4 mr-2 text-primary" />

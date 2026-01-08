@@ -6,7 +6,9 @@ import {
     Phone,
     Loader2,
     AlertCircle,
-    UserPlus
+    UserPlus,
+    UserCheck,
+    UserX
 } from 'lucide-react';
 import { useCustomer, useCustomerMutations } from '@/hooks/useCustomers';
 import { Input } from '@/components/ui/input';
@@ -35,6 +37,7 @@ export const CustomerForm: React.FC = () => {
         customerName: '',
         customerEmail: '',
         customerPhone: '',
+        customerStatus: 'active',
     });
 
     const [localError, setLocalError] = useState<string | null>(null);
@@ -45,6 +48,7 @@ export const CustomerForm: React.FC = () => {
                 customerName: customer.customerName,
                 customerEmail: customer.customerEmail,
                 customerPhone: customer.customerPhone,
+                customerStatus: customer.customerStatus,
             });
         }
     }, [isEdit, customer]);
@@ -168,6 +172,38 @@ export const CustomerForm: React.FC = () => {
                                             />
                                         </div>
                                     </div>
+                                </div>
+
+                                {/* Status Toggle */}
+                                <div className="space-y-2 pt-2">
+                                    <Label>Customer Status</Label>
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, customerStatus: 'active' }))}
+                                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all font-medium ${formData.customerStatus === 'active'
+                                                    ? 'bg-green-500/20 border-green-500 text-green-600 dark:text-green-400'
+                                                    : 'bg-muted/50 border-border/50 text-muted-foreground hover:border-border'
+                                                }`}
+                                        >
+                                            <UserCheck className="h-4 w-4" />
+                                            Active
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => setFormData(prev => ({ ...prev, customerStatus: 'inactive' }))}
+                                            className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border-2 transition-all font-medium ${formData.customerStatus === 'inactive'
+                                                    ? 'bg-red-500/20 border-red-500 text-red-600 dark:text-red-400'
+                                                    : 'bg-muted/50 border-border/50 text-muted-foreground hover:border-border'
+                                                }`}
+                                        >
+                                            <UserX className="h-4 w-4" />
+                                            Inactive
+                                        </button>
+                                    </div>
+                                    <p className="text-xs text-muted-foreground">
+                                        Inactive customers won't appear in order selection dropdown.
+                                    </p>
                                 </div>
                             </div>
                         </CardContent>

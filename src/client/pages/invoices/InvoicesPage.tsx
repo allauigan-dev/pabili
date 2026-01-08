@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useInvoiceMutations } from '@/hooks/useInvoices';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
+import { useStatusCounts } from '@/hooks/useStatusCounts';
 import { invoicesApi } from '@/lib/api';
 import { InvoiceCard } from './InvoiceCard';
 import { Button } from '@/components/ui/button';
@@ -28,6 +29,10 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const InvoicesPage: React.FC = () => {
     const navigate = useNavigate();
+    const [searchQuery, setSearchQuery] = useState('');
+    const [statusFilter, setStatusFilter] = useState('all');
+    const [deleteId, setDeleteId] = useState<number | null>(null);
+
     const {
         items: invoices,
         isLoading,
@@ -38,12 +43,20 @@ export const InvoicesPage: React.FC = () => {
         reset
     } = useInfiniteScroll({
         fetcher: invoicesApi.listPaginated,
+        cacheKey: 'invoices',
         pageSize: 20,
+        search: searchQuery,
     });
     const { deleteAction } = useInvoiceMutations();
-    const [searchQuery, setSearchQuery] = useState('');
-    const [statusFilter, setStatusFilter] = useState('all');
-    const [deleteId, setDeleteId] = useState<number | null>(null);
+
+    const statusList = ['all', 'draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'];
+
+    // Use server-side counts for filter pills
+    const { counts } = useStatusCounts({
+        fetcher: invoicesApi.getCounts,
+        cacheKey: 'invoices',
+        statusList,
+    });
 
     const handleDeleteClick = (id: number) => {
         setDeleteId(id);
@@ -57,25 +70,19 @@ export const InvoicesPage: React.FC = () => {
         }
     };
 
+    // Filter by status is still done client-side on loaded data
     const filteredInvoices = useMemo(() => {
-        return invoices.filter(i => {
-            const customerName = i.customerName || '';
-            const matchesSearch = i.invoiceNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                customerName.toLowerCase().includes(searchQuery.toLowerCase());
-            const matchesStatus = statusFilter === 'all' ? true : i.invoiceStatus === statusFilter;
-            return matchesSearch && matchesStatus;
-        });
-    }, [invoices, searchQuery, statusFilter]);
-
-    const statusList = ['all', 'draft', 'pending', 'sent', 'paid', 'overdue', 'cancelled'];
+        if (statusFilter === 'all') return invoices;
+        return invoices.filter(i => i.invoiceStatus === statusFilter);
+    }, [invoices, statusFilter]);
 
     const filterOptions = useMemo(() => {
         return statusList.map(f => ({
             label: f,
             value: f,
-            count: invoices.filter(i => f === 'all' ? true : i.invoiceStatus === f).length
+            count: counts[f] ?? 0
         }));
-    }, [invoices]);
+    }, [counts]);
 
     return (
         <div className="relative pb-24">

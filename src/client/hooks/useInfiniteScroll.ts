@@ -1,17 +1,81 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { ApiResponse } from '../lib/types';
+import { onCacheInvalidate } from '../lib/api';
+
+// ============================================
+// GLOBAL SCROLL CACHE
+// Persists loaded items across navigation
+// ============================================
+
+interface ScrollCacheEntry<T> {
+    items: T[];
+    page: number;
+    hasMore: boolean;
+    total: number;
+    timestamp: number;
+}
+
+// Global cache for scroll state - persists across component unmounts
+const scrollCache = new Map<string, ScrollCacheEntry<unknown>>();
+
+// Cache TTL: 5 minutes (matches API cache)
+const SCROLL_CACHE_TTL = 5 * 60 * 1000;
+
+/**
+ * Get cached scroll state if valid
+ */
+function getScrollCache<T>(key: string): ScrollCacheEntry<T> | null {
+    const entry = scrollCache.get(key) as ScrollCacheEntry<T> | undefined;
+    if (entry && Date.now() - entry.timestamp < SCROLL_CACHE_TTL) {
+        return entry;
+    }
+    if (entry) {
+        scrollCache.delete(key);
+    }
+    return null;
+}
+
+/**
+ * Set scroll cache
+ */
+function setScrollCache<T>(key: string, data: Omit<ScrollCacheEntry<T>, 'timestamp'>): void {
+    scrollCache.set(key, {
+        ...data,
+        timestamp: Date.now(),
+    });
+}
+
+/**
+ * Clear scroll cache for a pattern
+ */
+export function invalidateScrollCache(pattern?: string): void {
+    if (!pattern) {
+        scrollCache.clear();
+        return;
+    }
+    for (const key of scrollCache.keys()) {
+        if (key.startsWith(pattern)) {
+            scrollCache.delete(key);
+        }
+    }
+}
 
 interface UseInfiniteScrollOptions<T> {
     /**
      * Fetcher function that returns paginated data
      * @param page - Page number (1-indexed)
      * @param limit - Number of items per page
+     * @param search - Optional search query
      */
-    fetcher: (page: number, limit: number) => Promise<ApiResponse<T[]>>;
+    fetcher: (page: number, limit: number, search: string) => Promise<ApiResponse<T[]>>;
+    /** Unique cache key for this list (e.g., 'orders', 'stores') */
+    cacheKey?: string;
     /** Items per page (default: 20) */
     pageSize?: number;
     /** Whether fetching is enabled (default: true) */
     enabled?: boolean;
+    /** Search query to filter results (default: '') */
+    search?: string;
 }
 
 interface UseInfiniteScrollResult<T> {
@@ -39,55 +103,83 @@ interface UseInfiniteScrollResult<T> {
  * Automatically loads more items when the sentinel element 
  * becomes visible in the viewport.
  * 
+ * Features:
+ * - Persists loaded items across navigation (via cacheKey)
+ * - Auto-invalidates when related API data changes
+ * - Supports server-side search
+ * 
  * @example
  * ```tsx
  * const { items, isLoading, hasMore, sentinelRef, error } = useInfiniteScroll({
- *     fetcher: (page, limit) => ordersApi.listPaginated(page, limit),
+ *     fetcher: (page, limit, search) => ordersApi.listPaginated(page, limit, search),
+ *     cacheKey: 'orders',
  *     pageSize: 20,
+ *     search: searchQuery,
  * });
- * 
- * return (
- *     <div>
- *         {items.map(item => <ItemCard key={item.id} item={item} />)}
- *         <div ref={sentinelRef}>
- *             {isLoading && <Spinner />}
- *         </div>
- *     </div>
- * );
  * ```
  */
 export function useInfiniteScroll<T>(
     options: UseInfiniteScrollOptions<T>
 ): UseInfiniteScrollResult<T> {
-    const { fetcher, pageSize = 20, enabled = true } = options;
+    const { fetcher, cacheKey, pageSize = 20, enabled = true, search = '' } = options;
 
-    const [items, setItems] = useState<T[]>([]);
-    const [page, setPage] = useState(1);
+    // Include search in cache key to separate cached results per search term
+    const effectiveCacheKey = cacheKey ? (search ? `${cacheKey}:${search}` : cacheKey) : undefined;
+
+    // Try to restore from cache on initial mount
+    const cachedData = effectiveCacheKey ? getScrollCache<T>(effectiveCacheKey) : null;
+
+    const [items, setItems] = useState<T[]>(cachedData?.items ?? []);
+    const [page, setPage] = useState(cachedData?.page ?? 1);
     const [isLoading, setIsLoading] = useState(false);
     const [isLoadingMore, setIsLoadingMore] = useState(false);
-    const [hasMore, setHasMore] = useState(true);
+    const [hasMore, setHasMore] = useState(cachedData?.hasMore ?? true);
     const [error, setError] = useState<string | null>(null);
-    const [total, setTotal] = useState(0);
+    const [total, setTotal] = useState(cachedData?.total ?? 0);
 
     const observerRef = useRef<IntersectionObserver | null>(null);
     const sentinelNodeRef = useRef<HTMLDivElement | null>(null);
     const fetchingRef = useRef(false);
+    const initializedRef = useRef(!!cachedData); // Skip initial fetch if we have cached data
+    const currentSearchRef = useRef(search); // Track current search to detect changes
+
+    // Save to scroll cache whenever items change
+    useEffect(() => {
+        if (effectiveCacheKey && items.length > 0) {
+            setScrollCache(effectiveCacheKey, { items, page, hasMore, total });
+        }
+    }, [effectiveCacheKey, items, page, hasMore, total]);
+
+    // Listen for API cache invalidation and clear scroll cache accordingly
+    useEffect(() => {
+        if (!cacheKey) return;
+
+        const unsubscribe = onCacheInvalidate((pattern) => {
+            // If the API cache for this resource was invalidated, clear scroll cache too
+            if (!pattern || cacheKey.startsWith(pattern.replace('/api/', ''))) {
+                scrollCache.delete(cacheKey);
+            }
+        });
+
+        return unsubscribe;
+    }, [cacheKey]);
 
     // Fetch data for a specific page
-    const fetchPage = useCallback(async (pageNum: number, isInitial: boolean) => {
+    const fetchPage = useCallback(async (pageNum: number, isInitial: boolean, showLoading: boolean = true) => {
         if (fetchingRef.current || !enabled) return;
 
         fetchingRef.current = true;
 
-        if (isInitial) {
+        // Only show loading if explicitly requested and we have no data
+        if (isInitial && showLoading && items.length === 0) {
             setIsLoading(true);
-        } else {
+        } else if (!isInitial) {
             setIsLoadingMore(true);
         }
         setError(null);
 
         try {
-            const response = await fetcher(pageNum, pageSize);
+            const response = await fetcher(pageNum, pageSize, search);
 
             if (response.success && response.data) {
                 const newItems = response.data;
@@ -116,14 +208,31 @@ export function useInfiniteScroll<T>(
             setIsLoadingMore(false);
             fetchingRef.current = false;
         }
-    }, [fetcher, pageSize, enabled, items.length]);
+    }, [fetcher, pageSize, enabled, items.length, search]);
 
-    // Initial fetch
+    // Initial fetch - only if we don't have cached data
     useEffect(() => {
-        if (enabled) {
-            fetchPage(1, true);
+        if (enabled && !initializedRef.current) {
+            initializedRef.current = true;
+            fetchPage(1, true, true);
         }
     }, [enabled]); // eslint-disable-line react-hooks/exhaustive-deps
+
+    // Reset when search changes
+    useEffect(() => {
+        if (currentSearchRef.current !== search) {
+            currentSearchRef.current = search;
+            // Clear cache and reset state
+            setItems([]);
+            setPage(1);
+            setHasMore(true);
+            setError(null);
+            setTotal(0);
+            fetchingRef.current = false;
+            initializedRef.current = true; // Mark as initialized to avoid double fetch
+            fetchPage(1, true, true);
+        }
+    }, [search]); // eslint-disable-line react-hooks/exhaustive-deps
 
     // Set up Intersection Observer
     const sentinelRef = useCallback((node: HTMLDivElement | null) => {
@@ -166,14 +275,19 @@ export function useInfiniteScroll<T>(
 
     // Reset function to start fresh
     const reset = useCallback(() => {
+        // Clear scroll cache for this key
+        if (effectiveCacheKey) {
+            scrollCache.delete(effectiveCacheKey);
+        }
         setItems([]);
         setPage(1);
         setHasMore(true);
         setError(null);
         setTotal(0);
         fetchingRef.current = false;
-        fetchPage(1, true);
-    }, [fetchPage]);
+        initializedRef.current = false;
+        fetchPage(1, true, true);
+    }, [effectiveCacheKey, fetchPage]);
 
     return {
         items,

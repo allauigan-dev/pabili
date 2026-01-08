@@ -7,7 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
+### Added
+- **Server-Side Search**:
+  - Implemented high-performance server-side search across all core entities: Customers, Stores, Orders, Payments, and Invoices.
+  - Added support for fuzzy matching using SQL `LIKE` operations on the backend.
+  - Integrated search state into the `useInfiniteScroll` hook for seamless pagination with search queries.
+- **Enhanced Dashboard Analytics**:
+  - Developed a new `stats` API route (`/api/stats/counts`) for centralized entity and status counting.
+  - Created `useStatusCounts` hook to provide real-time status aggregations for the dashboard.
+  - Fixed inaccurate dashboard counts by moving from client-side array length counting to server-side SQL counts.
+- **Customer Status Management**:
+  - Added a "Status" field (Active/Inactive) to the customer schema and exposed it in `CustomerForm`.
+  - Implemented visual status indicators in `CustomerCard` and `CustomerDetails` view.
+- **Demo Data Improvements**:
+  - Enhanced `generate-seed.cjs` script to automatically inject realistic image URLs from Unsplash/Picsum for stores, customers, and orders.
+  - Improved multi-tenant seeding logic to handle image metadata more effectively.
+
 - **Dropdown Filtering**:
   - Implemented automatic filtering in `OrderForm`, `PaymentForm`, and `InvoiceForm` to hide inactive customers and stores.
   - Ensured historical data remains visible by allowing the currently selected inactive item to still appear in the list during edits.
