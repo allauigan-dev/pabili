@@ -21,6 +21,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Statement of Account export in Phase 6
   - SaaS subscription notifications in Phase 4
 
+### Fixed
+- **Image Gallery Modal**: Fixed event propagation issue where closing the image gallery modal on order cards would trigger navigation to order details. Added `stopPropagation` handlers to `DialogOverlay` and `DialogContent` components.
+
 ### Changed
 - **Login Page Redesign**:
   - Redesigned the login page to align with the project's premium design system.

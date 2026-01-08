@@ -85,8 +85,14 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     if (!images || images.length === 0) return null;
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-[95vw] sm:max-w-[90vw] h-auto max-h-[90vh] p-0 border border-border bg-background shadow-2xl overflow-hidden rounded-3xl transition-all">
+        <Dialog open={open} onOpenChange={(isOpen) => {
+            // Stop propagation by calling onOpenChange in a controlled way
+            onOpenChange(isOpen);
+        }}>
+            <DialogContent
+                className="max-w-[95vw] sm:max-w-[90vw] h-auto max-h-[90vh] p-0 border border-border bg-background shadow-2xl overflow-hidden rounded-3xl transition-all"
+                onClick={(e) => e.stopPropagation()}
+                onPointerDown={(e) => e.stopPropagation()}>
                 <DialogTitle className="sr-only">{title}</DialogTitle>
 
                 <div
