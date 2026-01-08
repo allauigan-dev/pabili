@@ -67,7 +67,7 @@ export const SettingsPage: React.FC = () => {
 
             <main className="pt-2">
                 {/* Desktop Layout */}
-                <div className="hidden md:grid md:grid-cols-[280px_1fr] gap-6">
+                <div className="hidden lg:grid lg:grid-cols-[280px_1fr] gap-6">
                     {/* Sidebar */}
                     <div className="space-y-2">
                         {tabs.map((tab) => {
@@ -123,7 +123,7 @@ export const SettingsPage: React.FC = () => {
                 </div>
 
                 {/* Mobile Layout */}
-                <div className="md:hidden">
+                <div className="lg:hidden">
                     {activeTab ? (
                         <div className="bg-surface-light dark:bg-surface-dark rounded-2xl p-5 shadow-soft border border-border/50">
                             {renderContent()}

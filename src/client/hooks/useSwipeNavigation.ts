@@ -57,7 +57,7 @@ export const useSwipeNavigation = () => {
     const onTouchStart = useCallback((e: React.TouchEvent) => {
         // Only track swipes if we are on a main route and it's mobile view
         // Also skip if a card swipe is currently active
-        if (!isMainRoute || window.innerWidth >= 768 || e.defaultPrevented || isCardSwipeActive.current) return;
+        if (!isMainRoute || window.innerWidth >= 1024 || e.defaultPrevented || isCardSwipeActive.current) return;
 
         // Don't trigger if swiping on an element that might have its own horizontal scroll
         // or specifically designated to block swipes
@@ -69,7 +69,7 @@ export const useSwipeNavigation = () => {
             if (el.hasAttribute('data-no-swipe') ||
                 el.getAttribute('role') === 'dialog' ||
                 el.hasAttribute('aria-modal') ||
-                (el.classList.contains('fixed') && !el.classList.contains('md:ml-64'))) { // md:ml-64 is our sidebar-matching container
+                (el.classList.contains('fixed') && !el.classList.contains('lg:ml-64'))) { // lg:ml-64 is our sidebar-matching container
                 return true;
             }
             return isInsideBlockedElement(el.parentElement);
@@ -94,7 +94,7 @@ export const useSwipeNavigation = () => {
 
     const onTouchMove = useCallback((e: React.TouchEvent) => {
         // Also skip if a card swipe became active during the gesture
-        if (!isMainRoute || window.innerWidth >= 768 || touchStart === null || isCardSwipeActive.current) return;
+        if (!isMainRoute || window.innerWidth >= 1024 || touchStart === null || isCardSwipeActive.current) return;
 
         const currentX = e.targetTouches[0].clientX;
         const currentY = e.targetTouches[0].clientY;
@@ -117,7 +117,7 @@ export const useSwipeNavigation = () => {
     }, [isMainRoute, touchStart, isHorizontalSwipe]);
 
     const onTouchEnd = useCallback(() => {
-        if (touchStart === null || currentTouchX === null || !isMainRoute || window.innerWidth >= 768 || isHorizontalSwipe !== true) {
+        if (touchStart === null || currentTouchX === null || !isMainRoute || window.innerWidth >= 1024 || isHorizontalSwipe !== true) {
             setTouchStart(null);
             setCurrentTouchX(null);
             setIsHorizontalSwipe(null);

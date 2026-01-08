@@ -17,6 +17,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { DeleteConfirmationSheet } from '@/components/ui/DeleteConfirmationSheet';
+import { ConfirmationSheet } from '@/components/ui/ConfirmationSheet';
 import { useIsMobile } from '@/hooks/useMediaQuery';
 import { usePaymentMutations } from '@/hooks/usePayments';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
@@ -35,6 +36,7 @@ export const PaymentsPage: React.FC = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [deleteId, setDeleteId] = useState<number | null>(null);
+    const [confirmId, setConfirmId] = useState<number | null>(null);
 
     const {
         items: payments,
@@ -73,9 +75,14 @@ export const PaymentsPage: React.FC = () => {
         }
     };
 
-    const handleConfirm = async (id: number) => {
-        if (window.confirm('Confirm this payment?')) {
-            await confirmAction(id);
+    const handleConfirm = (id: number) => {
+        setConfirmId(id);
+    };
+
+    const handleConfirmPayment = async () => {
+        if (confirmId) {
+            await confirmAction(confirmId);
+            setConfirmId(null);
             reset();
         }
     };
@@ -208,6 +215,35 @@ export const PaymentsPage: React.FC = () => {
                             <AlertDialogCancel>Cancel</AlertDialogCancel>
                             <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
                                 Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
+
+            {/* Payment Confirmation - Bottom Sheet on mobile, AlertDialog on desktop */}
+            {isMobile ? (
+                <ConfirmationSheet
+                    open={!!confirmId}
+                    onOpenChange={(open) => !open && setConfirmId(null)}
+                    title="Confirm Payment?"
+                    description="Are you sure you want to mark this payment as confirmed?"
+                    onConfirm={handleConfirmPayment}
+                    confirmLabel="Confirm"
+                />
+            ) : (
+                <AlertDialog open={!!confirmId} onOpenChange={(open) => !open && setConfirmId(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Confirm Payment?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to mark this payment as confirmed?
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmPayment}>
+                                Confirm
                             </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>

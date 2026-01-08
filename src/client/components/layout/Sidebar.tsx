@@ -168,7 +168,7 @@ export const Sidebar: React.FC = () => {
     const { isCollapsed } = useSidebar();
     return (
         <aside className={cn(
-            "fixed left-0 top-0 hidden h-full border-r bg-card flex-col md:flex transition-all duration-300 z-40",
+            "fixed left-0 top-0 hidden h-full border-r bg-card flex-col lg:flex transition-all duration-300 z-40",
             isCollapsed ? "w-20" : "w-64"
         )}>
             <SidebarContent />

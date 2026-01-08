@@ -85,7 +85,7 @@ export const Header: React.FC = () => {
             <div className="app-header-container">
                 {/* Mobile Menu & Logo */}
                 <div className="flex items-center">
-                    <div className="md:hidden">
+                    <div className="lg:hidden">
                         <Sheet open={open} onOpenChange={setOpen}>
                             <SheetTrigger asChild>
                                 <button className="flex items-center gap-2 mr-2">
@@ -103,7 +103,7 @@ export const Header: React.FC = () => {
                     </div>
 
                     {/* Desktop Logo */}
-                    <NavLink to="/" className="hidden md:flex items-center gap-2">
+                    <NavLink to="/" className="hidden lg:flex items-center gap-2">
                         <h1 className="text-lg font-bold truncate max-w-[120px] sm:max-w-none">
                             {title}
                         </h1>
@@ -111,7 +111,7 @@ export const Header: React.FC = () => {
 
                     {/* Mobile Title */}
                     {!isMobileSearchVisible && (
-                        <div className="flex-1 min-w-0 flex items-center md:hidden">
+                        <div className="flex-1 min-w-0 flex items-center lg:hidden">
                             <h1 className="text-lg font-bold truncate">
                                 {title}
                             </h1>
@@ -120,7 +120,7 @@ export const Header: React.FC = () => {
                 </div>
 
                 {/* Search Bar - Desktop Only */}
-                <div className={`flex-1 max-w-md mx-4 transition-all duration-300 ${showSearch ? 'opacity-100' : 'opacity-0 pointer-events-none'} hidden md:flex`}>
+                <div className={`flex-1 max-w-md mx-4 transition-all duration-300 ${showSearch ? 'opacity-100' : 'opacity-0 pointer-events-none'} hidden lg:flex`}>
                     <div className="relative w-full">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input
@@ -152,7 +152,7 @@ export const Header: React.FC = () => {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="md:hidden"
+                            className="lg:hidden"
                             onClick={() => setIsMobileSearchVisible(true)}
                         >
                             <Search className="h-5 w-5" />
@@ -161,7 +161,7 @@ export const Header: React.FC = () => {
 
                     {actions}
 
-                    <div className="hidden md:flex items-center gap-2 border-l pl-4">
+                    <div className="hidden lg:flex items-center gap-2 border-l pl-4">
                         <Button variant="ghost" size="icon" className="text-muted-foreground">
                             <Bell className="h-5 w-5" />
                         </Button>
@@ -241,7 +241,7 @@ export const Header: React.FC = () => {
 
             {/* Mobile Search Overlay */}
             {isMobileSearchVisible && (
-                <div className="fixed inset-x-0 top-0 h-16 bg-background z-[60] flex items-center px-4 gap-2 md:hidden shadow-md">
+                <div className="fixed inset-x-0 top-0 h-16 bg-background z-[60] flex items-center px-4 gap-2 lg:hidden shadow-md">
                     <div className="relative flex-1">
                         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                         <Input

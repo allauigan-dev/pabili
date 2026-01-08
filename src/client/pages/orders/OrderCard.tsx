@@ -12,12 +12,13 @@ import { Button } from '@/components/ui/button';
 import {
     Dialog,
     DialogContent,
-    DialogTrigger,
     DialogTitle,
 } from '@/components/ui/dialog';
 import { formatCurrency } from '@/lib/utils';
 import type { Order, OrderStatus } from '@/lib/types';
 import { ImageGallery } from '@/components/ui/ImageGallery';
+import { ActionSheet } from '@/components/ui/ActionSheet';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 import { SwipeableCard, createDeleteAction, createQuickAction } from '@/components/ui/SwipeableCard';
 
 
@@ -64,6 +65,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
     };
 
     const status = statusConfig[order.orderStatus as keyof typeof statusConfig] || statusConfig.pending;
+    const isMobile = useIsMobile();
     const [open, setOpen] = React.useState(false);
     const [galleryOpen, setGalleryOpen] = React.useState(false);
 
@@ -193,36 +195,53 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
 
                                 <div className="flex items-center mt-2 space-x-0.5" onClick={(e) => e.stopPropagation()}>
                                     {validStatuses.length > 0 && (
-                                        <Dialog open={open} onOpenChange={setOpen}>
-                                            <DialogTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                                                >
-                                                    <CheckCircle className="h-4 w-4" />
-                                                </Button>
-                                            </DialogTrigger>
-                                            <DialogContent className="sm:max-w-md">
-                                                <DialogTitle>Update Status</DialogTitle>
-                                                <div className="grid gap-2 py-4">
-                                                    {validStatuses.map((key) => {
+                                        <>
+                                            {isMobile ? (
+                                                <ActionSheet
+                                                    open={open}
+                                                    onOpenChange={setOpen}
+                                                    title="Update Status"
+                                                    actions={validStatuses.map((key) => {
                                                         const config = statusConfig[key as keyof typeof statusConfig];
-                                                        return (
-                                                            <Button
-                                                                key={key}
-                                                                variant="outline"
-                                                                className="w-full justify-start hover:bg-secondary"
-                                                                onClick={() => handleStatusSelect(key)}
-                                                            >
-                                                                <div className={`w-3 h-3 rounded-full mr-2 ${config.bar}`} />
-                                                                {config.label}
-                                                            </Button>
-                                                        );
+                                                        return {
+                                                            label: config.label,
+                                                            icon: <div className={`w-3 h-3 rounded-full ${config.bar}`} />,
+                                                            onAction: () => onStatusChange(order.id, key as OrderStatus),
+                                                        };
                                                     })}
-                                                </div>
-                                            </DialogContent>
-                                        </Dialog>
+                                                />
+                                            ) : (
+                                                <Dialog open={open} onOpenChange={setOpen}>
+                                                    <DialogContent className="sm:max-w-md">
+                                                        <DialogTitle>Update Status</DialogTitle>
+                                                        <div className="grid gap-2 py-4">
+                                                            {validStatuses.map((key) => {
+                                                                const config = statusConfig[key as keyof typeof statusConfig];
+                                                                return (
+                                                                    <Button
+                                                                        key={key}
+                                                                        variant="outline"
+                                                                        className="w-full justify-start hover:bg-secondary"
+                                                                        onClick={() => handleStatusSelect(key)}
+                                                                    >
+                                                                        <div className={`w-3 h-3 rounded-full mr-2 ${config.bar}`} />
+                                                                        {config.label}
+                                                                    </Button>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </DialogContent>
+                                                </Dialog>
+                                            )}
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                                                onClick={() => setOpen(true)}
+                                            >
+                                                <CheckCircle className="h-4 w-4" />
+                                            </Button>
+                                        </>
                                     )}
                                     <Button
                                         variant="ghost"

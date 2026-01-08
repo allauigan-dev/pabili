@@ -27,13 +27,13 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
     // Spring for sheet position (y offset from bottom)
     const [{ y }, api] = useSpring(() => ({
         y: 0,
-        config: config.stiff,
+        config: { tension: 300, friction: 25 },
     }));
 
     // Spring for backdrop opacity
     const [{ opacity }, backdropApi] = useSpring(() => ({
         opacity: 0,
-        config: config.stiff,
+        config: { tension: 300, friction: 25 },
     }));
 
     // Measure content height when opened

@@ -26,7 +26,7 @@ export const FloatingActionButton: React.FC<FloatingActionButtonProps> = ({
     const fabContent = (
         <div
             className={cn(
-                "fixed right-4 bottom-24 md:bottom-8 z-[60] flex items-center justify-center",
+                "fixed right-4 bottom-24 lg:bottom-8 z-40 flex items-center justify-center fab-button",
                 className
             )}
         >

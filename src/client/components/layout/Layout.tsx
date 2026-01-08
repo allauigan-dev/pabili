@@ -22,7 +22,7 @@ export const Layout: React.FC = () => {
 
                         {/* Visual feedback indicators */}
                         {isSwiping && Math.abs(distance) > 30 && (
-                            <div className="fixed inset-0 z-[60] pointer-events-none flex items-center justify-between px-4 md:hidden">
+                            <div className="fixed inset-0 z-[60] pointer-events-none flex items-center justify-between px-4 lg:hidden">
                                 <div
                                     className="p-3 rounded-full bg-primary/10 backdrop-blur-md border border-primary/20 transition-all duration-300"
                                     style={{

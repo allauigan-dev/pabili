@@ -238,3 +238,12 @@
         padding: 2.5rem;
     }
 }
+
+/* Hide FAB when menu or dialog is open */
+body[style*="pointer-events: none"] .fab-button,
+body:has([role="dialog"]) .fab-button {
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.5);
+    transition: all 0.2s ease;
+}

@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - **Phase 3 UI/UX Improvements**:
   - **Swipeable Card Actions**: Implemented `SwipeableCard` component with left/right swipe gestures for quick actions (delete, mark delivered, confirm payment) across Orders, Invoices, and Payments.
-  - **Bottom Sheet Component**: Created mobile-first `BottomSheet` component with drag-to-dismiss gestures using `@use-gesture/react` and `react-spring`.
-  - **Delete Confirmation Sheets**: Added `DeleteConfirmationSheet` and `ActionSheet` components that use BottomSheet on mobile and AlertDialog on desktop.
+  - **Bottom Sheet Component**: Created mobile-first `BottomSheet` component with drag-to-dismiss gestures and snappy animations (`tension: 300, friction: 25`).
+  - **Responsive Confirmation System**: Added generic `ConfirmationSheet` and `ActionSheet` components; migrated `OrderCard` status updates and `PaymentsPage` confirmations to use bottom sheets on mobile.
+  - **FAB Smart Visibility**: Implemented logic to hide the Floating Action Button when menus or dialogs are active to prevent visual overlap.
   - **Dashboard Quick Actions Reorder**: Implemented drag-and-drop reordering for Dashboard quick actions with persistence.
   - **Media Query Hook**: Added `useMediaQuery` and `useIsMobile` hooks for responsive behavior detection.
-  - **Dashboard Actions Hook**: Created `useDashboardActions` hook for managing quick action visibility and order.
 
 ### Fixed
 - **Gesture Conflict Resolution**: Fixed conflict between card swipe actions and page swipe navigation:
@@ -22,6 +22,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Added "swipe zones" to cards - middle 70% for card swipes, top/bottom 15% edges for page navigation.
   - Page swipe navigation now dynamically disables when card swipes are in progress.
 - **Swipe Navigation Sync**: Fixed swipe navigation to follow bottom navigation configuration instead of hardcoded routes, respecting user customizations.
+- **Layout Breakpoints**: Standardized mobile/desktop transition to `lg (1024px)` across layouts and gesture hooks for consistent tablet support.
 
 ### Changed
 - **Image Gallery Modal**: Fixed event propagation issue where closing the image gallery modal on order cards would trigger navigation to order details. Added `stopPropagation` handlers to `DialogOverlay` and `DialogContent` components.
