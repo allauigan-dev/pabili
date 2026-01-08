@@ -160,14 +160,9 @@ Use Cases:
 - Payment reminder
 - Invoice due notification
 
-### WhatsApp/Viber Bot
+### ~~WhatsApp/Viber Bot~~ (Moved to Phase 14)
 
-**Provider:** Official WhatsApp Business API or Twilio
-
-Use Cases:
-- Automated order confirmations
-- Payment receipts
-- Status update broadcasts
+> **Note:** WhatsApp/Viber integration has been moved to Phase 14 (Customer Support) as it's an external integration that requires dedicated setup and ongoing maintenance.
 
 ### Email Notifications
 
@@ -178,6 +173,38 @@ Templates:
 - Password reset
 - Invoice email with PDF attachment
 - Weekly summary report
+
+---
+
+## 4.4 SaaS-Specific Notifications
+
+### Subscription Notifications
+
+| Event | Notification | Channel |
+|-------|--------------|---------|
+| Trial Starting | Welcome + trial info | Email + In-App |
+| Trial Ending (3 days) | Upgrade reminder | Email + In-App |
+| Trial Ended | Features limited | Email + In-App |
+| Plan Upgraded | Confirmation | Email |
+| Payment Failed | Retry request | Email + In-App |
+| Subscription Cancelled | Confirmation + win-back | Email |
+
+### Usage Limit Notifications
+
+| Trigger | Message |
+|---------|---------|
+| 80% of order limit | "You've used 80% of your monthly orders" |
+| 100% of order limit | "Order limit reached - upgrade to continue" |
+| 80% of user limit | "Consider upgrading for more team members" |
+
+### Admin Notifications (Platform Owner)
+
+| Event | Notification |
+|-------|--------------|
+| New signup | New tenant alert |
+| Plan upgrade | Revenue notification |
+| Churn risk | At-risk tenant alert |
+| Support ticket | New ticket notification |
 
 ---
 

@@ -8,6 +8,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **SaaS Documentation Expansion**: Expanded documentation from 8 phases to 14 phases for comprehensive SaaS coverage:
+  - **Phase 9: Security & Compliance** - Rate limiting, audit logging, GDPR/DPA compliance, security headers
+  - **Phase 10: Onboarding & Customer Success** - Trial management, setup wizard, health scores, churn alerts
+  - **Phase 11: API & Developer Platform** - Public REST API, API keys, webhooks, white-label options
+  - **Phase 12: Performance & Scalability** - Edge caching, database optimization, error monitoring
+  - **Phase 13: Marketing & Growth** - Landing page, SEO, referral program, analytics
+  - **Phase 14: Customer Support** - Help center, ticket system, live chat, WhatsApp integration
+- **Business Model Alignment**: Added features from `spec.md` including:
+  - Multi-currency support (USD for OFW pasabuy) in Phase 7
+  - Barcode/QR scanning in Phase 6
+  - Statement of Account export in Phase 6
+  - SaaS subscription notifications in Phase 4
+
+### Changed
+- **Phase 3 (UI/UX)**: Removed Voice Input feature (too niche for SaaS MVP)
+- **Phase 4 (Notifications)**: Moved WhatsApp/Viber integration to Phase 14 (Customer Support)
+- **Phase 6 (Advanced Features)**: Deprioritized Inventory Tracking, added Customer Portal
+- **Phase 7 (Localization)**: Deprioritized Logistics Integration to future release
+- **ROADMAP.md**: Complete restructure with 14-phase SaaS roadmap, launch phases, and effort estimates
+- **docs/README.md**: Reorganized by category (Core SaaS, Core Features, Customer Success, Nice to Have) with launch checklist
+
+### Added
 - **Server-Side Search**:
   - Implemented high-performance server-side search across all core entities: Customers, Stores, Orders, Payments, and Invoices.
   - Added support for fuzzy matching using SQL `LIKE` operations on the backend.

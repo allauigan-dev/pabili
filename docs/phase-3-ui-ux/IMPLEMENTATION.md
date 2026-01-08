@@ -141,10 +141,9 @@ Enhance the mobile-first experience with modern UI patterns, improved search/fil
 - Preview before upload
 - Compress before sending
 
-### Voice Input (Optional)
-- Speech-to-text for order name field
-- Use Web Speech API
-- Supports English and Filipino
+### ~~Voice Input~~ (Removed)
+
+> **Note:** Voice input feature has been removed from the MVP scope. It may be reconsidered for future releases based on user feedback.
 
 ---
 
