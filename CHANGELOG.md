@@ -8,20 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **SaaS Documentation Expansion**: Expanded documentation from 8 phases to 14 phases for comprehensive SaaS coverage:
-  - **Phase 9: Security & Compliance** - Rate limiting, audit logging, GDPR/DPA compliance, security headers
-  - **Phase 10: Onboarding & Customer Success** - Trial management, setup wizard, health scores, churn alerts
-  - **Phase 11: API & Developer Platform** - Public REST API, API keys, webhooks, white-label options
-  - **Phase 12: Performance & Scalability** - Edge caching, database optimization, error monitoring
-  - **Phase 13: Marketing & Growth** - Landing page, SEO, referral program, analytics
-  - **Phase 14: Customer Support** - Help center, ticket system, live chat, WhatsApp integration
-- **Business Model Alignment**: Added features from `spec.md` including:
-  - Multi-currency support (USD for OFW pasabuy) in Phase 7
-  - Barcode/QR scanning in Phase 6
-  - Statement of Account export in Phase 6
-  - SaaS subscription notifications in Phase 4
+- **Phase 3 UI/UX Improvements**:
+  - **Swipeable Card Actions**: Implemented `SwipeableCard` component with left/right swipe gestures for quick actions (delete, mark delivered, confirm payment) across Orders, Invoices, and Payments.
+  - **Bottom Sheet Component**: Created mobile-first `BottomSheet` component with drag-to-dismiss gestures using `@use-gesture/react` and `react-spring`.
+  - **Delete Confirmation Sheets**: Added `DeleteConfirmationSheet` and `ActionSheet` components that use BottomSheet on mobile and AlertDialog on desktop.
+  - **Dashboard Quick Actions Reorder**: Implemented drag-and-drop reordering for Dashboard quick actions with persistence.
+  - **Media Query Hook**: Added `useMediaQuery` and `useIsMobile` hooks for responsive behavior detection.
+  - **Dashboard Actions Hook**: Created `useDashboardActions` hook for managing quick action visibility and order.
 
 ### Fixed
+- **Gesture Conflict Resolution**: Fixed conflict between card swipe actions and page swipe navigation:
+  - Implemented event-based coordination using custom `card-swipe-start` and `card-swipe-end` events.
+  - Added "swipe zones" to cards - middle 70% for card swipes, top/bottom 15% edges for page navigation.
+  - Page swipe navigation now dynamically disables when card swipes are in progress.
+- **Swipe Navigation Sync**: Fixed swipe navigation to follow bottom navigation configuration instead of hardcoded routes, respecting user customizations.
+
+### Changed
 - **Image Gallery Modal**: Fixed event propagation issue where closing the image gallery modal on order cards would trigger navigation to order details. Added `stopPropagation` handlers to `DialogOverlay` and `DialogContent` components.
 
 ### Changed

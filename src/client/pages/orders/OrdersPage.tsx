@@ -16,6 +16,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DeleteConfirmationSheet } from '@/components/ui/DeleteConfirmationSheet';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 import { useOrderMutations } from '@/hooks/useOrders';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useStatusCounts } from '@/hooks/useStatusCounts';
@@ -29,6 +31,7 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const OrdersPage: React.FC = () => {
     const navigate = useNavigate();
+    const isMobile = useIsMobile();
     const [filter, setFilter] = useState('all');
     const [searchQuery, setSearchQuery] = useState('');
     const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -178,22 +181,33 @@ export const OrdersPage: React.FC = () => {
                 icon={<Plus className="h-8 w-8" />}
             />
 
-            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the order.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* Delete Confirmation - Bottom Sheet on mobile, AlertDialog on desktop */}
+            {isMobile ? (
+                <DeleteConfirmationSheet
+                    open={!!deleteId}
+                    onOpenChange={(open) => !open && setDeleteId(null)}
+                    title="Delete Order?"
+                    description="This action cannot be undone. This will permanently delete the order."
+                    onConfirm={handleConfirmDelete}
+                />
+            ) : (
+                <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the order.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </div>
     );
 };

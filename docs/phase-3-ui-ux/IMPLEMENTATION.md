@@ -10,11 +10,12 @@ Enhance the mobile-first experience with modern UI patterns, improved search/fil
 
 ## 3.1 Mobile-First Experience
 
-### Swipe Actions on Cards
-- Implement swipe gestures on OrderCard, InvoiceCard, PaymentCard
-- **Swipe Left:** Delete (with confirmation)
-- **Swipe Right:** Quick action (mark delivered, confirm payment)
-- Library: Use `@use-gesture/react` or custom touch handlers
+### ✅ Swipe Actions on Cards (Completed)
+- [x] Implement swipe gestures on OrderCard, InvoiceCard, PaymentCard
+- [x] **Swipe Left:** Delete (with confirmation)
+- [x] **Swipe Right:** Quick action (mark delivered, confirm payment)
+- [x] Library: `@use-gesture/react` + `@react-spring/web`
+- [x] Created reusable `SwipeableCard` component in `src/client/components/ui/`
 
 ### Pull to Refresh
 - Add pull-to-refresh on list pages

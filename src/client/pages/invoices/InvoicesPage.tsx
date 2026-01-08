@@ -16,6 +16,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DeleteConfirmationSheet } from '@/components/ui/DeleteConfirmationSheet';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 import { useInvoiceMutations } from '@/hooks/useInvoices';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useStatusCounts } from '@/hooks/useStatusCounts';
@@ -29,6 +31,7 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const InvoicesPage: React.FC = () => {
     const navigate = useNavigate();
+    const isMobile = useIsMobile();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -47,7 +50,7 @@ export const InvoicesPage: React.FC = () => {
         pageSize: 20,
         search: searchQuery,
     });
-    const { deleteAction } = useInvoiceMutations();
+    const { deleteAction, updateStatusAction } = useInvoiceMutations();
 
     const statusList = ['all', 'draft', 'sent', 'paid', 'partial', 'overdue', 'cancelled'];
 
@@ -68,6 +71,11 @@ export const InvoicesPage: React.FC = () => {
             setDeleteId(null);
             reset();
         }
+    };
+
+    const handleStatusChange = async (id: number, status: string) => {
+        await updateStatusAction({ id, status: status as 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' | 'cancelled' });
+        reset();
     };
 
     // Filter by status is still done client-side on loaded data
@@ -126,6 +134,7 @@ export const InvoicesPage: React.FC = () => {
                                 key={invoice.id}
                                 invoice={invoice}
                                 onDelete={handleDeleteClick}
+                                onStatusChange={handleStatusChange}
                             />
                         ))}
 
@@ -175,22 +184,33 @@ export const InvoicesPage: React.FC = () => {
                 onClick={() => navigate('/invoices/new')}
             />
 
-            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Invoice?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to delete this invoice? This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* Delete Confirmation - Bottom Sheet on mobile, AlertDialog on desktop */}
+            {isMobile ? (
+                <DeleteConfirmationSheet
+                    open={!!deleteId}
+                    onOpenChange={(open) => !open && setDeleteId(null)}
+                    title="Delete Invoice?"
+                    description="Are you sure you want to delete this invoice? This action cannot be undone."
+                    onConfirm={handleConfirmDelete}
+                />
+            ) : (
+                <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Invoice?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete this invoice? This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </div>
     );
 };

@@ -1,34 +1,63 @@
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavConfig } from './useNavConfig';
 
 /**
  * Custom hook to handle mobile horizontal swipe gestures for navigation with visual feedback.
  * Navigates between main pages in the bottom navigation.
  * Only activates for predominantly horizontal swipes to avoid interfering with scrolling.
+ * Listens to card-swipe-start/end events to avoid conflicts with SwipeableCard gestures.
+ * Uses the same navigation config as the bottom nav for consistent behavior.
  */
 export const useSwipeNavigation = () => {
     const navigate = useNavigate();
     const location = useLocation();
+    const { bottomNavItems } = useNavConfig();
 
     const [touchStart, setTouchStart] = useState<{ x: number; y: number } | null>(null);
     const [currentTouchX, setCurrentTouchX] = useState<number | null>(null);
     const [isHorizontalSwipe, setIsHorizontalSwipe] = useState<boolean | null>(null);
     const startTime = useRef<number>(0);
+    const isCardSwipeActive = useRef<boolean>(false);
+
+    // Listen for card swipe events to prevent navigation during card swipes
+    useEffect(() => {
+        const handleCardSwipeStart = () => {
+            isCardSwipeActive.current = true;
+            // Reset any in-progress page swipe when card swipe starts
+            setTouchStart(null);
+            setCurrentTouchX(null);
+            setIsHorizontalSwipe(null);
+        };
+
+        const handleCardSwipeEnd = () => {
+            isCardSwipeActive.current = false;
+        };
+
+        window.addEventListener('card-swipe-start', handleCardSwipeStart);
+        window.addEventListener('card-swipe-end', handleCardSwipeEnd);
+
+        return () => {
+            window.removeEventListener('card-swipe-start', handleCardSwipeStart);
+            window.removeEventListener('card-swipe-end', handleCardSwipeEnd);
+        };
+    }, []);
 
     // Minimum distance for a swipe to be recognized (pixels)
     const minSwipeDistance = 60;
     // Velocity threshold (px/ms) - if swiped fast, trigger even if distance is small
     const velocityThreshold = 0.5;
 
-    // Define the sequence of routes for swipe navigation
-    const navRoutes = useMemo(() => ['/', '/orders', '/stores', '/payments'], []);
+    // Get navigation routes from the bottom nav configuration (follows user's customizations)
+    const navRoutes = useMemo(() => bottomNavItems.map(item => item.to), [bottomNavItems]);
 
-    // Only enable swipe on these specific main routes
+    // Only enable swipe on routes that are in the bottom navigation
     const isMainRoute = navRoutes.includes(location.pathname);
 
     const onTouchStart = useCallback((e: React.TouchEvent) => {
         // Only track swipes if we are on a main route and it's mobile view
-        if (!isMainRoute || window.innerWidth >= 768 || e.defaultPrevented) return;
+        // Also skip if a card swipe is currently active
+        if (!isMainRoute || window.innerWidth >= 768 || e.defaultPrevented || isCardSwipeActive.current) return;
 
         // Don't trigger if swiping on an element that might have its own horizontal scroll
         // or specifically designated to block swipes
@@ -64,7 +93,8 @@ export const useSwipeNavigation = () => {
     }, [isMainRoute]);
 
     const onTouchMove = useCallback((e: React.TouchEvent) => {
-        if (!isMainRoute || window.innerWidth >= 768 || touchStart === null) return;
+        // Also skip if a card swipe became active during the gesture
+        if (!isMainRoute || window.innerWidth >= 768 || touchStart === null || isCardSwipeActive.current) return;
 
         const currentX = e.targetTouches[0].clientX;
         const currentY = e.targetTouches[0].clientY;

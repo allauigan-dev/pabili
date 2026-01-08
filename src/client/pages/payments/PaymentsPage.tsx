@@ -16,6 +16,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DeleteConfirmationSheet } from '@/components/ui/DeleteConfirmationSheet';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 import { usePaymentMutations } from '@/hooks/usePayments';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useStatusCounts } from '@/hooks/useStatusCounts';
@@ -29,6 +31,7 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const PaymentsPage: React.FC = () => {
     const navigate = useNavigate();
+    const isMobile = useIsMobile();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
     const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -183,22 +186,33 @@ export const PaymentsPage: React.FC = () => {
                 onClick={() => navigate('/payments/new')}
             />
 
-            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Payment?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to delete this payment? This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* Delete Confirmation - Bottom Sheet on mobile, AlertDialog on desktop */}
+            {isMobile ? (
+                <DeleteConfirmationSheet
+                    open={!!deleteId}
+                    onOpenChange={(open) => !open && setDeleteId(null)}
+                    title="Delete Payment?"
+                    description="Are you sure you want to delete this payment? This action cannot be undone."
+                    onConfirm={handleConfirmDelete}
+                />
+            ) : (
+                <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Payment?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete this payment? This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </div>
     );
 };

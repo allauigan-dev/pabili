@@ -5,14 +5,10 @@ import {
     Store as StoreIcon,
     Users,
     Clock,
-    Plus,
-    UserPlus,
     History,
-    Receipt,
     Pencil,
-    Check,
-    Banknote,
-    CreditCard
+    CreditCard,
+    RotateCcw
 } from 'lucide-react';
 import {
     Dialog,
@@ -26,9 +22,10 @@ import { useApi } from '@/hooks/useApi';
 import { statsApi } from '@/lib/api';
 
 import { useActivities } from '@/hooks/useActivities';
-import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { useSession } from '@/lib/auth-client';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
+import { useDashboardActions } from '@/hooks/useDashboardActions';
+import { QuickActionsReorder } from '@/components/dashboard/QuickActionsReorder';
 
 type ActivityType = 'order' | 'customer' | 'store' | 'payment';
 
@@ -148,27 +145,8 @@ export const Dashboard: React.FC = () => {
 
 
 
-    const quickActions = [
-        { label: 'New Order', icon: Plus, path: '/orders/new', color: 'text-blue-600 dark:text-blue-400', bg: 'bg-blue-100 dark:bg-blue-900/40' },
-        { label: 'Add Store', icon: StoreIcon, path: '/stores/new', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/40' },
-        { label: 'Add Customer', icon: UserPlus, path: '/customers/new', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/40' },
-        { label: 'Create Invoice', icon: Receipt, path: '/invoices/new', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/40' },
-        { label: 'Record Payment', icon: Banknote, path: '/payments/new', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900/40' },
-    ];
-
-    const [visibleActionIds, setVisibleActionIds] = useLocalStorage<string[]>(
-        'dashboard-visible-actions',
-        quickActions.map(a => a.label)
-    );
+    const { visibleActions, resetToDefaults } = useDashboardActions();
     const [isEditMode, setIsEditMode] = React.useState(false);
-
-    const toggleAction = (label: string) => {
-        if (visibleActionIds.includes(label)) {
-            setVisibleActionIds(visibleActionIds.filter(id => id !== label));
-        } else {
-            setVisibleActionIds([...visibleActionIds, label]);
-        }
-    };
 
     return (
         <div className="pb-10">
@@ -252,22 +230,20 @@ export const Dashboard: React.FC = () => {
                 </div>
                 <div className="relative -mx-4">
                     <div className="flex gap-4 overflow-x-auto px-4 pb-6 no-scrollbar snap-x snap-mandatory">
-                        {quickActions
-                            .filter(action => visibleActionIds.includes(action.label))
-                            .map((action) => (
-                                <button
-                                    key={action.label}
-                                    className="snap-start shrink-0 flex flex-col items-center gap-3 group w-24"
-                                    onClick={() => navigate(action.path)}
-                                >
-                                    <div className={`w-16 h-16 rounded-2xl ${action.bg} ${action.color} flex items-center justify-center shadow-sm group-active:scale-95 group-hover:shadow-md transition-all`}>
-                                        <action.icon className="h-8 w-8" />
-                                    </div>
-                                    <span className="text-[10px] sm:text-xs font-semibold text-center leading-tight text-foreground/80 group-hover:text-foreground">
-                                        {action.label}
-                                    </span>
-                                </button>
-                            ))}
+                        {visibleActions.map((action) => (
+                            <button
+                                key={action.id}
+                                className="snap-start shrink-0 flex flex-col items-center gap-3 group w-24"
+                                onClick={() => navigate(action.path)}
+                            >
+                                <div className={`w-16 h-16 rounded-2xl ${action.bg} ${action.color} flex items-center justify-center shadow-sm group-active:scale-95 group-hover:shadow-md transition-all`}>
+                                    <action.icon className="h-8 w-8" />
+                                </div>
+                                <span className="text-[10px] sm:text-xs font-semibold text-center leading-tight text-foreground/80 group-hover:text-foreground">
+                                    {action.label}
+                                </span>
+                            </button>
+                        ))}
                         <div className="w-4 shrink-0"></div>
                     </div>
                     {/* Fade Indicator to show more content */}
@@ -345,28 +321,26 @@ export const Dashboard: React.FC = () => {
                             </Button>
                         </div>
                         <div className="grid grid-cols-1 gap-4">
-                            {quickActions
-                                .filter(action => visibleActionIds.includes(action.label))
-                                .map((action) => (
-                                    <button
-                                        key={action.label}
-                                        className="flex items-center gap-4 p-4 rounded-2xl hover:bg-muted transition-all border-2 border-transparent hover:border-primary/5 group text-left shadow-sm hover:shadow-md"
-                                        onClick={() => navigate(action.path)}
-                                    >
-                                        <div className={`w-14 h-14 rounded-2xl shrink-0 ${action.bg} ${action.color} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform`}>
-                                            <action.icon className="h-7 w-7" />
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
-                                                {action.label}
-                                            </span>
-                                            <span className="text-xs text-muted-foreground mt-0.5">
-                                                Click to perform action
-                                            </span>
-                                        </div>
-                                    </button>
-                                ))}
-                            {quickActions.filter(action => visibleActionIds.includes(action.label)).length === 0 && (
+                            {visibleActions.map((action) => (
+                                <button
+                                    key={action.id}
+                                    className="flex items-center gap-4 p-4 rounded-2xl hover:bg-muted transition-all border-2 border-transparent hover:border-primary/5 group text-left shadow-sm hover:shadow-md"
+                                    onClick={() => navigate(action.path)}
+                                >
+                                    <div className={`w-14 h-14 rounded-2xl shrink-0 ${action.bg} ${action.color} flex items-center justify-center shadow-inner group-hover:scale-110 transition-transform`}>
+                                        <action.icon className="h-7 w-7" />
+                                    </div>
+                                    <div className="flex flex-col">
+                                        <span className="text-base font-bold text-foreground group-hover:text-primary transition-colors">
+                                            {action.label}
+                                        </span>
+                                        <span className="text-xs text-muted-foreground mt-0.5">
+                                            Click to perform action
+                                        </span>
+                                    </div>
+                                </button>
+                            ))}
+                            {visibleActions.length === 0 && (
                                 <div className="text-center py-12 text-sm text-muted-foreground italic col-span-full bg-muted/20 rounded-2xl">
                                     No actions visible.
                                 </div>
@@ -384,26 +358,18 @@ export const Dashboard: React.FC = () => {
                             Select which quick actions to display on your dashboard.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="grid gap-3 py-4">
-                        {quickActions.map((action) => (
-                            <div
-                                key={action.label}
-                                className="flex items-center justify-between p-4 rounded-xl border-2 border-transparent bg-muted/30 hover:bg-muted/50 cursor-pointer transition-all hover:border-primary/20"
-                                onClick={() => toggleAction(action.label)}
+                    <div className="py-2">
+                        <QuickActionsReorder />
+                        <div className="mt-6 pt-4 border-t">
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={resetToDefaults}
                             >
-                                <div className="flex items-center gap-4">
-                                    <div className={`p-3 rounded-xl ${action.bg} ${action.color}`}>
-                                        <action.icon className="h-5 w-5" />
-                                    </div>
-                                    <span className="font-bold text-base">{action.label}</span>
-                                </div>
-                                <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${visibleActionIds.includes(action.label) ? 'bg-primary border-primary' : 'border-muted-foreground/30'}`}>
-                                    {visibleActionIds.includes(action.label) && (
-                                        <Check className="h-4 w-4 text-white" />
-                                    )}
-                                </div>
-                            </div>
-                        ))}
+                                <RotateCcw className="h-4 w-4 mr-2" />
+                                Reset to Defaults
+                            </Button>
+                        </div>
                     </div>
                 </DialogContent>
             </Dialog>

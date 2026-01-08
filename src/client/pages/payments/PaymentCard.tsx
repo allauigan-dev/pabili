@@ -17,6 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { formatCurrency } from '@/lib/utils';
 import type { Payment } from '@/lib/types';
+import { SwipeableCard, createDeleteAction, createConfirmAction } from '@/components/ui/SwipeableCard';
 
 interface PaymentCardProps {
     payment: Payment;
@@ -47,103 +48,117 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({ payment, onDelete, onC
 
     const status = statusConfig[payment.paymentStatus as keyof typeof statusConfig] || statusConfig.pending;
     const isConfirmed = payment.paymentStatus === 'confirmed';
+    const canConfirm = payment.paymentStatus === 'pending';
+
+    // Swipe actions
+    const deleteAction = onDelete ? createDeleteAction(() => onDelete(payment.id)) : undefined;
+
+    const confirmAction = canConfirm && onConfirm ? createConfirmAction(
+        () => onConfirm(payment.id),
+    ) : undefined;
 
     return (
-        <div
-            className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden mb-4 cursor-pointer transition-shadow hover:shadow-md"
-            onClick={() => navigate(`/payments/${payment.id}`)}
+        <SwipeableCard
+            rightAction={deleteAction}
+            leftAction={confirmAction}
+            className="mb-4"
         >
-            {/* Status Strip */}
-            <div className={`absolute left-0 top-0 bottom-0 w-1 ${status.bar} rounded-l-2xl`}></div>
+            <div
+                className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden cursor-pointer transition-shadow hover:shadow-md"
+                onClick={() => navigate(`/payments/${payment.id}`)}
+            >
+                {/* Status Strip */}
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${status.bar} rounded-l-2xl`}></div>
 
-            <div className="flex gap-4">
-                {/* Image Section */}
-                <div className="flex-shrink-0 w-20 h-20 bg-secondary/30 rounded-xl overflow-hidden border border-border/50 relative">
-                    <span className={`absolute top-0 right-0 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md z-10 ${status.badge}`}>
-                        {status.label}
-                    </span>
+                <div className="flex gap-4">
+                    {/* Image Section */}
+                    <div className="flex-shrink-0 w-20 h-20 bg-secondary/30 rounded-xl overflow-hidden border border-border/50 relative">
+                        <span className={`absolute top-0 right-0 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md z-10 ${status.badge}`}>
+                            {status.label}
+                        </span>
 
-                    {payment.paymentProof ? (
-                        <div onClick={(e) => e.stopPropagation()}>
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <img
-                                        src={payment.paymentProof}
-                                        alt="Payment Proof"
-                                        className="w-full h-full object-cover cursor-zoom-in"
-                                    />
-                                </DialogTrigger>
-                                <DialogContent className="max-w-[95vw] sm:max-w-[90vw] h-auto max-h-[90vh] p-1 border-none bg-transparent shadow-none">
-                                    <DialogTitle className="sr-only">Payment Proof</DialogTitle>
-                                    <div className="relative w-full h-full flex items-center justify-center">
+                        {payment.paymentProof ? (
+                            <div onClick={(e) => e.stopPropagation()}>
+                                <Dialog>
+                                    <DialogTrigger asChild>
                                         <img
                                             src={payment.paymentProof}
-                                            alt="Proof"
-                                            className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                                            alt="Payment Proof"
+                                            className="w-full h-full object-cover cursor-zoom-in"
                                         />
-                                    </div>
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                    ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-secondary/30">
-                            <ImageIcon className="h-6 w-6 text-muted-foreground opacity-50" />
-                        </div>
-                    )}
-                </div>
-
-                {/* Content Section */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                    <div className="flex justify-between items-start">
-                        <div className="min-w-0 pr-2">
-                            <h3 className="text-base font-bold text-foreground truncate">{payment.customerName}</h3>
-                            <div className="flex items-center text-xs text-muted-foreground mt-1 space-x-3">
-                                <span className="flex items-center truncate">
-                                    <User className="h-3.5 w-3.5 mr-1 opacity-70" />
-                                    {payment.paymentReference || 'No Ref'}
-                                </span>
-                                <span className="flex items-center">
-                                    <Calendar className="h-3.5 w-3.5 mr-1 opacity-70" />
-                                    {new Date(payment.paymentDate).toLocaleDateString()}
-                                </span>
+                                    </DialogTrigger>
+                                    <DialogContent className="max-w-[95vw] sm:max-w-[90vw] h-auto max-h-[90vh] p-1 border-none bg-transparent shadow-none">
+                                        <DialogTitle className="sr-only">Payment Proof</DialogTitle>
+                                        <div className="relative w-full h-full flex items-center justify-center">
+                                            <img
+                                                src={payment.paymentProof}
+                                                alt="Proof"
+                                                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+                                            />
+                                        </div>
+                                    </DialogContent>
+                                </Dialog>
                             </div>
-                        </div>
-                        <p className="text-primary font-bold text-base whitespace-nowrap">
-                            {formatCurrency(payment.paymentAmount)}
-                        </p>
+                        ) : (
+                            <div className="w-full h-full flex items-center justify-center bg-secondary/30">
+                                <ImageIcon className="h-6 w-6 text-muted-foreground opacity-50" />
+                            </div>
+                        )}
                     </div>
 
-                    <div className="flex justify-end items-center mt-3 gap-2" onClick={(e) => e.stopPropagation()}>
-                        {!isConfirmed && (
+                    {/* Content Section */}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
+                        <div className="flex justify-between items-start">
+                            <div className="min-w-0 pr-2">
+                                <h3 className="text-base font-bold text-foreground truncate">{payment.customerName}</h3>
+                                <div className="flex items-center text-xs text-muted-foreground mt-1 space-x-3">
+                                    <span className="flex items-center truncate">
+                                        <User className="h-3.5 w-3.5 mr-1 opacity-70" />
+                                        {payment.paymentReference || 'No Ref'}
+                                    </span>
+                                    <span className="flex items-center">
+                                        <Calendar className="h-3.5 w-3.5 mr-1 opacity-70" />
+                                        {new Date(payment.paymentDate).toLocaleDateString()}
+                                    </span>
+                                </div>
+                            </div>
+                            <p className="text-primary font-bold text-base whitespace-nowrap">
+                                {formatCurrency(payment.paymentAmount)}
+                            </p>
+                        </div>
+
+                        <div className="flex justify-end items-center mt-3 gap-2" onClick={(e) => e.stopPropagation()}>
+                            {!isConfirmed && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
+                                    onClick={() => onConfirm?.(payment.id)}
+                                    title="Confirm Payment"
+                                >
+                                    <CheckCircle2 className="h-4 w-4" />
+                                </Button>
+                            )}
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                className="h-8 w-8 rounded-lg text-emerald-600 hover:bg-emerald-50 hover:text-emerald-700 transition-colors"
-                                onClick={() => onConfirm?.(payment.id)}
-                                title="Confirm Payment"
+                                className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                                onClick={() => navigate(`/payments/${payment.id}/edit`)}
                             >
-                                <CheckCircle2 className="h-4 w-4" />
+                                <Edit className="h-4 w-4" />
                             </Button>
-                        )}
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                            onClick={() => navigate(`/payments/${payment.id}/edit`)}
-                        >
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={() => onDelete?.(payment.id)}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                                onClick={() => onDelete?.(payment.id)}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </SwipeableCard>
     );
 };

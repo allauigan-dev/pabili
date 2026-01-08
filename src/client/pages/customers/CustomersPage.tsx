@@ -15,6 +15,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { DeleteConfirmationSheet } from '@/components/ui/DeleteConfirmationSheet';
+import { useIsMobile } from '@/hooks/useMediaQuery';
 import { useCustomerMutations } from '@/hooks/useCustomers';
 import { useInfiniteScroll } from '@/hooks/useInfiniteScroll';
 import { useStatusCounts } from '@/hooks/useStatusCounts';
@@ -28,6 +30,7 @@ import { FilterPills } from '@/components/ui/FilterPills';
 
 export const CustomersPage: React.FC = () => {
     const navigate = useNavigate();
+    const isMobile = useIsMobile();
     const [searchQuery, setSearchQuery] = useState('');
     const [statusFilter, setStatusFilter] = useState('all');
 
@@ -169,22 +172,33 @@ export const CustomersPage: React.FC = () => {
                 icon={<UserPlus className="h-6 w-6" />}
             />
 
-            <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
-                <AlertDialogContent>
-                    <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Customer?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                            Are you sure you want to delete this customer? This action cannot be undone.
-                        </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-                            Delete
-                        </AlertDialogAction>
-                    </AlertDialogFooter>
-                </AlertDialogContent>
-            </AlertDialog>
+            {/* Delete Confirmation - Bottom Sheet on mobile, AlertDialog on desktop */}
+            {isMobile ? (
+                <DeleteConfirmationSheet
+                    open={!!deleteId}
+                    onOpenChange={(open) => !open && setDeleteId(null)}
+                    title="Delete Customer?"
+                    description="Are you sure you want to delete this customer? This action cannot be undone."
+                    onConfirm={handleConfirmDelete}
+                />
+            ) : (
+                <AlertDialog open={!!deleteId} onOpenChange={(open) => !open && setDeleteId(null)}>
+                    <AlertDialogContent>
+                        <AlertDialogHeader>
+                            <AlertDialogTitle>Delete Customer?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                                Are you sure you want to delete this customer? This action cannot be undone.
+                            </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={handleConfirmDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                                Delete
+                            </AlertDialogAction>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialog>
+            )}
         </div>
     );
 };
