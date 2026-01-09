@@ -22,6 +22,7 @@ import { SidebarContent } from './Sidebar';
 import { useHeader } from './HeaderProvider';
 import { Input } from '@/components/ui/input';
 import { useSession, signOut } from '@/lib/auth-client';
+import { getGenderImagePaths, type Gender } from '@/hooks/useGenderIcon';
 
 
 export const Header: React.FC = () => {
@@ -44,7 +45,7 @@ export const Header: React.FC = () => {
     const { data: session } = useSession();
     const user = session?.user;
     const userImage = user?.image;
-    const userInitials = user?.name?.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2) || 'U';
+    const genderImages = getGenderImagePaths((user as { gender?: Gender })?.gender);
     const [imageError, setImageError] = useState(false);
 
     // Reset image error when user image changes
@@ -89,7 +90,9 @@ export const Header: React.FC = () => {
                         <Sheet open={open} onOpenChange={setOpen}>
                             <SheetTrigger asChild>
                                 <button className="flex items-center gap-2 mr-2">
-                                    <div className="app-header-logo-icon cursor-pointer hover:opacity-80 transition-opacity">P</div>
+                                    <div className="app-header-logo-icon cursor-pointer hover:opacity-80 transition-opacity bg-transparent overflow-hidden">
+                                        <img src={genderImages.small} alt="Pabili" className="h-full w-full object-cover" />
+                                    </div>
                                 </button>
                             </SheetTrigger>
                             <SheetContent side="left" className="p-0 border-r w-72">
@@ -104,6 +107,9 @@ export const Header: React.FC = () => {
 
                     {/* Desktop Logo */}
                     <NavLink to="/" className="hidden lg:flex items-center gap-2">
+                        <div className="app-header-logo-icon shrink-0 bg-transparent overflow-hidden">
+                            <img src={genderImages.small} alt="Pabili" className="h-full w-full object-cover" />
+                        </div>
                         <h1 className="text-lg font-bold truncate max-w-[120px] sm:max-w-none">
                             {title}
                         </h1>
@@ -179,7 +185,7 @@ export const Header: React.FC = () => {
                                         onError={() => setImageError(true)}
                                     />
                                 ) : (
-                                    <span className="text-xs font-bold">{userInitials}</span>
+                                    <img src={genderImages.small} alt={user?.name || 'User'} className="h-full w-full object-cover" />
                                 )}
                             </Button>
                         </DropdownMenuTrigger>

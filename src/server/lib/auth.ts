@@ -25,6 +25,17 @@ export const getAuth = (env: { DB: D1Database; BETTER_AUTH_SECRET: string; BETTE
             },
         }),
 
+        // Custom user fields
+        user: {
+            additionalFields: {
+                gender: {
+                    type: "string",
+                    required: false,
+                    input: true, // Allow setting via updateUser
+                },
+            },
+        },
+
         // Social-only auth (no email/password)
         emailAndPassword: {
             enabled: false,

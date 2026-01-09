@@ -1,27 +1,32 @@
 import React, { useState } from 'react';
-import { User, Camera, Loader2, Check } from 'lucide-react';
+import { Camera, Loader2, Check } from 'lucide-react';
 import { useSession, authClient } from '@/lib/auth-client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
+import { genderOptions, getGenderImagePaths, type Gender } from '@/hooks/useGenderIcon';
 
 export const ProfileSection: React.FC = () => {
     const { data: session, isPending: sessionLoading } = useSession();
     const user = session?.user;
 
     const [name, setName] = useState(user?.name || '');
+    const [gender, setGender] = useState<Gender>((user as { gender?: Gender })?.gender);
     const [isEditing, setIsEditing] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const [saveSuccess, setSaveSuccess] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
-    // Sync name state when user data loads
+    const genderImages = getGenderImagePaths(gender);
+
+    // Sync state when user data loads
     React.useEffect(() => {
-        if (user?.name && !isEditing) {
-            setName(user.name);
+        if (user && !isEditing) {
+            setName(user.name || '');
+            setGender((user as { gender?: Gender }).gender);
         }
-    }, [user?.name, isEditing]);
+    }, [user, isEditing]);
 
     const handleSave = async () => {
         if (!name.trim()) {
@@ -35,6 +40,7 @@ export const ProfileSection: React.FC = () => {
         try {
             await authClient.updateUser({
                 name: name.trim(),
+                gender: gender,
             });
             setIsEditing(false);
             setSaveSuccess(true);
@@ -49,6 +55,7 @@ export const ProfileSection: React.FC = () => {
 
     const handleCancel = () => {
         setName(user?.name || '');
+        setGender((user as { gender?: Gender })?.gender);
         setIsEditing(false);
         setError(null);
     };
@@ -74,9 +81,11 @@ export const ProfileSection: React.FC = () => {
                                 className="w-full h-full object-cover"
                             />
                         ) : (
-                            <div className="w-full h-full flex items-center justify-center bg-primary/10">
-                                <User className="h-8 w-8 text-primary" />
-                            </div>
+                            <img
+                                src={genderImages.large}
+                                alt={gender === 'female' ? 'Female avatar' : 'Male avatar'}
+                                className="w-full h-full object-cover"
+                            />
                         )}
                     </div>
                     <button
@@ -141,9 +150,41 @@ export const ProfileSection: React.FC = () => {
                         </div>
                     )}
                 </div>
-                {error && (
+                {error && !gender && (
                     <p className="text-xs text-destructive">{error}</p>
                 )}
+            </div>
+
+            {/* Gender Selection */}
+            <div className="space-y-2">
+                <Label className="text-sm font-semibold">
+                    Gender
+                </Label>
+                <div className="flex gap-3">
+                    {genderOptions.map((option) => {
+                        const isSelected = gender === option.value;
+                        return (
+                            <button
+                                key={option.value}
+                                type="button"
+                                onClick={() => {
+                                    setGender(option.value);
+                                    if (!isEditing) setIsEditing(true);
+                                }}
+                                className={cn(
+                                    "flex-1 p-3 rounded-lg border-2 transition-all",
+                                    "flex items-center justify-center gap-2",
+                                    "hover:border-primary/50",
+                                    isSelected
+                                        ? "border-primary bg-primary/10 text-primary"
+                                        : "border-border/50 bg-muted/30 text-muted-foreground"
+                                )}
+                            >
+                                {option.label}
+                            </button>
+                        );
+                    })}
+                </div>
             </div>
 
             {/* Email (read-only) */}

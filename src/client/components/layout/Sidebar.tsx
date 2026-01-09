@@ -20,6 +20,8 @@ import { authClient } from '../../lib/auth-client';
 import { useNavigate } from 'react-router-dom';
 import { useTheme } from '@/hooks/useTheme';
 import { useSidebar } from './SidebarProvider';
+import { useSession } from '@/lib/auth-client';
+import { getGenderImagePaths, type Gender } from '@/hooks/useGenderIcon';
 
 const navItems = [
     { label: 'Dashboard', to: '/', icon: LayoutDashboard },
@@ -35,6 +37,9 @@ export const SidebarContent: React.FC<{ onLinkClick?: () => void, isMobile?: boo
     const navigate = useNavigate();
     const { isDark, toggleTheme } = useTheme();
     const { isCollapsed, toggleCollapsed } = useSidebar();
+    const { data: session } = useSession();
+    const user = session?.user;
+    const genderImages = getGenderImagePaths((user as { gender?: Gender })?.gender);
 
     // Use actual collapsed state for desktop, always expanded for mobile
     const collapsed = isMobile ? false : isCollapsed;
@@ -56,7 +61,9 @@ export const SidebarContent: React.FC<{ onLinkClick?: () => void, isMobile?: boo
                 "flex h-16 items-center border-b transition-all duration-300 justify-center",
                 collapsed ? "px-0" : "px-6"
             )}>
-                <div className="app-header-logo-icon shrink-0">P</div>
+                <div className="app-header-logo-icon shrink-0 bg-transparent overflow-hidden">
+                    <img src={genderImages.small} alt="Pabili" className="h-full w-full object-cover" />
+                </div>
             </div>
 
             <div className={cn(

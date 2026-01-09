@@ -11,6 +11,7 @@ export const user = sqliteTable('user', {
     email: text('email').notNull().unique(),
     emailVerified: integer('email_verified', { mode: 'boolean' }).notNull(),
     image: text('image'),
+    gender: text('gender', { enum: ['male', 'female'] }),
     createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
     updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
@@ -360,3 +361,5 @@ export type NewImage = typeof images.$inferInsert;
 export type Activity = typeof activities.$inferSelect;
 export type NewActivity = typeof activities.$inferInsert;
 
+export type User = typeof user.$inferSelect;
+export type NewUser = typeof user.$inferInsert;

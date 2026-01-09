@@ -43,7 +43,8 @@ export const OrdersPage: React.FC = () => {
         hasMore,
         error,
         sentinelRef,
-        reset
+        reset,
+        refetch
     } = useInfiniteScroll({
         fetcher: ordersApi.listPaginated,
         cacheKey: 'orders',
@@ -75,7 +76,7 @@ export const OrdersPage: React.FC = () => {
 
     const handleStatusChange = async (id: number, status: OrderStatus) => {
         await updateStatusAction({ id, status });
-        reset();
+        refetch();
     };
 
     // Filter by status is still done client-side on loaded data

@@ -43,7 +43,8 @@ export const InvoicesPage: React.FC = () => {
         hasMore,
         error,
         sentinelRef,
-        reset
+        reset,
+        refetch
     } = useInfiniteScroll({
         fetcher: invoicesApi.listPaginated,
         cacheKey: 'invoices',
@@ -75,7 +76,7 @@ export const InvoicesPage: React.FC = () => {
 
     const handleStatusChange = async (id: number, status: string) => {
         await updateStatusAction({ id, status: status as 'draft' | 'sent' | 'paid' | 'partial' | 'overdue' | 'cancelled' });
-        reset();
+        refetch();
     };
 
     // Filter by status is still done client-side on loaded data

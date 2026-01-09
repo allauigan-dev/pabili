@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- 2026-01-09 -->
+
+### Added
+- **Gender Icon System**: Added gender field to user schema and created `useGenderIcon` hook for gender-based avatar icons in Header and Sidebar.
+
+### Fixed
+- **Swipe Card Flash**: Fixed issue where swiping to change order/invoice status briefly showed "No orders found" by adding a `refetch()` function to `useInfiniteScroll` that updates data without clearing existing items.
+
+### Changed
+- **Login Page**: Updated styling and authentication options for improved UX.
+- **PWA Manifest**: Updated app icons and manifest configuration.
+
+---
+
 ### Added
 - **Members Feature Planning**: Created comprehensive implementation plan and task checklist for team member management with role-based access control (`docs/members/IMPLEMENTATION.md`, `docs/members/TASKS.md`).
 

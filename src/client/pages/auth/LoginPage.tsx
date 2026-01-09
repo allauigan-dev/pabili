@@ -1,12 +1,15 @@
 import { signIn, useSession } from "../../lib/auth-client";
-import { Store } from "lucide-react";
 import { Navigate, useNavigate } from "react-router-dom";
 import React from "react";
 import { Button } from "@/components/ui/button";
+import { getGenderImagePaths } from "../../hooks/useGenderIcon";
 
 export function LoginPage() {
     const { data: session } = useSession();
     const navigate = useNavigate();
+
+    const maleIcon = getGenderImagePaths("male").large;
+    const femaleIcon = getGenderImagePaths("female").large;
 
     React.useEffect(() => {
         if (session) {
@@ -42,11 +45,16 @@ export function LoginPage() {
 
             <div className="w-full max-w-sm bg-card rounded-2xl shadow-soft border border-border/50 p-8">
                 <div className="text-center mb-8">
-                    <div className="inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-2xl mb-4 text-primary shadow-sm ring-1 ring-primary/20">
-                        <Store size={32} strokeWidth={2.5} />
+                    <div className="flex items-center justify-center -space-x-4 mb-6">
+                        <div className="relative z-10 w-20 h-20 bg-blue-500/10 rounded-3xl p-2 ring-4 ring-background shadow-xl transform -rotate-6">
+                            <img src={maleIcon} alt="Male" className="w-full h-full object-contain" />
+                        </div>
+                        <div className="relative z-20 w-24 h-24 bg-pink-500/10 rounded-3xl p-2 ring-4 ring-background shadow-2xl">
+                            <img src={femaleIcon} alt="Female" className="w-full h-full object-contain" />
+                        </div>
                     </div>
-                    <h1 className="text-3xl font-bold text-foreground tracking-tight">Pabili</h1>
-                    <p className="text-muted-foreground mt-2 text-sm font-medium">Manage your Pasabuy orders with ease</p>
+                    <h1 className="text-4xl font-black text-foreground tracking-tight italic">Pabili</h1>
+                    <p className="text-muted-foreground mt-2 text-base font-medium">Pasabuy made easy for everyone</p>
                 </div>
 
                 <div className="space-y-4">

@@ -91,8 +91,10 @@ interface UseInfiniteScrollResult<T> {
     error: string | null;
     /** Ref to attach to sentinel element */
     sentinelRef: (node: HTMLDivElement | null) => void;
-    /** Reset and refetch from page 1 */
+    /** Reset and refetch from page 1 (clears data first) */
     reset: () => void;
+    /** Refetch from page 1 without clearing existing data (use for mutations) */
+    refetch: () => void;
     /** Total count of items */
     total: number;
 }
@@ -273,7 +275,7 @@ export function useInfiniteScroll<T>(
         };
     }, []);
 
-    // Reset function to start fresh
+    // Reset function to start fresh (clears data first - use for hard refresh)
     const reset = useCallback(() => {
         // Clear scroll cache for this key
         if (effectiveCacheKey) {
@@ -289,6 +291,22 @@ export function useInfiniteScroll<T>(
         fetchPage(1, true, true);
     }, [effectiveCacheKey, fetchPage]);
 
+    // Refetch function - fetches fresh data without clearing existing items first
+    // This prevents the flash of empty state during mutations like status changes
+    const refetch = useCallback(() => {
+        // Clear scroll cache for this key
+        if (effectiveCacheKey) {
+            scrollCache.delete(effectiveCacheKey);
+        }
+        setPage(1);
+        setHasMore(true);
+        setError(null);
+        fetchingRef.current = false;
+        initializedRef.current = true;
+        // Fetch without showing loading and without clearing items
+        fetchPage(1, true, false);
+    }, [effectiveCacheKey, fetchPage]);
+
     return {
         items,
         isLoading,
@@ -297,6 +315,7 @@ export function useInfiniteScroll<T>(
         error,
         sentinelRef,
         reset,
+        refetch,
         total,
     };
 }
