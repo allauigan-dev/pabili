@@ -8,6 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **Members Feature Planning**: Created comprehensive implementation plan and task checklist for team member management with role-based access control (`docs/members/IMPLEMENTATION.md`, `docs/members/TASKS.md`).
+
+### Changed
+- **Agent Rules**: Condensed `.agent/rules.md` from 423 lines to ~75 lines while preserving all essential conventions, multi-tenancy rules, and key principles.
+- **Git Workflow**: Improved `.agent/workflows/git.md` with detailed step-by-step instructions, changelog format guidelines, and commit conventions.
+
+### Added
 - **Dashboard Card Reordering**:
   - Implemented drag-and-drop reordering for Dashboard cards using `@dnd-kit`.
   - Created `DashboardCardsReorder`, `DashboardCardItem` components, and `useDashboardCards` hook.

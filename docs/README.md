@@ -28,6 +28,7 @@ Each phase has an `IMPLEMENTATION.md` (technical details) and `TASKS.md` (checkl
 | **3** | UI/UX Improvements | 🟠 High | [Implementation](./phase-3-ui-ux/IMPLEMENTATION.md) / [Tasks](./phase-3-ui-ux/TASKS.md) |
 | **4** | Communication & Notifications | 🟠 High | [Implementation](./phase-4-notifications/IMPLEMENTATION.md) / [Tasks](./phase-4-notifications/TASKS.md) |
 | **8** | Settings Page | 🟠 High | [Implementation](./phase-8-settings/IMPLEMENTATION.md) / [Tasks](./phase-8-settings/TASKS.md) |
+| **Members** | Team Members & Roles | 🟠 High | [Implementation](./members/IMPLEMENTATION.md) / [Tasks](./members/TASKS.md) |
 
 ### Customer Success
 
