@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - **Gender Icon System**: Added gender field to user schema and created `useGenderIcon` hook for gender-based avatar icons in Header and Sidebar.
+- **Image Upload Compression**: Implemented client-side image compression before upload using Canvas API (`src/client/lib/image-compression.ts`). Automatically resizes images to max 1920×1080, compresses to 80% quality, and converts large PNG/WebP files to JPEG.
 
 ### Fixed
 - **Swipe Card Flash**: Fixed issue where swiping to change order/invoice status briefly showed "No orders found" by adding a `refetch()` function to `useInfiniteScroll` that updates data without clearing existing items.

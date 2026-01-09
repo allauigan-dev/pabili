@@ -1,4 +1,5 @@
 import type { ApiResponse, Order, Store, Customer, Payment, Invoice, Activity, CreateOrderDto, CreateStoreDto, CreateCustomerDto, CreatePaymentDto, CreateInvoiceDto } from './types';
+import { compressImage, isCompressibleImage } from './image-compression';
 
 // ============================================
 // API CACHE LAYER
@@ -371,9 +372,14 @@ export const activitiesApi = {
  * File Upload API
  */
 export const uploadApi = {
-    upload: (file: File) => {
+    upload: async (file: File) => {
+        // Compress image if it's a compressible format
+        const fileToUpload = isCompressibleImage(file)
+            ? await compressImage(file)
+            : file;
+
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', fileToUpload);
         return fetchApi<{ key: string; url: string }>('/api/upload', {
             method: 'POST',
             body: formData,
