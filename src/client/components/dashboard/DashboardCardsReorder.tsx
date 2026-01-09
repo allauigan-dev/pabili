@@ -1,6 +1,6 @@
 import React from 'react';
 import { GripVertical, Check } from 'lucide-react';
-import { useDashboardActions } from '@/hooks/useDashboardActions';
+import { useDashboardCards } from '@/hooks/useDashboardCards';
 import { cn } from '@/lib/utils';
 import {
     DndContext,
@@ -22,19 +22,19 @@ import {
 import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
 import { CSS } from '@dnd-kit/utilities';
 
-interface SortableActionItemProps {
-    action: {
+interface SortableCardItemProps {
+    card: {
         id: string;
         label: string;
         icon: React.ComponentType<{ className?: string }>;
-        bg: string;
-        color: string;
+        gradient: string;
+        textColor: string;
     };
     isVisible: boolean;
     onToggle: () => void;
 }
 
-const SortableActionItem: React.FC<SortableActionItemProps> = ({ action, isVisible, onToggle }) => {
+const SortableCardItem: React.FC<SortableCardItemProps> = ({ card, isVisible, onToggle }) => {
     const {
         attributes,
         listeners,
@@ -42,7 +42,7 @@ const SortableActionItem: React.FC<SortableActionItemProps> = ({ action, isVisib
         transform,
         transition,
         isDragging,
-    } = useSortable({ id: action.id });
+    } = useSortable({ id: card.id });
 
     const style = {
         transform: CSS.Transform.toString(transform),
@@ -72,18 +72,18 @@ const SortableActionItem: React.FC<SortableActionItemProps> = ({ action, isVisib
                     <GripVertical className="h-4 w-4" />
                 </div>
 
-                {/* Icon */}
+                {/* Icon with gradient preview */}
                 <div className={cn(
-                    "p-2 rounded-lg flex items-center justify-center shrink-0",
-                    action.bg,
-                    action.color
+                    "p-2 rounded-lg flex items-center justify-center shrink-0 bg-gradient-to-br",
+                    card.gradient,
+                    "text-white"
                 )}>
-                    <action.icon className="h-4 w-4" />
+                    <card.icon className="h-4 w-4" />
                 </div>
 
                 {/* Label */}
                 <span className="font-bold text-base text-foreground">
-                    {action.label}
+                    {card.label}
                 </span>
             </div>
 
@@ -109,13 +109,13 @@ const SortableActionItem: React.FC<SortableActionItemProps> = ({ action, isVisib
     );
 };
 
-export const QuickActionsReorder: React.FC = () => {
+export const DashboardCardsReorder: React.FC = () => {
     const {
-        allActions,
-        toggleAction,
-        isActionVisible,
+        allCards,
+        toggleCard,
+        isCardVisible,
         updateOrder,
-    } = useDashboardActions();
+    } = useDashboardCards();
 
     const sensors = useSensors(
         useSensor(PointerSensor, {
@@ -138,11 +138,11 @@ export const QuickActionsReorder: React.FC = () => {
         const { active, over } = event;
 
         if (over && active.id !== over.id) {
-            const oldIndex = allActions.findIndex((a) => a.id === active.id);
-            const newIndex = allActions.findIndex((a) => a.id === over.id);
+            const oldIndex = allCards.findIndex((c) => c.id === active.id);
+            const newIndex = allCards.findIndex((c) => c.id === over.id);
 
-            const newOrder = arrayMove(allActions, oldIndex, newIndex);
-            const newIds = newOrder.map((a) => a.id);
+            const newOrder = arrayMove(allCards, oldIndex, newIndex);
+            const newIds = newOrder.map((c) => c.id);
             updateOrder(newIds);
         }
     };
@@ -156,16 +156,16 @@ export const QuickActionsReorder: React.FC = () => {
                 modifiers={[restrictToVerticalAxis, restrictToParentElement]}
             >
                 <SortableContext
-                    items={allActions.map((a) => a.id)}
+                    items={allCards.map((c) => c.id)}
                     strategy={verticalListSortingStrategy}
                 >
                     <div className="space-y-1">
-                        {allActions.map((action) => (
-                            <SortableActionItem
-                                key={action.id}
-                                action={action}
-                                isVisible={isActionVisible(action.id)}
-                                onToggle={() => toggleAction(action.id)}
+                        {allCards.map((card) => (
+                            <SortableCardItem
+                                key={card.id}
+                                card={card}
+                                isVisible={isCardVisible(card.id)}
+                                onToggle={() => toggleCard(card.id)}
                             />
                         ))}
                     </div>

@@ -1,46 +1,114 @@
-import React, { useRef } from 'react';
+import React from 'react';
 import { Lock, RotateCcw, GripVertical } from 'lucide-react';
 import { useNavConfig } from '@/hooks/useNavConfig';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { useDrag } from '@use-gesture/react';
-import { useSprings, animated, config } from '@react-spring/web';
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    useSortable,
+    verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { restrictToVerticalAxis, restrictToParentElement } from '@dnd-kit/modifiers';
+import { CSS } from '@dnd-kit/utilities';
 
-// Helper to move an item in an array
-const move = <T,>(array: T[], from: number, to: number) => {
-    const newArray = [...array];
-    const item = newArray.splice(from, 1)[0];
-    newArray.splice(to, 0, item);
-    return newArray;
-};
+interface NavItemData {
+    id: string;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    required?: boolean;
+}
 
-// Height of each item row
-const ITEM_HEIGHT = 64;
+interface SortableNavItemProps {
+    item: NavItemData;
+    position: number;
+    onToggle: () => void;
+}
 
-// Helper for spring calculations
-const fn = (order: number[], active = false, originalIndex = -1, y = 0) => (index: number) => {
-    // For the actively dragged item, calculate position based on original order position + drag offset
-    if (active && index === originalIndex) {
-        const originalOrderPosition = order.indexOf(index);
-        return {
-            y: originalOrderPosition * ITEM_HEIGHT + y,
-            scale: 1.02,
-            zIndex: 1,
-            shadow: 15,
-            immediate: (key: string) => key === 'y' || key === 'zIndex',
-            config: config.stiff,
-        };
-    }
-    // For non-dragged items, animate to their position in the current order
-    return {
-        y: order.indexOf(index) * ITEM_HEIGHT,
-        scale: 1,
-        zIndex: 0,
-        shadow: 1,
-        immediate: false,
-        config: config.stiff,
+const SortableNavItem: React.FC<SortableNavItemProps> = ({ item, position, onToggle }) => {
+    const isRequired = item.required;
+
+    const {
+        attributes,
+        listeners,
+        setNodeRef,
+        transform,
+        transition,
+        isDragging,
+    } = useSortable({
+        id: item.id,
+        disabled: isRequired, // Dashboard cannot be dragged
+    });
+
+    const style = {
+        transform: CSS.Transform.toString(transform),
+        transition,
+        zIndex: isDragging ? 10 : 0,
+        opacity: isDragging ? 0.9 : 1,
     };
+
+    return (
+        <div
+            ref={setNodeRef}
+            style={style}
+            className={cn(
+                "flex items-center gap-3 p-3 rounded-xl border transition-colors h-[60px]",
+                "border-primary/30 bg-primary/5",
+                isDragging && "shadow-lg cursor-grabbing",
+                !isRequired && !isDragging && "cursor-grab"
+            )}
+            {...(!isRequired ? { ...attributes, ...listeners } : {})}
+        >
+            {/* Drag Handle */}
+            <div className={cn(
+                "flex items-center justify-center",
+                isRequired ? "text-muted-foreground/30" : "text-muted-foreground"
+            )}>
+                <GripVertical className="h-4 w-4" />
+            </div>
+
+            {/* Position indicator */}
+            <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
+                <span className="text-xs font-bold text-primary">{position}</span>
+            </div>
+
+            {/* Icon */}
+            <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary text-primary-foreground shrink-0">
+                <item.icon className="h-4 w-4" />
+            </div>
+
+            {/* Label */}
+            <div className="flex-1 flex items-center gap-2 min-w-0">
+                <span className="text-sm font-medium text-foreground truncate">
+                    {item.label}
+                </span>
+                {isRequired && (
+                    <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
+                )}
+            </div>
+
+            {/* Toggle (only for non-required) */}
+            {!isRequired && (
+                <Switch
+                    checked={true}
+                    onCheckedChange={onToggle}
+                    onPointerDown={(e) => e.stopPropagation()}
+                />
+            )}
+        </div>
+    );
 };
 
 export const NavigationSection: React.FC = () => {
@@ -54,48 +122,37 @@ export const NavigationSection: React.FC = () => {
         maxItems,
     } = useNavConfig();
 
-    const order = useRef<number[]>(enabledItems.map((_, index) => index));
-    const [springs, api] = useSprings(enabledItems.length, fn(order.current));
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 150,
+                tolerance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
 
-    // Update order ref when enabledItems change (e.g., item toggled or reset)
-    React.useEffect(() => {
-        order.current = enabledItems.map((_, index) => index);
-        api.start(fn(order.current));
-    }, [enabledItems.length, api]);
+    const handleDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
 
-    const bind = useDrag(({ args: [originalIndex], active, movement: [, my], first, memo }) => {
-        const index = originalIndex as number;
-        const curIndex = order.current.indexOf(index);
+        if (over && active.id !== over.id) {
+            const oldIndex = enabledItems.findIndex((item) => item.id === active.id);
+            const newIndex = enabledItems.findIndex((item) => item.id === over.id);
 
-        // On first drag, store the starting order (memo is typed as unknown, so we cast it)
-        const startOrder: number[] = first ? [...order.current] : ((memo as number[] | undefined) || order.current);
+            // Prevent moving to position 0 (reserved for Dashboard)
+            if (newIndex === 0) {
+                return;
+            }
 
-        // Calculate which position the dragged item should be at based on movement
-        const currentPosition = curIndex * ITEM_HEIGHT + my;
-        const targetRow = Math.round(currentPosition / ITEM_HEIGHT);
-        const clampedRow = Math.max(0, Math.min(enabledItems.length - 1, targetRow));
-
-        // Prevent moving Dashboard (id: 'dashboard', index 0)
-        // Check if the item being dragged is Dashboard OR if it's being moved to position 0
-        const isDashboardBeingDragged = enabledItems[index]?.id === 'dashboard';
-        const isMovingToDashboardPosition = clampedRow === 0 && startOrder.indexOf(index) !== 0;
-
-        if (isDashboardBeingDragged || isMovingToDashboardPosition) {
-            // If dragging dashboard or trying to move something to position 0, just animate in place
-            api.start(fn(order.current, active, index, my));
-            return startOrder;
-        }
-
-        // Create new order by moving the item
-        const newOrder = move(startOrder, startOrder.indexOf(index), clampedRow);
-
-        // Update springs - pass the original start order for position calculation during drag
-        api.start(fn(active ? startOrder : newOrder, active, index, my));
-
-        if (!active) {
-            order.current = newOrder;
-            // Map indexes back to IDs for localStorage
-            const newIds = newOrder.map(idx => enabledItems[idx]?.id).filter(Boolean) as string[];
+            const newOrder = arrayMove(enabledItems, oldIndex, newIndex);
+            const newIds = newOrder.map((item) => item.id);
 
             // Update localStorage
             localStorage.setItem('pabili-nav-items', JSON.stringify(newIds));
@@ -104,14 +161,7 @@ export const NavigationSection: React.FC = () => {
                 detail: { key: 'pabili-nav-items', value: newIds }
             }));
         }
-
-        // Return memo for next frame
-        return startOrder;
-    }, {
-        axis: 'y',
-        filterTaps: true,
-        rubberband: 0.15,
-    });
+    };
 
     return (
         <div className="space-y-6">
@@ -130,71 +180,28 @@ export const NavigationSection: React.FC = () => {
                     <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
                         Active Items
                     </p>
-                    <div className="relative" style={{ height: enabledItems.length * 64 }}>
-                        {springs.map(({ zIndex, shadow, y, scale }, i) => {
-                            const item = enabledItems[i];
-                            if (!item) return null;
-                            const isRequired = item.required;
-
-                            return (
-                                <animated.div
-                                    key={item.id}
-                                    style={{
-                                        zIndex,
-                                        boxShadow: shadow.to(s => `rgba(0, 0, 0, ${s / 100}) 0px ${s}px ${s * 2}px`),
-                                        y,
-                                        scale,
-                                        position: 'absolute',
-                                        width: '100%',
-                                        top: 0,
-                                        touchAction: 'none',
-                                    }}
-                                    className={cn(
-                                        "flex items-center gap-3 p-3 rounded-xl border transition-colors h-[60px]",
-                                        "border-primary/30 bg-primary/5",
-                                        !isRequired && "cursor-grab active:cursor-grabbing"
-                                    )}
-                                    {...(!isRequired ? bind(i) : {})}
-                                >
-                                    {/* Drag Handle */}
-                                    <div className={cn(
-                                        "flex items-center justify-center",
-                                        isRequired ? "text-muted-foreground/30" : "text-muted-foreground"
-                                    )}>
-                                        <GripVertical className="h-4 w-4" />
-                                    </div>
-
-                                    {/* Position indicator */}
-                                    <div className="w-6 h-6 rounded-md bg-primary/20 flex items-center justify-center shrink-0">
-                                        <span className="text-xs font-bold text-primary">{order.current.indexOf(i) + 1}</span>
-                                    </div>
-
-                                    {/* Icon */}
-                                    <div className="w-9 h-9 rounded-lg flex items-center justify-center bg-primary text-primary-foreground shrink-0">
-                                        <item.icon className="h-4 w-4" />
-                                    </div>
-
-                                    {/* Label */}
-                                    <div className="flex-1 flex items-center gap-2 min-w-0">
-                                        <span className="text-sm font-medium text-foreground truncate">
-                                            {item.label}
-                                        </span>
-                                        {isRequired && (
-                                            <Lock className="h-3 w-3 text-muted-foreground shrink-0" />
-                                        )}
-                                    </div>
-
-                                    {/* Toggle (only for non-required) */}
-                                    {!isRequired && (
-                                        <Switch
-                                            checked={true}
-                                            onCheckedChange={() => toggleItem(item.id)}
-                                        />
-                                    )}
-                                </animated.div>
-                            );
-                        })}
-                    </div>
+                    <DndContext
+                        sensors={sensors}
+                        collisionDetection={closestCenter}
+                        onDragEnd={handleDragEnd}
+                        modifiers={[restrictToVerticalAxis, restrictToParentElement]}
+                    >
+                        <SortableContext
+                            items={enabledItems.map((item) => item.id)}
+                            strategy={verticalListSortingStrategy}
+                        >
+                            <div className="space-y-1">
+                                {enabledItems.map((item, index) => (
+                                    <SortableNavItem
+                                        key={item.id}
+                                        item={item}
+                                        position={index + 1}
+                                        onToggle={() => toggleItem(item.id)}
+                                    />
+                                ))}
+                            </div>
+                        </SortableContext>
+                    </DndContext>
                 </div>
 
                 {/* Inactive Navigation Items */}

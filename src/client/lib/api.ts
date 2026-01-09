@@ -350,6 +350,10 @@ export interface DashboardStats {
     pending: number;
     activeStores: number;
     customers: number;
+    invoices: number;
+    overdueInvoices: number;
+    payments: number;
+    revenue: number;
 }
 
 export const statsApi = {

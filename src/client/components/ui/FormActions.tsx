@@ -28,7 +28,9 @@ export const FormActions: React.FC<FormActionsProps> = ({
     const content = (
         <nav
             className={cn(
-                "fixed bottom-0 left-0 right-0 z-50 border-t bg-card/80 backdrop-blur-lg",
+                "fixed bottom-0 right-0 z-50 border-t bg-card/80 backdrop-blur-lg",
+                "left-0 lg:left-[var(--sidebar-width,256px)]",
+                "transition-[left] duration-300",
                 className
             )}
             style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}

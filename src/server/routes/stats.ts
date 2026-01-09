@@ -4,8 +4,8 @@
  */
 
 import { Hono } from 'hono';
-import { eq, and, isNull, count } from 'drizzle-orm';
-import { createDb, orders, stores, customers } from '../db';
+import { eq, and, isNull, count, sql, inArray } from 'drizzle-orm';
+import { createDb, orders, stores, customers, invoices, payments } from '../db';
 
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
@@ -61,6 +61,44 @@ app.get('/', async (c) => {
                 isNull(customers.deletedAt)
             ));
 
+        // Get total invoices count
+        const [invoicesCount] = await db
+            .select({ total: count() })
+            .from(invoices)
+            .where(and(
+                eq(invoices.organizationId, organizationId),
+                isNull(invoices.deletedAt)
+            ));
+
+        // Get overdue invoices count
+        const [overdueInvoicesCount] = await db
+            .select({ total: count() })
+            .from(invoices)
+            .where(and(
+                eq(invoices.organizationId, organizationId),
+                eq(invoices.invoiceStatus, 'overdue'),
+                isNull(invoices.deletedAt)
+            ));
+
+        // Get total payments count
+        const [paymentsCount] = await db
+            .select({ total: count() })
+            .from(payments)
+            .where(and(
+                eq(payments.organizationId, organizationId),
+                isNull(payments.deletedAt)
+            ));
+
+        // Get revenue (sum of order totals for bought/delivered orders)
+        const [revenueResult] = await db
+            .select({ total: sql<number>`COALESCE(SUM(${orders.orderTotal}), 0)` })
+            .from(orders)
+            .where(and(
+                eq(orders.organizationId, organizationId),
+                inArray(orders.orderStatus, ['bought', 'packed', 'delivered']),
+                isNull(orders.deletedAt)
+            ));
+
         return c.json({
             success: true,
             data: {
@@ -68,6 +106,10 @@ app.get('/', async (c) => {
                 pending: pendingCount?.total || 0,
                 activeStores: activeStoresCount?.total || 0,
                 customers: customersCount?.total || 0,
+                invoices: invoicesCount?.total || 0,
+                overdueInvoices: overdueInvoicesCount?.total || 0,
+                payments: paymentsCount?.total || 0,
+                revenue: revenueResult?.total || 0,
             }
         });
     } catch (error) {
@@ -77,3 +119,4 @@ app.get('/', async (c) => {
 });
 
 export default app;
+

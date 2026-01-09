@@ -1,14 +1,13 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-    Package,
-    Store as StoreIcon,
-    Users,
-    Clock,
     History,
     Pencil,
     CreditCard,
-    RotateCcw
+    RotateCcw,
+    Package,
+    Users,
+    Store as StoreIcon,
 } from 'lucide-react';
 import {
     Dialog,
@@ -25,7 +24,28 @@ import { useActivities } from '@/hooks/useActivities';
 import { useSession } from '@/lib/auth-client';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
 import { useDashboardActions } from '@/hooks/useDashboardActions';
+import { useDashboardCards } from '@/hooks/useDashboardCards';
 import { QuickActionsReorder } from '@/components/dashboard/QuickActionsReorder';
+import { DashboardCardsReorder } from '@/components/dashboard/DashboardCardsReorder';
+import { DashboardCardItem } from '@/components/dashboard/DashboardCardItem';
+
+import {
+    DndContext,
+    closestCenter,
+    KeyboardSensor,
+    PointerSensor,
+    TouchSensor,
+    useSensor,
+    useSensors,
+} from '@dnd-kit/core';
+import type { DragEndEvent } from '@dnd-kit/core';
+import {
+    arrayMove,
+    SortableContext,
+    sortableKeyboardCoordinates,
+    rectSortingStrategy,
+} from '@dnd-kit/sortable';
+import { restrictToParentElement } from '@dnd-kit/modifiers';
 
 type ActivityType = 'order' | 'customer' | 'store' | 'payment';
 
@@ -50,14 +70,6 @@ export const Dashboard: React.FC = () => {
 
     // Get user's first name for greeting
     const userName = session?.user?.name?.split(' ')[0] || 'there';
-
-    // Stats from API (accurate counts)
-    const dashboardStats = {
-        orders: stats?.orders || 0,
-        activeStores: stats?.activeStores || 0,
-        customers: stats?.customers || 0,
-        pending: stats?.pending || 0,
-    };
 
     // Helper to format activity into a sentence
     const formatActivitySentence = (type: ActivityType, title: string, status: string | undefined | null, action: string | undefined | null, description: string | undefined | null): string => {
@@ -143,10 +155,46 @@ export const Dashboard: React.FC = () => {
         }
     };
 
+    // Dashboard cards state
+    const { visibleCards, allCards, updateOrder, resetToDefaults: resetCardsToDefaults } = useDashboardCards();
+    const [isCardsEditMode, setIsCardsEditMode] = useState(false);
 
+    // Quick actions state
+    const { visibleActions, resetToDefaults: resetActionsToDefaults } = useDashboardActions();
+    const [isActionsEditMode, setIsActionsEditMode] = useState(false);
 
-    const { visibleActions, resetToDefaults } = useDashboardActions();
-    const [isEditMode, setIsEditMode] = React.useState(false);
+    // DnD sensors for cards
+    const sensors = useSensors(
+        useSensor(PointerSensor, {
+            activationConstraint: {
+                distance: 8,
+            },
+        }),
+        useSensor(TouchSensor, {
+            activationConstraint: {
+                delay: 200,
+                tolerance: 8,
+            },
+        }),
+        useSensor(KeyboardSensor, {
+            coordinateGetter: sortableKeyboardCoordinates,
+        })
+    );
+
+    const handleCardsDragEnd = (event: DragEndEvent) => {
+        const { active, over } = event;
+
+        if (over && active.id !== over.id) {
+            const oldIndex = visibleCards.findIndex((c) => c.id === active.id);
+            const newIndex = visibleCards.findIndex((c) => c.id === over.id);
+
+            const newOrder = arrayMove(visibleCards, oldIndex, newIndex);
+            // Update the full order based on visible cards new positions
+            const hiddenCards = allCards.filter(c => !visibleCards.some(vc => vc.id === c.id));
+            const newIds = [...newOrder.map(c => c.id), ...hiddenCards.map(c => c.id)];
+            updateOrder(newIds);
+        }
+    };
 
     return (
         <div className="pb-10">
@@ -159,60 +207,48 @@ export const Dashboard: React.FC = () => {
                 }
             />
 
+            {/* Stats Cards Section */}
             <section className="mb-10">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
-                    {/* Orders Card */}
-                    <div className="bg-gradient-to-br from-blue-600 to-blue-700 p-4 sm:p-6 rounded-3xl shadow-lg border-none flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all">
-                        <div className="flex justify-between items-start z-10">
-                            <span className="text-[10px] sm:text-xs font-bold text-blue-100 uppercase tracking-widest">Orders</span>
-                            <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center shadow-inner backdrop-blur-md border border-white/10">
-                                <Package className="h-5 w-5 sm:h-6 sm:w-6" />
-                            </div>
-                        </div>
-                        <div className="z-10 text-white">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{dashboardStats.orders}</span>
-                        </div>
-                    </div>
-
-                    {/* Active Stores Card */}
-                    <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-4 sm:p-6 rounded-3xl shadow-lg border-none flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all">
-                        <div className="flex justify-between items-start z-10">
-                            <span className="text-[10px] sm:text-xs font-bold text-emerald-100 uppercase tracking-widest">Active Stores</span>
-                            <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center shadow-inner backdrop-blur-md border border-white/10">
-                                <StoreIcon className="h-5 w-5 sm:h-6 sm:w-6" />
-                            </div>
-                        </div>
-                        <div className="z-10 text-white">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{dashboardStats.activeStores}</span>
-                        </div>
-                    </div>
-
-                    {/* Customers Card */}
-                    <div className="bg-gradient-to-br from-purple-600 to-purple-700 p-4 sm:p-6 rounded-3xl shadow-lg border-none flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all">
-                        <div className="flex justify-between items-start z-10">
-                            <span className="text-[10px] sm:text-xs font-bold text-purple-100 uppercase tracking-widest">Customers</span>
-                            <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center shadow-inner backdrop-blur-md border border-white/10">
-                                <Users className="h-5 w-5 sm:h-6 sm:w-6" />
-                            </div>
-                        </div>
-                        <div className="z-10 text-white">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{dashboardStats.customers}</span>
-                        </div>
-                    </div>
-
-                    {/* Pending Card */}
-                    <div className="bg-gradient-to-br from-amber-500 to-amber-600 p-4 sm:p-6 rounded-3xl shadow-lg border-none flex flex-col justify-between h-36 sm:h-44 relative overflow-hidden group hover:shadow-xl hover:-translate-y-1 transition-all">
-                        <div className="flex justify-between items-start z-10">
-                            <span className="text-[10px] sm:text-xs font-bold text-amber-50 uppercase tracking-widest">Pending</span>
-                            <div className="w-10 h-10 rounded-2xl bg-white/20 text-white flex items-center justify-center shadow-inner backdrop-blur-md border border-white/10">
-                                <Clock className="h-5 w-5 sm:h-6 sm:w-6" />
-                            </div>
-                        </div>
-                        <div className="z-10 text-white">
-                            <span className="text-3xl sm:text-4xl lg:text-5xl font-bold tracking-tight drop-shadow-sm">{dashboardStats.pending}</span>
-                        </div>
-                    </div>
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-[10px] sm:text-xs font-bold text-muted-foreground uppercase tracking-widest">Overview</h2>
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-full"
+                        onClick={() => setIsCardsEditMode(true)}
+                    >
+                        <Pencil className="h-4 w-4" />
+                    </Button>
                 </div>
+
+                <DndContext
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleCardsDragEnd}
+                    modifiers={[restrictToParentElement]}
+                >
+                    <SortableContext
+                        items={visibleCards.map(c => c.id)}
+                        strategy={rectSortingStrategy}
+                    >
+                        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+                            {visibleCards.map((card) => (
+                                <DashboardCardItem
+                                    key={card.id}
+                                    card={card}
+                                    stats={stats ?? undefined}
+                                    compact={visibleCards.length > 4}
+                                />
+                            ))}
+                        </div>
+                    </SortableContext>
+                </DndContext>
+
+                {visibleCards.length === 0 && (
+                    <div className="text-center py-12 text-sm text-muted-foreground italic bg-muted/20 rounded-2xl">
+                        No cards visible. Click the edit button to add cards.
+                    </div>
+                )}
             </section>
 
             {/* Quick Actions - Mobile & Tablet */}
@@ -223,7 +259,7 @@ export const Dashboard: React.FC = () => {
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-full"
-                        onClick={() => setIsEditMode(true)}
+                        onClick={() => setIsActionsEditMode(true)}
                     >
                         <Pencil className="h-4 w-4" />
                     </Button>
@@ -315,7 +351,7 @@ export const Dashboard: React.FC = () => {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-full"
-                                onClick={() => setIsEditMode(true)}
+                                onClick={() => setIsActionsEditMode(true)}
                             >
                                 <Pencil className="h-4 w-4" />
                             </Button>
@@ -350,7 +386,33 @@ export const Dashboard: React.FC = () => {
                 </section>
             </div>
 
-            <Dialog open={isEditMode} onOpenChange={setIsEditMode}>
+            {/* Cards Edit Dialog */}
+            <Dialog open={isCardsEditMode} onOpenChange={setIsCardsEditMode}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Customize Cards</DialogTitle>
+                        <DialogDescription>
+                            Select which stat cards to display on your dashboard.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2">
+                        <DashboardCardsReorder />
+                        <div className="mt-6 pt-4 border-t">
+                            <Button
+                                variant="outline"
+                                className="w-full"
+                                onClick={resetCardsToDefaults}
+                            >
+                                <RotateCcw className="h-4 w-4 mr-2" />
+                                Reset to Defaults
+                            </Button>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+
+            {/* Actions Edit Dialog */}
+            <Dialog open={isActionsEditMode} onOpenChange={setIsActionsEditMode}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle>Customize Actions</DialogTitle>
@@ -364,7 +426,7 @@ export const Dashboard: React.FC = () => {
                             <Button
                                 variant="outline"
                                 className="w-full"
-                                onClick={resetToDefaults}
+                                onClick={resetActionsToDefaults}
                             >
                                 <RotateCcw className="h-4 w-4 mr-2" />
                                 Reset to Defaults
@@ -376,3 +438,4 @@ export const Dashboard: React.FC = () => {
         </div >
     );
 };
+

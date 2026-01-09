@@ -8,23 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Phase 3 UI/UX Improvements**:
-  - **Swipeable Card Actions**: Implemented `SwipeableCard` component with left/right swipe gestures for quick actions (delete, mark delivered, confirm payment) across Orders, Invoices, and Payments.
-  - **Bottom Sheet Component**: Created mobile-first `BottomSheet` component with drag-to-dismiss gestures and snappy animations (`tension: 300, friction: 25`).
-  - **Responsive Confirmation System**: Added generic `ConfirmationSheet` and `ActionSheet` components; migrated `OrderCard` status updates and `PaymentsPage` confirmations to use bottom sheets on mobile.
-  - **FAB Smart Visibility**: Implemented logic to hide the Floating Action Button when menus or dialogs are active to prevent visual overlap.
-  - **Dashboard Quick Actions Reorder**: Implemented drag-and-drop reordering for Dashboard quick actions with persistence.
-  - **Media Query Hook**: Added `useMediaQuery` and `useIsMobile` hooks for responsive behavior detection.
+- **Dashboard Card Reordering**:
+  - Implemented drag-and-drop reordering for Dashboard cards using `@dnd-kit`.
+  - Created `DashboardCardsReorder`, `DashboardCardItem` components, and `useDashboardCards` hook.
+  - Added persistence for dashboard card layout in local storage.
+- **Modern Drag-and-Drop Infrastructure**:
+  - Migrated stateful reordering components to `@dnd-kit` for superior performance and accessibility.
+  - Implemented `SortableContext` with vertical list strategies and sensor-based event handling.
 
 ### Fixed
-- **Gesture Conflict Resolution**: Fixed conflict between card swipe actions and page swipe navigation:
-  - Implemented event-based coordination using custom `card-swipe-start` and `card-swipe-end` events.
-  - Added "swipe zones" to cards - middle 70% for card swipes, top/bottom 15% edges for page navigation.
-  - Page swipe navigation now dynamically disables when card swipes are in progress.
-- **Swipe Navigation Sync**: Fixed swipe navigation to follow bottom navigation configuration instead of hardcoded routes, respecting user customizations.
-- **Layout Breakpoints**: Standardized mobile/desktop transition to `lg (1024px)` across layouts and gesture hooks for consistent tablet support.
+- **Quick Action Layout**: Fixed layout of quick action reorder buttons to prevent them from being cut off by the sidebar on desktop screens.
+- **Server Stats Precision**: Optimized `/api/stats/counts` route to provide more accurate and efficient entity counting for the dashboard.
 
 ### Changed
+- **Navigation Reordering Migration**:
+  - Migrated `NavigationSection` from `@use-gesture/react` to `@dnd-kit` to resolve positional tracking issues.
+  - Improved drag-start delay and touch tolerance for better mobile UX.
 - **Image Gallery Modal**: Fixed event propagation issue where closing the image gallery modal on order cards would trigger navigation to order details. Added `stopPropagation` handlers to `DialogOverlay` and `DialogContent` components.
 
 ### Changed
