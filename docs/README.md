@@ -54,6 +54,7 @@ Each phase has an `IMPLEMENTATION.md` (technical details) and `TASKS.md` (checkl
 - **Spec**: [spec.md](../spec.md) - Original project specification
 - **Rules**: [.agent/rules.md](../.agent/rules.md) - Coding conventions
 - **API**: [API.md](./API.md) - API documentation
+- **CI/CD**: [CICD_GUIDE.md](./CICD_GUIDE.md) - CI/CD pipeline guide
 
 ---
 
