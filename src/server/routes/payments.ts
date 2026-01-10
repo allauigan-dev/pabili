@@ -111,7 +111,7 @@ app.get('/', async (c) => {
             .from(payments)
             .leftJoin(customers, eq(payments.customerId, customers.id))
             .where(whereConditions)
-            .orderBy(desc(payments.createdAt))
+            .orderBy(desc(payments.createdAt), desc(payments.id))
             .limit(limit)
             .offset(offset);
 

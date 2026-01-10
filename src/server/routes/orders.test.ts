@@ -101,6 +101,13 @@ describe('Orders API', () => {
             )
             expect(deleteRoute).toBeDefined()
         })
+
+        it('should have GET /buy-list route for grouped pending orders', () => {
+            const buyListRoute = ordersApp.routes.find(
+                (r) => r.method === 'GET' && r.path === '/buy-list'
+            )
+            expect(buyListRoute).toBeDefined()
+        })
     })
 
     describe('Validation schemas', () => {

@@ -127,10 +127,10 @@ export const InvoiceForm: React.FC = () => {
             result = await createAction(formData);
         }
 
-        if (result && result.success) {
+        if (result) {
             navigate('/invoices');
         } else {
-            setLocalError(result?.error || 'Failed to save invoice');
+            setLocalError('Failed to save invoice. Please check the information and try again.');
         }
     };
 

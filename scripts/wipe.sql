@@ -1,0 +1,16 @@
+PRAGMA foreign_keys = OFF;
+DELETE FROM activities;
+DELETE FROM images;
+DELETE FROM payments;
+DELETE FROM orders;
+DELETE FROM invoices;
+DELETE FROM customers;
+DELETE FROM stores;
+DELETE FROM invitation;
+DELETE FROM member;
+DELETE FROM organization;
+DELETE FROM verification;
+DELETE FROM account;
+DELETE FROM session;
+DELETE FROM user;
+PRAGMA foreign_keys = ON;

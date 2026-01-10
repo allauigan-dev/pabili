@@ -58,8 +58,8 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onDelete }
                 </div>
 
                 {/* Content Section */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                    <div className="flex justify-between items-start">
+                <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
+                    <div className="flex justify-between items-stretch">
                         <div className="min-w-0 pr-2">
                             <div className="flex items-center gap-2">
                                 <h3 className="text-base font-bold text-foreground truncate">{customer.customerName}</h3>
@@ -84,31 +84,34 @@ export const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onDelete }
                                 )}
                             </div>
                         </div>
-                        <div className="flex flex-col items-end">
-                            <p className={`font-bold text-base whitespace-nowrap ${hasBalance ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                {formatCurrency(outstandingBalance)}
-                            </p>
-                            <span className="text-[9px] text-muted-foreground uppercase font-medium">Due</span>
-                        </div>
-                    </div>
 
-                    <div className="flex justify-end items-center mt-3 gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                            onClick={() => navigate(`/customers/${customer.id}/edit`)}
-                        >
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={() => onDelete(customer.id)}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <div className="flex flex-col items-end justify-between pl-2">
+                            <div className="flex items-baseline gap-1">
+                                <p className={`font-bold text-base whitespace-nowrap ${hasBalance ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                    {formatCurrency(outstandingBalance)}
+                                </p>
+                                <span className="text-[9px] text-muted-foreground uppercase font-medium">Due</span>
+                            </div>
+
+                            <div className="flex items-center gap-0.5 mt-2" onClick={(e) => e.stopPropagation()}>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
+                                    onClick={() => navigate(`/customers/${customer.id}/edit`)}
+                                >
+                                    <Edit className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
+                                    onClick={() => onDelete(customer.id)}
+                                >
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>

@@ -3,6 +3,7 @@ import { useLocalStorage } from './useLocalStorage';
 import {
     LayoutDashboard,
     ShoppingBag,
+    ShoppingBasket,
     Store,
     CreditCard,
     Users,
@@ -22,6 +23,7 @@ export interface NavItem {
 export const allNavItemsMap: Record<string, NavItem> = {
     dashboard: { id: 'dashboard', label: 'Dashboard', to: '/', icon: LayoutDashboard, required: true },
     orders: { id: 'orders', label: 'Orders', to: '/orders', icon: ShoppingBag },
+    buyList: { id: 'buyList', label: 'Buy List', to: '/buy-list', icon: ShoppingBasket },
     stores: { id: 'stores', label: 'Stores', to: '/stores', icon: Store },
     payments: { id: 'payments', label: 'Payments', to: '/payments', icon: CreditCard },
     customers: { id: 'customers', label: 'Customers', to: '/customers', icon: Users },
@@ -32,6 +34,7 @@ export const allNavItemsMap: Record<string, NavItem> = {
 export const allNavItems: NavItem[] = [
     allNavItemsMap.dashboard,
     allNavItemsMap.orders,
+    allNavItemsMap.buyList,
     allNavItemsMap.stores,
     allNavItemsMap.payments,
     allNavItemsMap.customers,
@@ -39,7 +42,7 @@ export const allNavItems: NavItem[] = [
 ];
 
 // Default enabled items (shown in bottom nav) - ordered
-const defaultEnabledIds = ['dashboard', 'orders', 'stores', 'payments'];
+const defaultEnabledIds = ['dashboard', 'orders', 'buyList', 'stores'];
 
 // Maximum items in bottom nav (including Dashboard, excluding "More" button)
 const MAX_NAV_ITEMS = 4;

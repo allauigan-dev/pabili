@@ -10,6 +10,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- 2026-01-10 -->
 
 ### Added
+- **Buy List Module**: Implemented a new "Buy List" feature that groups pending orders by store for efficient purchasing. Includes a dedicated `BuyListPage` for store overview and `BuyListStorePage` for store-specific order lists.
+- **Database Utilities**: Added `scripts/wipe.sql` for cleaning up local development data.
+
+### Changed
+- **Order Card UI**: Refactored `OrderCard` with a more compact layout, relocating action buttons (edit/delete) to save space and added the ability to hide the store name in context.
+- **Customer Card UI**: Updated `CustomerCard` to move action buttons to the right side, improving vertical scanning.
+- **Store Card UI**: Refined layout of `StoreCard` for better consistency with other card components.
+- **Navigation**: Added "Buy List" to the sidebar and configurable bottom navigation bar.
+- **Seed Data Logic**: Significantly updated `scripts/generate-seed.cjs` to automatically detect Organization IDs, handle image metadata more effectively, and use explicit IDs for deterministic seeding.
+- **API Enhancements**: Refactored `orders.ts` routes to support filtering by store ID and improved TypeScript types for list responses.
+
+### Fixed
+- **Invoice Form**: Fixed the cancel button functionality in `InvoiceForm`.
+- **Infinite Scroll**: Improved `useInfiniteScroll` hook to handle deduplication and refetching more reliably, resolving "duplicate key" issues during rapid data updates.
+- **Type Safety**: Improved Zod schemas and TypeScript interfaces for better consistency across client and server.
+
+### Added (Previous)
 - **Business Analysis**: Created `docs/BUSINESS_ANALYSIS.md` containing a comprehensive MVP roadmap and business model analysis.
 - **CI/CD Documentation**: Created `docs/CICD_GUIDE.md` to document the project's CI/CD pipeline and deployment strategies.
 - **Vite Stability**: Added explicit HMR configuration in `vite.config.ts` to improve development experience when using the Cloudflare Workers plugin.

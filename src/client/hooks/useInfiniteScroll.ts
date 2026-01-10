@@ -187,7 +187,14 @@ export function useInfiniteScroll<T>(
                 const newItems = response.data;
                 const meta = response.meta;
 
-                setItems(prev => isInitial ? newItems : [...prev, ...newItems]);
+                setItems(prev => {
+                    if (isInitial) return newItems;
+                    // Deduplicate items to prevent React key warnings if backend returns overlapping items
+                    // Most entities in our system have an 'id' property
+                    const existingIds = new Set(prev.map((item: any) => item.id));
+                    const uniqueNewItems = newItems.filter((item: any) => !existingIds.has(item.id));
+                    return [...prev, ...uniqueNewItems];
+                });
 
                 if (meta) {
                     setTotal(meta.total);

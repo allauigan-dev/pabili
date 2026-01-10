@@ -75,7 +75,7 @@ app.get('/', async (c) => {
             .select()
             .from(customers)
             .where(whereConditions)
-            .orderBy(desc(customers.createdAt))
+            .orderBy(desc(customers.createdAt), desc(customers.id))
             .limit(limit)
             .offset(offset);
 
@@ -217,7 +217,7 @@ app.get('/:id/orders', async (c) => {
                 eq(orders.organizationId, organizationId),
                 isNull(orders.deletedAt)
             ))
-            .orderBy(desc(orders.createdAt));
+            .orderBy(desc(orders.createdAt), desc(orders.id));
 
         return c.json({ success: true, data: customerOrders });
     } catch (error) {

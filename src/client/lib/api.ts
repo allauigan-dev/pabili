@@ -232,6 +232,7 @@ export const ordersApi = {
         method: 'DELETE',
     }),
     getCounts: () => fetchApi<Record<string, number>>('/api/orders/counts'),
+    getBuyList: () => fetchApi<import('./types').BuyListStoreGroup[]>('/api/orders/buy-list'),
 };
 
 /**

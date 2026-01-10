@@ -40,7 +40,7 @@ export const FormActions: React.FC<FormActionsProps> = ({
                     type="button"
                     variant="secondary"
                     onClick={onCancel}
-                    disabled={disabled || isSaving}
+                    disabled={isSaving}
                     className="flex-1 h-11 rounded-xl font-bold"
                 >
                     {cancelLabel}

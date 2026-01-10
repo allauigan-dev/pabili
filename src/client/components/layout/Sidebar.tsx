@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import {
     LayoutDashboard,
     ShoppingBag,
+    ShoppingBasket,
     Store,
     CreditCard,
     Users,
@@ -26,6 +27,7 @@ import { getGenderImagePaths, type Gender } from '@/hooks/useGenderIcon';
 const navItems = [
     { label: 'Dashboard', to: '/', icon: LayoutDashboard },
     { label: 'Orders', to: '/orders', icon: ShoppingBag },
+    { label: 'Buy List', to: '/buy-list', icon: ShoppingBasket },
     { label: 'Stores', to: '/stores', icon: Store },
     { label: 'Payments', to: '/payments', icon: CreditCard },
     { label: 'Customers', to: '/customers', icon: Users },

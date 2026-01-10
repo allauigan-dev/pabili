@@ -26,9 +26,15 @@ interface OrderCardProps {
     order: Order;
     onDelete: (id: number) => void;
     onStatusChange: (id: number, status: OrderStatus) => void;
+    showStore?: boolean;
 }
 
-export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusChange }) => {
+export const OrderCard: React.FC<OrderCardProps> = ({
+    order,
+    onDelete,
+    onStatusChange,
+    showStore = true
+}) => {
     const navigate = useNavigate();
 
     const statusConfig = {
@@ -180,10 +186,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({ order, onDelete, onStatusC
                                         <User className="h-3.5 w-3.5 mr-1 opacity-70" />
                                         {order.customerName}
                                     </span>
-                                    <span className="flex items-center text-[10px] text-muted-foreground/80 mt-0.5 truncate uppercase tracking-wider font-medium">
-                                        <Store className="h-3 w-3 mr-1 opacity-70" />
-                                        {order.storeName}
-                                    </span>
+                                    {showStore && (
+                                        <span className="flex items-center text-[10px] text-muted-foreground/80 mt-0.5 truncate uppercase tracking-wider font-medium">
+                                            <Store className="h-3 w-3 mr-1 opacity-70" />
+                                            {order.storeName}
+                                        </span>
+                                    )}
                                 </div>
                             </div>
 

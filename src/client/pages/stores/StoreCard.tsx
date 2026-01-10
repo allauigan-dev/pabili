@@ -41,44 +41,45 @@ export const StoreCard: React.FC<StoreCardProps> = ({ store, onDelete }) => {
                 </div>
 
                 {/* Content Section */}
-                <div className="flex-1 min-w-0 flex flex-col justify-between py-0.5">
-                    <div className="flex justify-between items-start">
-                        <div className="min-w-0 pr-2">
-                            <h3 className="text-base font-bold text-foreground truncate">{store.storeName}</h3>
-                            <div className="flex flex-col gap-1 mt-1">
-                                {store.storeAddress && (
-                                    <div className="flex items-center text-xs text-muted-foreground">
-                                        <MapPin className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />
-                                        <span className="truncate">{store.storeAddress}</span>
-                                    </div>
-                                )}
-                                {store.storePhone && (
-                                    <div className="flex items-center text-xs text-muted-foreground">
-                                        <Phone className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />
-                                        <span className="truncate">{store.storePhone}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
+                <div className="flex-1 min-w-0 flex flex-col justify-center py-0.5">
+                    <h3 className="text-base font-bold text-foreground truncate mb-0.5">{store.storeName}</h3>
 
-                    <div className="flex justify-end items-center mt-3 gap-2" onClick={(e) => e.stopPropagation()}>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors"
-                            onClick={() => navigate(`/stores/${store.id}/edit`)}
-                        >
-                            <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 rounded-lg text-destructive hover:bg-destructive/10 transition-colors"
-                            onClick={() => onDelete(store.id)}
-                        >
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                    <div className="flex flex-col">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center text-xs text-muted-foreground min-w-0 pr-2">
+                                <MapPin className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />
+                                <span className="truncate">{store.storeAddress || 'No location'}</span>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-lg text-muted-foreground hover:bg-secondary hover:text-foreground transition-colors -mr-1"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/stores/${store.id}/edit`);
+                                }}
+                            >
+                                <Edit className="h-3.5 w-3.5" />
+                            </Button>
+                        </div>
+
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center text-xs text-muted-foreground min-w-0 pr-2">
+                                <Phone className="h-3.5 w-3.5 mr-1 opacity-70 flex-shrink-0" />
+                                <span className="truncate">{store.storePhone || 'No contact'}</span>
+                            </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-7 w-7 rounded-lg text-destructive hover:bg-destructive/10 transition-colors -mr-1"
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDelete(store.id);
+                                }}
+                            >
+                                <Trash2 className="h-3.5 w-3.5" />
+                            </Button>
+                        </div>
                     </div>
                 </div>
             </div>

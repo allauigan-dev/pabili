@@ -178,3 +178,37 @@ export interface CreatePaymentDto extends Partial<Omit<Payment, 'id' | 'createdA
 export interface CreateInvoiceDto extends Partial<Omit<Invoice, 'id' | 'invoiceNumber' | 'invoiceBalance' | 'createdAt' | 'updatedAt' | 'deletedAt'>> {
     customerId: number;
 }
+
+/**
+ * Buy List Types - for orders grouped by store
+ */
+export interface BuyListOrder {
+    id: number;
+    orderNumber: string;
+    orderName: string;
+    orderDescription?: string | null;
+    orderQuantity: number;
+    orderImage?: string | null;
+    orderImages?: string[];
+    orderPrice: number;
+    orderTotal: number | null;
+    orderStatus: OrderStatus;
+    orderDate: string | null;
+    storeId: number;
+    customerId: number;
+    createdAt: string | null;
+    storeName: string | null;
+    customerName: string | null;
+}
+
+export interface BuyListStoreGroup {
+    store: {
+        id: number;
+        storeName: string | null;
+        storeAddress: string | null;
+        storeLogo: string | null;
+    };
+    orders: BuyListOrder[];
+    orderCount: number;
+    totalItems: number;
+}

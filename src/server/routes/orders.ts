@@ -139,7 +139,7 @@ app.get('/', async (c) => {
             .leftJoin(stores, eq(orders.storeId, stores.id))
             .leftJoin(customers, eq(orders.customerId, customers.id))
             .where(whereConditions)
-            .orderBy(desc(orders.createdAt))
+            .orderBy(desc(orders.createdAt), desc(orders.id))
             .limit(limit)
             .offset(offset);
 
@@ -197,6 +197,90 @@ app.get('/counts', async (c) => {
     } catch (error) {
         console.error('Error fetching order counts:', error);
         return c.json({ success: false, error: 'Failed to fetch order counts' }, 500);
+    }
+});
+
+// GET /api/orders/buy-list - Get pending orders grouped by store
+app.get('/buy-list', async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+
+    try {
+        // Fetch all pending orders with store and customer info
+        const pendingOrders = await db
+            .select({
+                id: orders.id,
+                orderNumber: orders.orderNumber,
+                orderName: orders.orderName,
+                orderDescription: orders.orderDescription,
+                orderQuantity: orders.orderQuantity,
+                orderImage: orders.orderImage,
+                orderImages: orders.orderImages,
+                orderPrice: orders.orderPrice,
+                orderFee: orders.orderFee,
+                orderCustomerPrice: orders.orderCustomerPrice,
+                orderTotal: orders.orderTotal,
+                orderCustomerTotal: orders.orderCustomerTotal,
+                orderStatus: orders.orderStatus,
+                orderDate: orders.orderDate,
+                storeId: orders.storeId,
+                customerId: orders.customerId,
+                createdAt: orders.createdAt,
+                storeName: stores.storeName,
+                storeAddress: stores.storeAddress,
+                storeLogo: stores.storeLogo,
+                customerName: customers.customerName,
+            })
+            .from(orders)
+            .leftJoin(stores, eq(orders.storeId, stores.id))
+            .leftJoin(customers, eq(orders.customerId, customers.id))
+            .where(and(
+                eq(orders.organizationId, organizationId),
+                eq(orders.orderStatus, 'pending'),
+                isNull(orders.deletedAt)
+            ))
+            .orderBy(stores.storeName, desc(orders.createdAt), desc(orders.id));
+
+        // Group orders by store in application layer
+        const storeGroups = new Map<number, {
+            store: { id: number; storeName: string | null; storeAddress: string | null; storeLogo: string | null };
+            orders: typeof pendingOrders;
+            orderCount: number;
+            totalItems: number;
+        }>();
+
+        for (const order of pendingOrders) {
+            const storeId = order.storeId;
+            if (!storeGroups.has(storeId)) {
+                storeGroups.set(storeId, {
+                    store: {
+                        id: storeId,
+                        storeName: order.storeName,
+                        storeAddress: order.storeAddress,
+                        storeLogo: order.storeLogo,
+                    },
+                    orders: [],
+                    orderCount: 0,
+                    totalItems: 0,
+                });
+            }
+
+            const group = storeGroups.get(storeId)!;
+            group.orders.push({
+                ...order,
+                orderImages: order.orderImages ? JSON.parse(order.orderImages as string) : [],
+            } as typeof order);
+            group.orderCount++;
+            group.totalItems += order.orderQuantity;
+        }
+
+        // Convert map to array
+        const buyList = Array.from(storeGroups.values());
+
+        return c.json({ success: true, data: buyList });
+    } catch (error) {
+        console.error('Error fetching buy list:', error);
+        return c.json({ success: false, error: 'Failed to fetch buy list' }, 500);
     }
 });
 

@@ -76,7 +76,7 @@ app.get('/', async (c) => {
             .select()
             .from(stores)
             .where(whereConditions)
-            .orderBy(desc(stores.createdAt))
+            .orderBy(desc(stores.createdAt), desc(stores.id))
             .limit(limit)
             .offset(offset);
 
