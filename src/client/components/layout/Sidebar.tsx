@@ -13,7 +13,8 @@ import {
     Moon,
     Sun,
     PanelLeftClose,
-    PanelLeftOpen
+    PanelLeftOpen,
+    PackageCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OrganizationSwitcher } from '../OrganizationSwitcher';
@@ -28,6 +29,7 @@ const navItems = [
     { label: 'Dashboard', to: '/', icon: LayoutDashboard },
     { label: 'Orders', to: '/orders', icon: ShoppingBag },
     { label: 'Buy List', to: '/buy-list', icon: ShoppingBasket },
+    { label: 'Packaging', to: '/packaging', icon: PackageCheck },
     { label: 'Stores', to: '/stores', icon: Store },
     { label: 'Payments', to: '/payments', icon: CreditCard },
     { label: 'Customers', to: '/customers', icon: Users },

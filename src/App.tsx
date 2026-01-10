@@ -4,6 +4,8 @@ import { Dashboard } from './client/pages/Dashboard';
 import { OrdersPage } from './client/pages/orders/OrdersPage';
 import { OrderForm } from './client/pages/orders/OrderForm';
 import { OrderDetails } from './client/pages/orders/OrderDetails';
+import { PackagingPage } from './client/pages/orders/PackagingPage';
+import { PackagingCustomerPage } from './client/pages/orders/PackagingCustomerPage';
 import { BuyListPage } from './client/pages/orders/BuyListPage';
 import { BuyListStorePage } from './client/pages/orders/BuyListStorePage';
 import { StoresPage } from './client/pages/stores/StoresPage';
@@ -49,6 +51,8 @@ function App() {
               <Route path="/orders/new" element={<OrderForm />} />
               <Route path="/orders/:id" element={<OrderDetails />} />
               <Route path="/orders/:id/edit" element={<OrderForm />} />
+              <Route path="/packaging" element={<PackagingPage />} />
+              <Route path="/packaging/:customerId" element={<PackagingCustomerPage />} />
               <Route path="/buy-list" element={<BuyListPage />} />
               <Route path="/buy-list/:storeId" element={<BuyListStorePage />} />
               <Route path="/stores" element={<StoresPage />} />

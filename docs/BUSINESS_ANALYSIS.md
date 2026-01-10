@@ -32,7 +32,7 @@ The customer needs to feel secure and informed throughout the "pasabuy" lifecycl
 The owner needs efficiency. Managing hundreds of items across multiple stores is the biggest pain point.
 
 ### MVP Feature Needs:
-*   **Shopping List Mode (Batching)**: A view that groups all "Pending" orders by **Store**. This allows the owner to walk into a store and see exactly what they need to buy for all customers at once.
+*   **Shopping List Mode (Batching)**: A view that groups all "Pending" orders by **Store**. This allows the owner to walk into a store and see exactly what they need to buy for all customers at once. -- DONE
 *   **Logistics & Packaging**: Ability to bundle multiple orders into a single "Shipment" or "Delivery Package" with a single tracking number or status.
 *   **Expense Tracking**: Capturing overhead costs (gas, parking, toll fees) to calculate **Net Profit**, not just Gross Revenue.
 *   **One-Click Invoicing**: Generating a PDF or shareable image invoice from a set of orders.

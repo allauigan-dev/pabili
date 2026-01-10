@@ -8,6 +8,7 @@ import {
     CreditCard,
     Users,
     FileText,
+    PackageCheck,
     type LucideIcon
 } from 'lucide-react';
 
@@ -24,6 +25,7 @@ export const allNavItemsMap: Record<string, NavItem> = {
     dashboard: { id: 'dashboard', label: 'Dashboard', to: '/', icon: LayoutDashboard, required: true },
     orders: { id: 'orders', label: 'Orders', to: '/orders', icon: ShoppingBag },
     buyList: { id: 'buyList', label: 'Buy List', to: '/buy-list', icon: ShoppingBasket },
+    packaging: { id: 'packaging', label: 'Packaging', to: '/packaging', icon: PackageCheck },
     stores: { id: 'stores', label: 'Stores', to: '/stores', icon: Store },
     payments: { id: 'payments', label: 'Payments', to: '/payments', icon: CreditCard },
     customers: { id: 'customers', label: 'Customers', to: '/customers', icon: Users },
@@ -35,6 +37,7 @@ export const allNavItems: NavItem[] = [
     allNavItemsMap.dashboard,
     allNavItemsMap.orders,
     allNavItemsMap.buyList,
+    allNavItemsMap.packaging,
     allNavItemsMap.stores,
     allNavItemsMap.payments,
     allNavItemsMap.customers,
@@ -42,7 +45,7 @@ export const allNavItems: NavItem[] = [
 ];
 
 // Default enabled items (shown in bottom nav) - ordered
-const defaultEnabledIds = ['dashboard', 'orders', 'buyList', 'stores'];
+const defaultEnabledIds = ['dashboard', 'orders', 'buyList', 'packaging'];
 
 // Maximum items in bottom nav (including Dashboard, excluding "More" button)
 const MAX_NAV_ITEMS = 4;

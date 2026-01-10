@@ -6,6 +6,7 @@ import {
     UserPlus,
     Receipt,
     Banknote,
+    PackageCheck,
     type LucideIcon
 } from 'lucide-react';
 
@@ -24,6 +25,7 @@ export const allDashboardActions: DashboardAction[] = [
     { id: 'add-customer', label: 'Add Customer', icon: UserPlus, path: '/customers/new', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/40' },
     { id: 'create-invoice', label: 'Create Invoice', icon: Receipt, path: '/invoices/new', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/40' },
     { id: 'record-payment', label: 'Record Payment', icon: Banknote, path: '/payments/new', color: 'text-rose-600 dark:text-rose-400', bg: 'bg-rose-100 dark:bg-rose-900/40' },
+    { id: 'packaging', label: 'Packaging', icon: PackageCheck, path: '/packaging', color: 'text-indigo-600 dark:text-indigo-400', bg: 'bg-indigo-100 dark:bg-indigo-900/40' },
 ];
 
 const defaultIds = allDashboardActions.map(a => a.id);

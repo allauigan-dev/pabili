@@ -27,13 +27,25 @@ interface OrderCardProps {
     onDelete: (id: number) => void;
     onStatusChange: (id: number, status: OrderStatus) => void;
     showStore?: boolean;
+    hideCustomer?: boolean;
+    hidePrice?: boolean;
+    showQuantity?: boolean;
+    selectable?: boolean;
+    selected?: boolean;
+    onSelect?: () => void;
 }
 
 export const OrderCard: React.FC<OrderCardProps> = ({
     order,
     onDelete,
     onStatusChange,
-    showStore = true
+    showStore = true,
+    hideCustomer = false,
+    hidePrice = false,
+    showQuantity = false,
+    selectable = false,
+    selected = false,
+    onSelect
 }) => {
     const navigate = useNavigate();
 
@@ -140,12 +152,27 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         >
             <div
                 className="bg-surface-light dark:bg-surface-dark rounded-2xl p-4 shadow-soft border border-border/50 relative group overflow-hidden cursor-pointer transition-shadow hover:shadow-md"
-                onClick={() => navigate(`/orders/${order.id}`)}
+                onClick={() => {
+                    if (selectable && onSelect) {
+                        onSelect();
+                    } else {
+                        navigate(`/orders/${order.id}`);
+                    }
+                }}
             >
-                {/* Status Strip */}
+                {/* Status Strip (hide if selectable, or keep?) - Keep for visual context */}
                 <div className={`absolute left-0 top-0 bottom-0 w-1 ${status.bar} rounded-l-2xl`}></div>
 
                 <div className="flex gap-4">
+                    {/* Selection Checkbox */}
+                    {selectable && (
+                        <div className="flex items-center justify-center pl-2">
+                            <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${selected ? 'bg-primary border-primary' : 'border-muted-foreground'}`}>
+                                {selected && <div className="w-2.5 h-2.5 rounded-full bg-white" />}
+                            </div>
+                        </div>
+                    )}
+
                     {/* Image Section */}
                     <div className="flex-shrink-0 w-20 h-20 bg-secondary/30 rounded-xl overflow-hidden border border-border/50 relative">
                         <span className={`absolute top-0 right-0 text-[9px] font-bold px-1.5 py-0.5 rounded-bl-md z-10 ${status.badge}`}>
@@ -188,10 +215,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({
                             <div className="min-w-0 pr-2">
                                 <h3 className="text-base font-bold text-foreground truncate">{order.orderName}</h3>
                                 <div className="flex flex-col mt-1">
-                                    <span className="flex items-center text-xs text-muted-foreground truncate">
-                                        <User className="h-3.5 w-3.5 mr-1 opacity-70" />
-                                        {order.customerName}
-                                    </span>
+                                    {!hideCustomer && (
+                                        <span className="flex items-center text-xs text-muted-foreground truncate">
+                                            <User className="h-3.5 w-3.5 mr-1 opacity-70" />
+                                            {order.customerName}
+                                        </span>
+                                    )}
                                     {showStore && (
                                         <span className="flex items-center text-[10px] text-muted-foreground/80 mt-0.5 truncate uppercase tracking-wider font-medium">
                                             <Store className="h-3 w-3 mr-1 opacity-70" />
@@ -203,12 +232,20 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
                             {/* Right Side: Price and Actions */}
                             <div className="flex flex-col items-end">
-                                <p className="text-primary font-bold text-base whitespace-nowrap">
-                                    {formatCurrency(order.orderCustomerTotal ?? 0)}
-                                </p>
+                                {!hidePrice && (
+                                    <p className="text-primary font-bold text-base whitespace-nowrap">
+                                        {formatCurrency(order.orderCustomerTotal ?? 0)}
+                                    </p>
+                                )}
+                                {showQuantity && (
+                                    <p className="text-foreground font-bold text-lg whitespace-nowrap flex items-center gap-1">
+                                        <span className="text-xs text-muted-foreground font-normal uppercase">Qty</span>
+                                        {order.orderQuantity}
+                                    </p>
+                                )}
 
                                 <div className="flex items-center mt-2 space-x-0.5" onClick={(e) => e.stopPropagation()}>
-                                    {validStatuses.length > 0 && (
+                                    {!selectable && validStatuses.length > 0 && (
                                         <>
                                             {isMobile ? (
                                                 <ActionSheet

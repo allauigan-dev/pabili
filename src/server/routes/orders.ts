@@ -284,6 +284,90 @@ app.get('/buy-list', async (c) => {
     }
 });
 
+// GET /api/orders/packaging-list - Get bought orders grouped by customer
+app.get('/packaging-list', async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+
+    try {
+        // Fetch all bought orders with customer and store info
+        const boughtOrders = await db
+            .select({
+                id: orders.id,
+                orderNumber: orders.orderNumber,
+                orderName: orders.orderName,
+                orderDescription: orders.orderDescription,
+                orderQuantity: orders.orderQuantity,
+                orderImage: orders.orderImage,
+                orderImages: orders.orderImages,
+                orderPrice: orders.orderPrice,
+                orderFee: orders.orderFee,
+                orderCustomerPrice: orders.orderCustomerPrice,
+                orderTotal: orders.orderTotal,
+                orderCustomerTotal: orders.orderCustomerTotal,
+                orderStatus: orders.orderStatus,
+                orderDate: orders.orderDate,
+                storeId: orders.storeId,
+                customerId: orders.customerId,
+                createdAt: orders.createdAt,
+                storeName: stores.storeName,
+                customerName: customers.customerName,
+                customerAddress: customers.customerAddress,
+                customerPhoto: customers.customerPhoto,
+            })
+            .from(orders)
+            .leftJoin(stores, eq(orders.storeId, stores.id))
+            .leftJoin(customers, eq(orders.customerId, customers.id))
+            .where(and(
+                eq(orders.organizationId, organizationId),
+                eq(orders.orderStatus, 'bought'),
+                isNull(orders.deletedAt)
+            ))
+            .orderBy(customers.customerName, desc(orders.createdAt), desc(orders.id));
+
+        // Group orders by customer in application layer
+        const customerGroups = new Map<number, {
+            customer: { id: number; customerName: string; customerAddress: string | null; customerPhoto: string | null };
+            orders: typeof boughtOrders;
+            orderCount: number;
+            totalItems: number;
+        }>();
+
+        for (const order of boughtOrders) {
+            const customerId = order.customerId;
+            if (!customerGroups.has(customerId)) {
+                customerGroups.set(customerId, {
+                    customer: {
+                        id: customerId,
+                        customerName: order.customerName || 'Unknown Customer',
+                        customerAddress: order.customerAddress,
+                        customerPhoto: order.customerPhoto,
+                    },
+                    orders: [],
+                    orderCount: 0,
+                    totalItems: 0,
+                });
+            }
+
+            const group = customerGroups.get(customerId)!;
+            group.orders.push({
+                ...order,
+                orderImages: order.orderImages ? JSON.parse(order.orderImages as string) : [],
+            } as typeof order);
+            group.orderCount++;
+            group.totalItems += order.orderQuantity;
+        }
+
+        // Convert map to array
+        const packagingList = Array.from(customerGroups.values());
+
+        return c.json({ success: true, data: packagingList });
+    } catch (error) {
+        console.error('Error fetching packaging list:', error);
+        return c.json({ success: false, error: 'Failed to fetch packaging list' }, 500);
+    }
+});
+
 // GET /api/orders/:id - Get single order
 app.get('/:id', async (c) => {
     const db = createDb(c.env.DB);

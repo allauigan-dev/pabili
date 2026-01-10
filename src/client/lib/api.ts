@@ -233,6 +233,7 @@ export const ordersApi = {
     }),
     getCounts: () => fetchApi<Record<string, number>>('/api/orders/counts'),
     getBuyList: () => fetchApi<import('./types').BuyListStoreGroup[]>('/api/orders/buy-list'),
+    getPackagingList: () => fetchApi<import('./types').PackagingListGroup[]>('/api/orders/packaging-list'),
 };
 
 /**

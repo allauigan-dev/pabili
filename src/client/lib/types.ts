@@ -212,3 +212,15 @@ export interface BuyListStoreGroup {
     orderCount: number;
     totalItems: number;
 }
+
+export interface PackagingListGroup {
+    customer: {
+        id: number;
+        customerName: string;
+        customerAddress: string | null;
+        customerPhoto: string | null;
+    };
+    orders: BuyListOrder[];
+    orderCount: number;
+    totalItems: number;
+}

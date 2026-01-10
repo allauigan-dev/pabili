@@ -10,6 +10,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- 2026-01-11 -->
 
 ### Added
+- **Packaging Feature**: Implemented a comprehensive packaging workflow, including grouping orders by customer, bulk selection, and a "Mark as Packed" action with photo upload confirmation.
+- **Packaging UI**: Added `PackagingPage` for customer overview and `PackagingCustomerPage` for detailed packing operations.
+- **Navigation**: Integrated "Packaging" into the Sidebar and made it a default item in the mobile Bottom Navigation.
+
+### Changed
+- **Bulk Action UI**: Refactored the bulk selection floating bar to match the design system (Card style).
+- **Order Cards**: Enhanced `OrderCard` to support a "Packaging Mode" that hides pricing/customer details and emphasizes quantity.
+
+### Added (Previous)
 - **Unit Tests**: Added comprehensive test suites for `OrgGuard`, `OrganizationSwitcher`, and `useLocalStorage` to ensure UI stability and hook reliability.
 
 ### Changed
