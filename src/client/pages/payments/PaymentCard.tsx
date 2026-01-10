@@ -17,7 +17,7 @@ import {
 } from '@/components/ui/dialog';
 import { formatCurrency } from '@/lib/utils';
 import type { Payment } from '@/lib/types';
-import { SwipeableCard, createDeleteAction, createConfirmAction } from '@/components/ui/SwipeableCard';
+import { SwipeableCard, createConfirmAction } from '@/components/ui/SwipeableCard';
 
 interface PaymentCardProps {
     payment: Payment;
@@ -51,7 +51,13 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({ payment, onDelete, onC
     const canConfirm = payment.paymentStatus === 'pending';
 
     // Swipe actions
-    const deleteAction = onDelete ? createDeleteAction(() => onDelete(payment.id)) : undefined;
+    const editAction = {
+        icon: <Edit className="h-5 w-5" />,
+        label: 'Edit',
+        color: 'text-white',
+        bgColor: 'bg-blue-600',
+        onAction: () => navigate(`/payments/${payment.id}/edit`),
+    };
 
     const confirmAction = canConfirm && onConfirm ? createConfirmAction(
         () => onConfirm(payment.id),
@@ -59,7 +65,7 @@ export const PaymentCard: React.FC<PaymentCardProps> = ({ payment, onDelete, onC
 
     return (
         <SwipeableCard
-            rightAction={deleteAction}
+            rightAction={editAction}
             leftAction={confirmAction}
             className="mb-4"
         >

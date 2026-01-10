@@ -7,14 +7,16 @@ import {
     Loader2,
     AlertCircle,
     Hash,
-    Image as ImageIcon
+    Image as ImageIcon,
+    Upload,
+    Check,
+    User,
+    DollarSign,
+    FileText
 } from 'lucide-react';
 import { usePayment, usePaymentMutations } from '@/hooks/usePayments';
 import { useCustomers } from '@/hooks/useCustomers';
 import { uploadApi } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -22,17 +24,8 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardFooter
-} from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Separator } from '@/components/ui/separator';
 import { Combobox } from '@/components/ui/combobox';
-import type { CreatePaymentDto } from '@/lib/types';
+import type { CreatePaymentDto, PaymentStatus, PaymentMethod } from '@/lib/types';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
 import { FormActions } from '@/components/ui/FormActions';
 
@@ -51,6 +44,7 @@ export const PaymentForm: React.FC = () => {
         paymentMethod: 'gcash',
         paymentReference: '',
         paymentProof: '',
+        paymentStatus: 'confirmed',
         customerId: 0,
     });
 
@@ -69,12 +63,13 @@ export const PaymentForm: React.FC = () => {
                 paymentMethod: payment.paymentMethod,
                 paymentReference: payment.paymentReference || '',
                 paymentProof: payment.paymentProof || '',
+                paymentStatus: payment.paymentStatus,
                 customerId: payment.customerId,
             });
         }
     }, [isEdit, payment]);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         const { name, value, type } = e.target;
         setFormData(prev => ({
             ...prev,
@@ -82,16 +77,8 @@ export const PaymentForm: React.FC = () => {
         }));
     };
 
-    // Helper to display number inputs - shows empty string instead of 0
     const displayNumber = (value: number | undefined) => {
         return value === 0 || value === undefined ? '' : value;
-    };
-
-    const handleSelectChange = (name: string, value: string) => {
-        setFormData(prev => ({
-            ...prev,
-            [name]: name === 'customerId' ? Number(value) : value,
-        }));
     };
 
     const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -103,14 +90,14 @@ export const PaymentForm: React.FC = () => {
         const result = await uploadApi.upload(file);
         setUploading(false);
 
-        if (result.success && result.data) {
+        if (result.success && result.data?.url) {
             setFormData(prev => ({ ...prev, paymentProof: result.data!.url }));
         } else {
             setLocalError(result.error || 'Failed to upload proof of payment');
         }
     };
 
-    const handleSubmit = async (e?: React.FormEvent) => {
+    const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
         if (e) e.preventDefault();
         setLocalError(null);
 
@@ -126,28 +113,25 @@ export const PaymentForm: React.FC = () => {
             result = await createAction(formData);
         }
 
-        // useMutation execute returns T | null - null means error (error is set via hook's error state)
         if (result) {
             navigate('/payments');
         }
-        // If result is null, the error was already set by the mutation hook
     };
 
     if (isEdit && loadingPayment) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-muted-foreground animate-pulse">Loading payment details...</p>
+                <p className="text-muted-foreground animate-pulse font-medium">Loading details...</p>
             </div>
         );
     }
 
     return (
         <div className="bg-background text-foreground font-sans min-h-screen pb-24">
-            {/* Clear header content from previous page */}
             <HeaderContent title={isEdit ? 'Edit Payment' : 'New Payment'} />
 
-            <main className="max-w-md md:max-w-4xl mx-auto px-4 pt-4 md:pt-6">
+            <main className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto px-4 pt-4 md:pt-6">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-foreground tracking-tight mb-2 uppercase">
                         {isEdit ? 'Update Payment' : 'Record Payment'}
@@ -158,160 +142,218 @@ export const PaymentForm: React.FC = () => {
                 </div>
 
                 {(error || localError) && (
-                    <Alert variant="destructive" className="mb-8">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{error || localError}</AlertDescription>
-                    </Alert>
+                    <div className="mb-8">
+                        <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle className="font-bold">Action failed</AlertTitle>
+                            <AlertDescription className="font-medium">
+                                {error || localError}
+                            </AlertDescription>
+                        </Alert>
+                    </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <div className="lg:col-span-2 space-y-8">
-                        <Card>
-                            <CardHeader>
-                                <CardTitle className="text-xl flex items-center gap-2">
-                                    <CreditCard className="h-5 w-5 text-primary" />
-                                    Transaction Details
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-6">
-                                <div className="space-y-2">
-                                    <Label htmlFor="customerId">Customer</Label>
-                                    <Combobox
-                                        options={activeCustomers.map(customer => ({ label: customer.customerName, value: customer.id }))}
-                                        value={formData.customerId}
-                                        onChange={(value) => handleSelectChange('customerId', value.toString())}
-                                        placeholder="Select a customer"
-                                        searchPlaceholder="Search customers..."
-                                        emptyMessage="No customer found."
-                                    />
+                <form onSubmit={handleSubmit}>
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* Status & Proof */}
+                        <div className="lg:col-span-12 space-y-8">
+                            <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50">
+                                <div className="flex items-center mb-6">
+                                    <div className="p-2 rounded-xl bg-primary/10 mr-3">
+                                        <ImageIcon className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-foreground tracking-tight">Proof of Payment</h3>
                                 </div>
 
-                                <Separator />
+                                <div className="grid grid-cols-1 md:grid-cols-1 gap-8">
+                                    {/* Proof Upload */}
+                                    <div className="space-y-4">
+                                        {formData.paymentProof ? (
+                                            <div className="relative aspect-video max-w-lg mx-auto group rounded-2xl overflow-hidden border border-border/50 animate-in fade-in zoom-in duration-300">
+                                                <img src={formData.paymentProof} alt="Proof" className="w-full h-full object-cover" />
+                                                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                                    <button type="button" onClick={() => setFormData(prev => ({ ...prev, paymentProof: '' }))} className="p-2 bg-destructive text-destructive-foreground rounded-full hover:scale-110 transition-transform shadow-lg">
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ) : (
+                                            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-dashed border-border/60 rounded-2xl hover:border-primary/50 transition-colors cursor-pointer group bg-secondary/20 relative overflow-hidden min-h-[240px]">
+                                                <div className="space-y-2 text-center my-auto">
+                                                    <Upload className="h-10 w-10 text-muted-foreground group-hover:text-primary transition-colors mx-auto" />
+                                                    <div className="flex text-sm text-muted-foreground justify-center">
+                                                        <label htmlFor="proof-upload" className="relative cursor-pointer rounded-md font-bold text-primary hover:text-primary-dark transition-colors">
+                                                            <span>Upload receipt or screenshot</span>
+                                                        </label>
+                                                    </div>
+                                                    <p className="text-[10px] text-muted-foreground uppercase font-bold tracking-widest opacity-60">
+                                                        PNG, JPG up to 10MB
+                                                    </p>
+                                                </div>
+                                                <input id="proof-upload" type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" onChange={handleFileUpload} accept="image/*" disabled={uploading} />
+                                            </div>
+                                        )}
+                                        {uploading && <p className="text-center text-xs text-primary font-bold animate-pulse">Uploading proof...</p>}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="paymentAmount">Amount Paid (PHP)</Label>
-                                        <div className="relative">
-                                            <span className="absolute left-3 top-2.5 text-muted-foreground text-sm font-bold">₱</span>
-                                            <Input
-                                                id="paymentAmount"
-                                                name="paymentAmount"
-                                                type="number"
-                                                step="0.01"
-                                                className="pl-7"
-                                                value={displayNumber(formData.paymentAmount)}
-                                                onChange={handleChange}
-                                                required
-                                            />
+                        {/* Transaction Details */}
+                        <div className="lg:col-span-7 space-y-8">
+                            <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50">
+                                <div className="flex items-center mb-6">
+                                    <div className="p-2 rounded-xl bg-primary/10 mr-3">
+                                        <CreditCard className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-foreground tracking-tight">Transaction Info</h3>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div>
+                                        <label htmlFor="customerId" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Customer</label>
+                                        <Combobox
+                                            options={activeCustomers.map(customer => ({ label: customer.customerName, value: customer.id }))}
+                                            value={formData.customerId}
+                                            onChange={(value) => setFormData(prev => ({ ...prev, customerId: Number(value) }))}
+                                            placeholder="Select Customer"
+                                            searchPlaceholder="Search customers..."
+                                            emptyMessage="No customer found."
+                                        />
+                                    </div>
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label htmlFor="paymentAmount" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Amount Paid</label>
+                                            <div className="relative">
+                                                <span className="absolute left-4 top-1/2 transform -translate-y-1/2 text-muted-foreground font-black text-sm">₱</span>
+                                                <input
+                                                    type="number"
+                                                    id="paymentAmount"
+                                                    name="paymentAmount"
+                                                    value={displayNumber(formData.paymentAmount)}
+                                                    onChange={handleChange}
+                                                    placeholder="0.00"
+                                                    step="0.01"
+                                                    className="w-full rounded-2xl border-border/60 bg-secondary/30 text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary pl-10 py-4 px-4 border outline-none transition-all font-black text-lg"
+                                                    required
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="paymentDate" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Date Received</label>
+                                            <div className="relative">
+                                                <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground/40" />
+                                                <input
+                                                    type="date"
+                                                    id="paymentDate"
+                                                    name="paymentDate"
+                                                    value={formData.paymentDate}
+                                                    onChange={handleChange}
+                                                    className="w-full rounded-2xl border-border/60 bg-secondary/30 text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary pl-12 py-4 px-4 border outline-none transition-all font-medium"
+                                                    required
+                                                />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="paymentDate">Date Received</Label>
-                                        <div className="relative">
-                                            <Calendar className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                id="paymentDate"
-                                                name="paymentDate"
-                                                type="date"
-                                                className="pl-10"
-                                                value={formData.paymentDate}
-                                                onChange={handleChange}
-                                                required
-                                            />
+
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div>
+                                            <label htmlFor="paymentMethod" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Method</label>
+                                            <Select
+                                                value={formData.paymentMethod}
+                                                onValueChange={(v) => setFormData(prev => ({ ...prev, paymentMethod: v as PaymentMethod }))}
+                                            >
+                                                <SelectTrigger id="paymentMethod" className="w-full rounded-2xl border-2 border-border/60 bg-secondary/30 text-foreground h-14 px-5 focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold outline-none transition-all">
+                                                    <SelectValue placeholder="Select method" />
+                                                </SelectTrigger>
+                                                <SelectContent className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
+                                                    <SelectItem value="cash" className="font-bold py-3 pr-8">Cash</SelectItem>
+                                                    <SelectItem value="gcash" className="font-bold py-3 pr-8">GCash</SelectItem>
+                                                    <SelectItem value="paymaya" className="font-bold py-3 pr-8">Maya</SelectItem>
+                                                    <SelectItem value="bank_transfer" className="font-bold py-3 pr-8">Bank Transfer</SelectItem>
+                                                    <SelectItem value="other" className="font-bold py-3 pr-8">Other</SelectItem>
+                                                </SelectContent>
+                                            </Select>
+                                        </div>
+
+                                        <div>
+                                            <label htmlFor="paymentReference" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Reference No.</label>
+                                            <div className="relative">
+                                                <Hash className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-muted-foreground/40" />
+                                                <input
+                                                    type="text"
+                                                    id="paymentReference"
+                                                    name="paymentReference"
+                                                    value={formData.paymentReference || ''}
+                                                    onChange={handleChange}
+                                                    placeholder="Optional"
+                                                    className="w-full rounded-2xl border-border/60 bg-secondary/30 text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-muted-foreground/40 py-4 pl-12 pr-4 border outline-none transition-all font-medium"
+                                                />
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
 
-                                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="paymentMethod">Payment Method</Label>
+                        {/* Status & Notes */}
+                        <div className="lg:col-span-12 md:lg:col-span-5 space-y-8">
+                            <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50">
+                                <div className="flex items-center mb-6">
+                                    <div className="p-2 rounded-xl bg-primary/10 mr-3">
+                                        <AlertCircle className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-foreground tracking-tight">Status & Notes</h3>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div>
+                                        <label htmlFor="paymentStatus" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Confirmation Status</label>
                                         <Select
-                                            value={formData.paymentMethod}
-                                            onValueChange={(v) => handleSelectChange('paymentMethod', v)}
+                                            value={formData.paymentStatus}
+                                            onValueChange={(v) => setFormData(prev => ({ ...prev, paymentStatus: v as PaymentStatus }))}
                                         >
-                                            <SelectTrigger id="paymentMethod">
-                                                <SelectValue placeholder="Select method" />
+                                            <SelectTrigger id="paymentStatus" className="w-full rounded-2xl border-2 border-border/60 bg-secondary/30 text-foreground h-14 px-5 focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold outline-none transition-all">
+                                                <SelectValue placeholder="Select status" />
                                             </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="gcash">Gcash</SelectItem>
-                                                <SelectItem value="paymaya">Maya</SelectItem>
-                                                <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                                                <SelectItem value="cash">Cash</SelectItem>
+                                            <SelectContent className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
+                                                <SelectItem value="pending" className="font-bold py-3 pr-8">Pending</SelectItem>
+                                                <SelectItem value="confirmed" className="font-bold py-3 pr-8 text-emerald-600">Confirmed</SelectItem>
+                                                <SelectItem value="rejected" className="font-bold py-3 pr-8 text-red-600">Rejected</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                    <div className="space-y-2">
-                                        <Label htmlFor="paymentReference">Reference Number</Label>
-                                        <div className="relative">
-                                            <Hash className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                                            <Input
-                                                id="paymentReference"
-                                                name="paymentReference"
-                                                className="pl-10"
-                                                placeholder="Optional"
-                                                value={formData.paymentReference || ''}
-                                                onChange={handleChange}
-                                            />
-                                        </div>
-                                    </div>
-                                </div>
-                            </CardContent>
-                        </Card>
-                    </div>
 
-                    <div className="space-y-8">
-                        <Card className="overflow-hidden">
-                            <CardHeader className="pb-4">
-                                <CardTitle className="text-lg flex items-center gap-2">
-                                    <ImageIcon className="h-4 w-4 text-primary" />
-                                    Proof of Payment
-                                </CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
-                                <div className="aspect-[3/4] rounded-lg border-2 border-dashed border-muted bg-secondary/30 flex flex-col items-center justify-center relative group overflow-hidden">
-                                    {formData.paymentProof ? (
-                                        <>
-                                            <img src={formData.paymentProof} className="w-full h-full object-cover" alt="Payment Proof" />
-                                            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                                <Button size="icon" variant="destructive" onClick={() => setFormData(prev => ({ ...prev, paymentProof: '' }))} type="button">
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        </>
-                                    ) : (
-                                        <div className="text-center p-4">
-                                            <ImageIcon className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-50" />
-                                            <p className="text-xs text-muted-foreground">Upload receipt screenshot</p>
+                                    <div>
+                                        <label htmlFor="paymentNotes" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Notes</label>
+                                        <div className="relative">
+                                            <FileText className="absolute left-4 top-4 h-5 w-5 text-muted-foreground/40" />
+                                            <textarea
+                                                id="paymentNotes"
+                                                name="paymentNotes"
+                                                value={formData.paymentNotes || ''}
+                                                onChange={handleChange}
+                                                placeholder="Add internal notes about this payment..."
+                                                rows={3}
+                                                className="w-full rounded-2xl border-border/60 bg-secondary/30 text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-muted-foreground/40 py-4 pl-12 pr-4 border outline-none transition-all resize-none font-medium text-sm"
+                                            ></textarea>
                                         </div>
-                                    )}
-                                    <Input
-                                        type="file"
-                                        className="absolute inset-0 opacity-0 cursor-pointer disabled:cursor-not-allowed"
-                                        onChange={handleFileUpload}
-                                        accept="image/*"
-                                        disabled={uploading}
-                                    />
-                                </div>
-                                {uploading && (
-                                    <div className="flex items-center gap-2 text-xs text-primary animate-pulse">
-                                        <Loader2 className="h-3 w-3 animate-spin" />
-                                        Uploading...
                                     </div>
-                                )}
-                            </CardContent>
-                            <CardFooter className="bg-muted/20 p-4">
-                                <p className="text-[10px] text-center w-full text-muted-foreground">Screenshots preferred (max. 10MB)</p>
-                            </CardFooter>
-                        </Card>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </form>
             </main>
+
             <FormActions
                 onCancel={() => navigate(-1)}
                 onSave={handleSubmit}
                 isSaving={mutationLoading || uploading}
                 saveLabel={isEdit ? 'Update' : 'Save'}
+                saveIcon={Check}
                 disabled={mutationLoading || uploading}
             />
         </div>

@@ -20,7 +20,9 @@ import ordersApp from './orders'
 // Mock the database module
 vi.mock('../db', () => ({
     createDb: vi.fn(() => mockDb),
-    orders: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt', customerId: 'customerId' },
+    orders: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt', customerId: 'customerId', storeId: 'storeId', organizationId: 'organizationId' },
+    stores: { id: 'id', storeName: 'storeName' },
+    customers: { id: 'id', customerName: 'customerName' },
 }))
 
 // Mock database instance

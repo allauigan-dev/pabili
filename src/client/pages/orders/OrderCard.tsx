@@ -19,7 +19,7 @@ import type { Order, OrderStatus } from '@/lib/types';
 import { ImageGallery } from '@/components/ui/ImageGallery';
 import { ActionSheet } from '@/components/ui/ActionSheet';
 import { useIsMobile } from '@/hooks/useMediaQuery';
-import { SwipeableCard, createDeleteAction, createQuickAction } from '@/components/ui/SwipeableCard';
+import { SwipeableCard, createQuickAction } from '@/components/ui/SwipeableCard';
 
 
 interface OrderCardProps {
@@ -118,7 +118,13 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     const quickStatusLabel = quickStatus ? statusConfig[quickStatus]?.label || quickStatus : null;
 
     // Swipe actions
-    const deleteAction = createDeleteAction(() => onDelete(order.id));
+    const editAction = {
+        icon: <Edit className="h-5 w-5" />,
+        label: 'Edit',
+        color: 'text-white',
+        bgColor: 'bg-blue-600',
+        onAction: () => navigate(`/orders/${order.id}/edit`),
+    };
 
     const quickAction = quickStatus ? createQuickAction(
         <PackageCheck className="h-5 w-5" />,
@@ -128,7 +134,7 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
     return (
         <SwipeableCard
-            rightAction={deleteAction}
+            rightAction={editAction}
             leftAction={quickAction}
             className="mb-4"
         >

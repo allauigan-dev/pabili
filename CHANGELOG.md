@@ -7,7 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- 2026-01-11 -->
+
+### Added
+- **Unit Tests**: Added comprehensive test suites for `OrgGuard`, `OrganizationSwitcher`, and `useLocalStorage` to ensure UI stability and hook reliability.
+
+### Changed
+- **Form Standardization**: Refactored `CustomerForm`, `InvoiceForm`, `PaymentForm`, and `StoreForm` to follow the unified premium design system, including standardizing class names and layout.
+- **Card UI Refresh**: Updated `CustomerCard` and `PaymentCard` with consistent compact layouts and improved visual hierarchy.
+- **Swipe Actions**: Updated `OrderCard` swipe actions for better consistency with the application's gesture system.
+
+### Removed
+- **Redundant Scripts**: Removed `scripts/wipe.sql` as it has been superseded by more robust seeding and management utilities.
+
 <!-- 2026-01-10 -->
+
 
 ### Added
 - **Buy List Module**: Implemented a new "Buy List" feature that groups pending orders by store for efficient purchasing. Includes a dedicated `BuyListPage` for store overview and `BuyListStorePage` for store-specific order lists.

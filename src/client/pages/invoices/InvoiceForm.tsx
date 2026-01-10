@@ -7,12 +7,13 @@ import {
     AlertCircle,
     FileCheck,
     Check,
-    Package
+    Package,
+    Receipt,
+    FileText
 } from 'lucide-react';
 import { useInvoice, useInvoiceMutations } from '@/hooks/useInvoices';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useOrders } from '@/hooks/useOrders';
-import { Label } from '@/components/ui/label';
 import {
     Select,
     SelectContent,
@@ -20,18 +21,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-    CardDescription
-} from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { Combobox } from '@/components/ui/combobox';
 import { cn, formatCurrency } from '@/lib/utils';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import type { CreateInvoiceDto, InvoiceStatus } from '@/lib/types';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
 import { FormActions } from '@/components/ui/FormActions';
@@ -51,6 +43,7 @@ export const InvoiceForm: React.FC = () => {
         invoiceTotal: 0,
         customerId: 0,
         orderIds: [],
+        invoiceNotes: '',
     });
 
     const activeCustomers = useMemo(() => customers?.filter(customer =>
@@ -66,6 +59,7 @@ export const InvoiceForm: React.FC = () => {
                 invoiceTotal: invoice.invoiceTotal,
                 customerId: invoice.customerId,
                 orderIds: invoice.orderIds || [],
+                invoiceNotes: invoice.invoiceNotes || '',
             });
         }
     }, [isEdit, invoice]);
@@ -86,15 +80,6 @@ export const InvoiceForm: React.FC = () => {
         setFormData(prev => ({ ...prev, invoiceTotal: total }));
     }, [formData.orderIds, availableOrders]);
 
-    const handleSelectChange = (name: string, value: string) => {
-        setFormData(prev => {
-            if (name === 'customerId') {
-                return { ...prev, [name]: Number(value), orderIds: [] };
-            }
-            return { ...prev, [name]: value as any };
-        });
-    };
-
     const toggleOrder = (orderId: number) => {
         setFormData(prev => {
             const currentOrderIds = prev.orderIds || [];
@@ -106,8 +91,8 @@ export const InvoiceForm: React.FC = () => {
         });
     };
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
+    const handleSubmit = async (e?: React.FormEvent | React.MouseEvent) => {
+        if (e) e.preventDefault();
         setLocalError(null);
 
         if (!formData.customerId) {
@@ -120,7 +105,7 @@ export const InvoiceForm: React.FC = () => {
             return;
         }
 
-        let result: any;
+        let result;
         if (isEdit) {
             result = await updateAction({ id: Number(id), data: formData });
         } else {
@@ -129,8 +114,6 @@ export const InvoiceForm: React.FC = () => {
 
         if (result) {
             navigate('/invoices');
-        } else {
-            setLocalError('Failed to save invoice. Please check the information and try again.');
         }
     };
 
@@ -138,7 +121,7 @@ export const InvoiceForm: React.FC = () => {
         return (
             <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
                 <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                <p className="text-muted-foreground animate-pulse">Loading invoice details...</p>
+                <p className="text-muted-foreground animate-pulse font-medium">Loading details...</p>
             </div>
         );
     }
@@ -147,10 +130,9 @@ export const InvoiceForm: React.FC = () => {
 
     return (
         <div className="bg-background text-foreground font-sans min-h-screen pb-24">
-            {/* Clear header content from previous page */}
             <HeaderContent title={isEdit ? 'Edit Invoice' : 'New Invoice'} />
 
-            <main className="max-w-md md:max-w-4xl mx-auto px-4 pt-4 md:pt-6">
+            <main className="max-w-md md:max-w-3xl lg:max-w-5xl mx-auto px-4 pt-4 md:pt-6">
                 <div className="mb-8">
                     <h2 className="text-3xl font-black text-foreground tracking-tight mb-2 uppercase">
                         {isEdit ? 'Update Invoice' : 'Create Invoice'}
@@ -161,82 +143,92 @@ export const InvoiceForm: React.FC = () => {
                 </div>
 
                 {(error || localError) && (
-                    <Alert variant="destructive" className="mb-8">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Error</AlertTitle>
-                        <AlertDescription>{error || localError}</AlertDescription>
-                    </Alert>
+                    <div className="mb-8">
+                        <Alert variant="destructive" className="rounded-2xl border-destructive/20 bg-destructive/5">
+                            <AlertCircle className="h-4 w-4" />
+                            <AlertTitle className="font-bold">Action failed</AlertTitle>
+                            <AlertDescription className="font-medium">
+                                {error || localError}
+                            </AlertDescription>
+                        </Alert>
+                    </div>
                 )}
 
                 <form onSubmit={handleSubmit}>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 space-y-8">
-                            <Card>
-                                <CardHeader>
-                                    <CardTitle className="text-xl flex items-center gap-2">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                        {/* Billing Details */}
+                        <div className="lg:col-span-7 space-y-8">
+                            <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50">
+                                <div className="flex items-center mb-6">
+                                    <div className="p-2 rounded-xl bg-primary/10 mr-3">
                                         <User className="h-5 w-5 text-primary" />
-                                        Billing Context
-                                    </CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-6">
-                                    <div className="space-y-2">
-                                        <Label htmlFor="customerId">Customer / Bill To</Label>
+                                    </div>
+                                    <h3 className="text-xl font-bold text-foreground tracking-tight">Billing Context</h3>
+                                </div>
+
+                                <div className="space-y-6">
+                                    <div>
+                                        <label htmlFor="customerId" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Customer / Bill To</label>
                                         <Combobox
                                             options={activeCustomers.map(customer => ({ label: customer.customerName, value: customer.id }))}
                                             value={formData.customerId}
-                                            onChange={(value) => handleSelectChange('customerId', value.toString())}
+                                            onChange={(value) => setFormData(prev => ({ ...prev, customerId: Number(value), orderIds: [] }))}
                                             disabled={isEdit}
-                                            placeholder="Select customer to bill"
+                                            placeholder="Select Customer"
                                             searchPlaceholder="Search customers..."
                                             emptyMessage="No customer found."
                                         />
-                                        {isEdit && <p className="text-[10px] text-muted-foreground">Customer cannot be changed after invoice creation.</p>}
+                                        {isEdit && <p className="text-[10px] text-muted-foreground mt-2 px-1">Customer cannot be changed after invoice creation.</p>}
                                     </div>
 
-                                    <div className="space-y-2">
-                                        <Label htmlFor="invoiceStatus">Payment Status</Label>
+                                    <div>
+                                        <label htmlFor="invoiceStatus" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-2 px-1">Payment Status</label>
                                         <Select
                                             value={formData.invoiceStatus}
-                                            onValueChange={(v) => handleSelectChange('invoiceStatus', v)}
+                                            onValueChange={(v) => setFormData(prev => ({ ...prev, invoiceStatus: v as InvoiceStatus }))}
                                         >
-                                            <SelectTrigger id="invoiceStatus">
+                                            <SelectTrigger id="invoiceStatus" className="w-full rounded-2xl border-2 border-border/60 bg-secondary/30 text-foreground h-14 px-5 focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold outline-none transition-all">
                                                 <SelectValue placeholder="Select status" />
                                             </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value="draft">Pending Payment (Draft)</SelectItem>
-                                                <SelectItem value="paid">Paid Full</SelectItem>
+                                            <SelectContent className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
+                                                <SelectItem value="draft" className="font-bold py-3 pr-8 text-amber-600">Pending Payment (Draft)</SelectItem>
+                                                <SelectItem value="sent" className="font-bold py-3 pr-8 text-blue-600">Sent to Customer</SelectItem>
+                                                <SelectItem value="paid" className="font-bold py-3 pr-8 text-emerald-600">Paid in Full</SelectItem>
+                                                <SelectItem value="partial" className="font-bold py-3 pr-8 text-orange-600">Partially Paid</SelectItem>
+                                                <SelectItem value="overdue" className="font-bold py-3 pr-8 text-red-600">Overdue</SelectItem>
+                                                <SelectItem value="cancelled" className="font-bold py-3 pr-8 text-muted-foreground">Cancelled</SelectItem>
                                             </SelectContent>
                                         </Select>
                                     </div>
-                                </CardContent>
-                            </Card>
+                                </div>
+                            </div>
 
-                            <Card>
-                                <CardHeader className="flex flex-row items-center justify-between">
-                                    <div className="space-y-1">
-                                        <CardTitle className="text-xl flex items-center gap-2">
+                            <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50">
+                                <div className="flex items-center justify-between mb-6">
+                                    <div className="flex items-center">
+                                        <div className="p-2 rounded-xl bg-primary/10 mr-3">
                                             <ShoppingCart className="h-5 w-5 text-primary" />
-                                            Included Orders
-                                        </CardTitle>
-                                        <CardDescription>Select the orders to batch in this invoice.</CardDescription>
+                                        </div>
+                                        <h3 className="text-xl font-bold text-foreground tracking-tight">Included Orders</h3>
                                     </div>
-                                    <Badge variant="secondary" className="h-6">
+                                    <span className="bg-secondary text-secondary-foreground text-[10px] font-black px-3 py-1 rounded-full uppercase tracking-widest">
                                         {currentOrderIds.length} Selected
-                                    </Badge>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
+                                    </span>
+                                </div>
+
+                                <div className="space-y-3">
                                     {!formData.customerId ? (
-                                        <div className="py-12 text-center bg-muted/30 rounded-lg border-2 border-dashed">
+                                        <div className="py-12 text-center bg-secondary/20 rounded-2xl border-2 border-dashed border-border/60">
                                             <Package className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                            <p className="text-sm text-muted-foreground">Select a customer first to see their orders.</p>
+                                            <p className="text-sm font-medium text-muted-foreground">Select a customer first to see their orders.</p>
                                         </div>
                                     ) : availableOrders.length === 0 ? (
-                                        <div className="py-12 text-center bg-muted/30 rounded-lg border-2 border-dashed">
+                                        <div className="py-12 text-center bg-secondary/20 rounded-2xl border-2 border-dashed border-border/60">
                                             <Package className="h-10 w-10 text-muted-foreground mx-auto mb-2 opacity-20" />
-                                            <p className="text-sm text-muted-foreground">This customer doesn't have any orders yet.</p>
+                                            <p className="text-sm font-medium text-muted-foreground">No deliverable orders found for this customer.</p>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-1 gap-2">
+                                        <div className="space-y-3">
                                             {availableOrders.map(order => {
                                                 const isSelected = currentOrderIds.includes(order.id);
                                                 return (
@@ -244,35 +236,35 @@ export const InvoiceForm: React.FC = () => {
                                                         key={order.id}
                                                         onClick={() => toggleOrder(order.id)}
                                                         className={cn(
-                                                            "group flex items-center justify-between p-3 rounded-lg border-2 cursor-pointer transition-all",
+                                                            "group flex items-center justify-between p-4 rounded-2xl border-2 cursor-pointer transition-all",
                                                             isSelected
-                                                                ? "bg-primary/5 border-primary"
-                                                                : "bg-background border-border hover:border-primary/50"
+                                                                ? "bg-primary/5 border-primary shadow-sm"
+                                                                : "bg-secondary/10 border-border/60 hover:border-primary/30"
                                                         )}
                                                     >
-                                                        <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-4">
                                                             <div className={cn(
-                                                                "h-10 w-10 rounded bg-secondary flex items-center justify-center shrink-0 border transition-colors",
+                                                                "h-12 w-12 rounded-xl bg-secondary flex items-center justify-center shrink-0 border border-border/50 transition-colors overflow-hidden",
                                                                 isSelected ? "bg-primary/20 border-primary/30" : ""
                                                             )}>
                                                                 {order.orderImage ? (
                                                                     <img src={order.orderImage} className="h-full w-full object-cover" alt="" />
                                                                 ) : (
-                                                                    <Package className="h-5 w-5 text-muted-foreground" />
+                                                                    <Package className="h-6 w-6 text-muted-foreground/40" />
                                                                 )}
                                                             </div>
                                                             <div>
                                                                 <p className="text-sm font-bold group-hover:text-primary transition-colors">{order.orderName}</p>
-                                                                <p className="text-[10px] text-muted-foreground">#{order.id} • {new Date(order.createdAt).toLocaleDateString()}</p>
+                                                                <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-tight">#{order.orderNumber || order.id} • {new Date(order.createdAt).toLocaleDateString()}</p>
                                                             </div>
                                                         </div>
                                                         <div className="flex items-center gap-4">
-                                                            <p className="text-sm font-bold">{formatCurrency(order.orderCustomerTotal || 0)}</p>
+                                                            <p className="text-sm font-black">{formatCurrency(order.orderCustomerTotal || 0)}</p>
                                                             <div className={cn(
-                                                                "h-5 w-5 rounded-full border-2 flex items-center justify-center transition-all",
-                                                                isSelected ? "bg-primary border-primary" : "border-muted"
+                                                                "h-6 w-6 rounded-full border-2 flex items-center justify-center transition-all",
+                                                                isSelected ? "bg-primary border-primary scale-110 shadow-md" : "border-border/60"
                                                             )}>
-                                                                {isSelected && <Check className="h-3 w-3 text-white" />}
+                                                                {isSelected && <Check className="h-3.5 w-3.5 text-white" strokeWidth={4} />}
                                                             </div>
                                                         </div>
                                                     </div>
@@ -280,45 +272,77 @@ export const InvoiceForm: React.FC = () => {
                                             })}
                                         </div>
                                     )}
-                                </CardContent>
-                            </Card>
+                                </div>
+                            </div>
                         </div>
 
-                        <div className="space-y-6">
-                            <Card className="bg-gradient-to-br from-card to-secondary/30 border-none shadow-lg">
-                                <CardHeader>
-                                    <CardTitle className="text-lg">Invoice Summary</CardTitle>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Subtotal ({currentOrderIds.length} items)</span>
-                                        <span>{formatCurrency(formData.invoiceTotal || 0)}</span>
+                        {/* Summary & Notes */}
+                        <div className="lg:col-span-5 space-y-8">
+                            <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50 text-foreground overflow-hidden relative">
+                                <div className="absolute top-0 right-0 p-8 opacity-[0.03] pointer-events-none">
+                                    <Receipt className="h-32 w-32" />
+                                </div>
+                                <div className="flex items-center mb-6">
+                                    <div className="p-2 rounded-xl bg-primary/10 mr-3">
+                                        <Receipt className="h-5 w-5 text-primary" />
                                     </div>
-                                    <div className="flex justify-between text-sm">
-                                        <span className="text-muted-foreground">Tax / Fees</span>
-                                        <span>{formatCurrency(0)}</span>
-                                    </div>
-                                    <Separator />
-                                    <div className="flex justify-between items-end">
-                                        <span className="font-bold">Total Amount</span>
-                                        <span className="text-2xl font-black text-primary">{formatCurrency(formData.invoiceTotal || 0)}</span>
-                                    </div>
-                                </CardContent>
-                            </Card>
+                                    <h3 className="text-xl font-bold text-foreground tracking-tight">Summary</h3>
+                                </div>
 
-                            <Alert className="bg-amber-500/5 border-amber-500/20 text-xs">
-                                <AlertCircle className="h-4 w-4 text-amber-500" />
-                                <AlertTitle className="text-amber-500">Notice</AlertTitle>
-                                <AlertDescription>
-                                    Generating an invoice will consolidate the totals of all selected orders.
+                                <div className="space-y-4 relative z-10">
+                                    <div className="flex justify-between items-center text-sm font-medium">
+                                        <span className="text-muted-foreground">Subtotal ({currentOrderIds.length} orders)</span>
+                                        <span className="font-bold">{formatCurrency(formData.invoiceTotal || 0)}</span>
+                                    </div>
+                                    <div className="flex justify-between items-center text-sm font-medium">
+                                        <span className="text-muted-foreground">Service Fees</span>
+                                        <span className="font-bold">{formatCurrency(0)}</span>
+                                    </div>
+                                    <div className="pt-4 border-t border-border/50">
+                                        <div className="flex justify-between items-end">
+                                            <span className="text-xs font-bold text-muted-foreground uppercase tracking-widest">Total Amount</span>
+                                            <span className="text-3xl font-black text-primary leading-none">{formatCurrency(formData.invoiceTotal || 0)}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div className="bg-card rounded-3xl p-6 shadow-soft border border-border/50">
+                                <div className="flex items-center mb-6">
+                                    <div className="p-2 rounded-xl bg-primary/10 mr-3">
+                                        <FileText className="h-5 w-5 text-primary" />
+                                    </div>
+                                    <h3 className="text-xl font-bold text-foreground tracking-tight">Invoice Notes</h3>
+                                </div>
+
+                                <div className="space-y-4">
+                                    <textarea
+                                        id="invoiceNotes"
+                                        name="invoiceNotes"
+                                        value={formData.invoiceNotes || ''}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, invoiceNotes: e.target.value }))}
+                                        placeholder="Add instructions or bank details for the customer..."
+                                        rows={4}
+                                        className="w-full rounded-2xl border-border/60 bg-secondary/30 text-foreground focus:ring-2 focus:ring-primary/20 focus:border-primary placeholder:text-muted-foreground/40 py-4 px-4 border outline-none transition-all resize-none font-medium text-sm"
+                                    ></textarea>
+                                </div>
+                            </div>
+
+                            <Alert className="rounded-2xl border-blue-500/20 bg-blue-500/5">
+                                <AlertCircle className="h-4 w-4 text-blue-500" />
+                                <AlertTitle className="text-blue-500 font-bold">Billing Notice</AlertTitle>
+                                <AlertDescription className="text-blue-500/80 font-medium text-xs">
+                                    Generating an invoice will consolidate the totals of all selected orders into a single billing statement.
                                 </AlertDescription>
                             </Alert>
                         </div>
                     </div>
                 </form>
             </main>
+
             <FormActions
                 onCancel={() => navigate(-1)}
+                onSave={handleSubmit}
                 isSaving={mutationLoading}
                 saveLabel={isEdit ? 'Update' : 'Generate'}
                 saveIcon={FileCheck}
