@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+<!-- 2026-01-10 -->
+
+### Changed
+- **Design System Refresh**:
+  - Reduced base border radius from `0.5rem` to `0.375rem` for a sharper, more modern appearance.
+  - Refined radius variables (`xl`, `2xl`, `3xl`) for better scaling across components.
+  - Updated sidebar and header search inputs to use standardized radius variables.
+- **Dashboard Greeting**: Updated dashboard title from "Mabuhay" to "Welcome" for a more professional tone.
+- **Header Cleanup**: Removed redundant desktop logo icon to simplify the navigation bar.
+
+### Added
+- **Vite Stability**: Added explicit HMR configuration in `vite.config.ts` to improve development experience when using the Cloudflare Workers plugin.
+
 <!-- 2026-01-09 -->
 
 ### Added

@@ -107,9 +107,6 @@ export const Header: React.FC = () => {
 
                     {/* Desktop Logo */}
                     <NavLink to="/" className="hidden lg:flex items-center gap-2">
-                        <div className="app-header-logo-icon shrink-0 bg-transparent overflow-hidden">
-                            <img src={genderImages.small} alt="Pabili" className="h-full w-full object-cover" />
-                        </div>
                         <h1 className="text-lg font-bold truncate max-w-[120px] sm:max-w-none">
                             {title}
                         </h1>

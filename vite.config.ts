@@ -6,10 +6,19 @@ import path from "path"
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [cloudflare(), tailwindcss(), react()],
+  plugins: [react(), tailwindcss(), cloudflare()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src/client"),
+    },
+  },
+  server: {
+    hmr: {
+      // The Cloudflare plugin uses its own server, configure HMR to work with it
+      protocol: 'ws',
+      host: 'localhost',
+      port: 5173,
+      clientPort: 5173,
     },
   },
   build: {

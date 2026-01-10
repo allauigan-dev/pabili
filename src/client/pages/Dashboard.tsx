@@ -199,7 +199,7 @@ export const Dashboard: React.FC = () => {
     return (
         <div className="pb-10">
             <HeaderContent
-                title={`Mabuhay, ${userName}!`}
+                title={`Welcome, ${userName}!`}
                 actions={
                     <div className="hidden sm:flex text-[10px] font-bold text-muted-foreground tracking-widest uppercase bg-secondary/80 backdrop-blur-sm px-4 py-1.5 rounded-full border shadow-sm">
                         {new Date().toLocaleDateString('en-PH', { weekday: 'short', month: 'short', day: 'numeric' })}
