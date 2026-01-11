@@ -25,6 +25,8 @@ import { EmptyState } from '@/components/EmptyState';
 import { ordersApi, shipmentsApi } from '@/lib/api';
 import type { ShippingListGroup, BuyListOrder, Order } from '@/lib/types';
 import { OrderCard } from '../orders/OrderCard';
+import type { SwipeAction } from '@/components/ui/SwipeableCard';
+import { Truck as TruckIcon } from 'lucide-react';
 
 export const ShipmentCustomerPage: React.FC = () => {
     const { customerId } = useParams<{ customerId: string }>();
@@ -39,6 +41,10 @@ export const ShipmentCustomerPage: React.FC = () => {
     const [selectedOrders, setSelectedOrders] = useState<Set<number>>(new Set());
     const [isShipSheetOpen, setIsShipSheetOpen] = useState(false);
     const [isCreating, setIsCreating] = useState(false);
+
+    // Single order swipe-to-ship state
+    const [swipeShipOrderId, setSwipeShipOrderId] = useState<number | null>(null);
+    const [isSwipeShipSheetOpen, setIsSwipeShipSheetOpen] = useState(false);
 
     const fetchCustomerData = useCallback(async () => {
         if (!customerId) return;
@@ -114,6 +120,37 @@ export const ShipmentCustomerPage: React.FC = () => {
         } finally {
             setIsCreating(false);
             setIsShipSheetOpen(false);
+        }
+    };
+
+    // Handle single order swipe-to-ship
+    const handleSwipeShip = (orderId: number) => {
+        setSwipeShipOrderId(orderId);
+        setIsSwipeShipSheetOpen(true);
+    };
+
+    const handleConfirmSwipeShipment = async () => {
+        if (!customerGroup || swipeShipOrderId === null) return;
+
+        setIsCreating(true);
+        try {
+            const result = await shipmentsApi.create({
+                customerId: customerGroup.customer.id,
+                orderIds: [swipeShipOrderId],
+            });
+
+            if (result.success && result.data) {
+                navigate(`/shipments/${result.data.id}`);
+            } else {
+                setError(result.error || 'Failed to create shipment');
+            }
+        } catch (e) {
+            console.error('Failed to create shipment', e);
+            setError('Failed to create shipment');
+        } finally {
+            setIsCreating(false);
+            setIsSwipeShipSheetOpen(false);
+            setSwipeShipOrderId(null);
         }
     };
 
@@ -291,22 +328,34 @@ export const ShipmentCustomerPage: React.FC = () => {
             {/* Orders List */}
             <div className="px-4 space-y-4">
                 {filteredOrders.length > 0 ? (
-                    filteredOrders.map((order) => (
-                        <OrderCard
-                            key={order.id}
-                            order={adaptToOrder(order)}
-                            onDelete={() => { }}
-                            onStatusChange={() => { }}
-                            showStore={true}
-                            hideCustomer={true}
-                            hidePrice={true}
-                            showQuantity={true}
-                            selectable={isSelectionMode}
-                            selected={selectedOrders.has(order.id)}
-                            onSelect={() => handleSelect(order.id)}
-                            allowedStatuses={[]} // No status changes - orders auto-transition to shipped
-                        />
-                    ))
+                    filteredOrders.map((order) => {
+                        // Create swipe action for single-order ship
+                        const shipSwipeAction: SwipeAction = {
+                            icon: <TruckIcon className="h-5 w-5" />,
+                            label: 'Ship',
+                            color: 'text-white',
+                            bgColor: 'bg-cyan-500',
+                            onAction: () => handleSwipeShip(order.id),
+                        };
+
+                        return (
+                            <OrderCard
+                                key={order.id}
+                                order={adaptToOrder(order)}
+                                onDelete={() => { }}
+                                onStatusChange={() => { }}
+                                showStore={true}
+                                hideCustomer={true}
+                                hidePrice={true}
+                                showQuantity={true}
+                                selectable={isSelectionMode}
+                                selected={selectedOrders.has(order.id)}
+                                onSelect={() => handleSelect(order.id)}
+                                allowedStatuses={[]} // No status changes - orders auto-transition to shipped
+                                swipeRightAction={!isSelectionMode ? shipSwipeAction : undefined}
+                            />
+                        );
+                    })
                 ) : (
                     <div className="pt-8">
                         <EmptyState
@@ -384,6 +433,76 @@ export const ShipmentCustomerPage: React.FC = () => {
                         variant="ghost"
                         size="lg"
                         onClick={() => setIsShipSheetOpen(false)}
+                        className="w-full text-muted-foreground h-12 rounded-xl"
+                    >
+                        Cancel
+                    </Button>
+                </BottomSheetFooter>
+            </BottomSheet>
+
+            {/* Single Order Swipe Shipment Bottom Sheet */}
+            <BottomSheet
+                open={isSwipeShipSheetOpen}
+                onOpenChange={(open) => {
+                    setIsSwipeShipSheetOpen(open);
+                    if (!open) setSwipeShipOrderId(null);
+                }}
+            >
+                <BottomSheetHeader>
+                    <BottomSheetTitle>Create Shipment</BottomSheetTitle>
+                    <BottomSheetDescription>
+                        Create a shipment for this order?
+                    </BottomSheetDescription>
+                </BottomSheetHeader>
+
+                <div className="py-4">
+                    {swipeShipOrderId && (() => {
+                        const swipeOrder = customerGroup?.orders.find(o => o.id === swipeShipOrderId);
+                        return swipeOrder ? (
+                            <div className="bg-secondary/30 rounded-xl p-4 space-y-2">
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Order</span>
+                                    <span className="font-medium truncate ml-4">{swipeOrder.orderName}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Customer</span>
+                                    <span className="font-medium">{customerGroup?.customer.customerName}</span>
+                                </div>
+                                <div className="flex justify-between text-sm">
+                                    <span className="text-muted-foreground">Carrier</span>
+                                    <span className="font-medium">Self Delivery (default)</span>
+                                </div>
+                            </div>
+                        ) : null;
+                    })()}
+                </div>
+
+                <BottomSheetFooter>
+                    <Button
+                        size="lg"
+                        onClick={handleConfirmSwipeShipment}
+                        disabled={isCreating}
+                        className="w-full font-bold text-lg h-12 rounded-xl"
+                    >
+                        {isCreating ? (
+                            <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Creating...
+                            </>
+                        ) : (
+                            <>
+                                <Truck className="h-4 w-4 mr-2" />
+                                Create Shipment
+                            </>
+                        )}
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="lg"
+                        onClick={() => {
+                            setIsSwipeShipSheetOpen(false);
+                            setSwipeShipOrderId(null);
+                        }}
                         className="w-full text-muted-foreground h-12 rounded-xl"
                     >
                         Cancel

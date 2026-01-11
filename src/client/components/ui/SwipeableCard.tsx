@@ -18,7 +18,7 @@ const REVEAL_THRESHOLD = 80;      // Pixels to reveal action
 const TRIGGER_THRESHOLD = 120;    // Pixels to trigger action
 const CARD_RETURN_VELOCITY = 0.5; // Velocity for rubber-band return
 
-interface SwipeAction {
+export interface SwipeAction {
     icon: React.ReactNode;
     label: string;
     color: string;

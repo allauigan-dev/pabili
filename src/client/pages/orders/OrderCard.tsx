@@ -19,7 +19,7 @@ import type { Order, OrderStatus } from '@/lib/types';
 import { ImageGallery } from '@/components/ui/ImageGallery';
 import { ActionSheet } from '@/components/ui/ActionSheet';
 import { useIsMobile } from '@/hooks/useMediaQuery';
-import { SwipeableCard, createQuickAction } from '@/components/ui/SwipeableCard';
+import { SwipeableCard, createQuickAction, type SwipeAction } from '@/components/ui/SwipeableCard';
 
 
 interface OrderCardProps {
@@ -35,6 +35,8 @@ interface OrderCardProps {
     onSelect?: () => void;
     /** Limit which status options are shown. If not provided, uses default flow logic. */
     allowedStatuses?: OrderStatus[];
+    /** Custom swipe-right action. If provided, overrides the default quick status action. */
+    swipeRightAction?: SwipeAction;
 }
 
 export const OrderCard: React.FC<OrderCardProps> = ({
@@ -48,7 +50,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     selectable = false,
     selected = false,
     onSelect,
-    allowedStatuses
+    allowedStatuses,
+    swipeRightAction
 }) => {
     const navigate = useNavigate();
 
@@ -155,10 +158,13 @@ export const OrderCard: React.FC<OrderCardProps> = ({
         () => onStatusChange(order.id, quickStatus),
     ) : undefined;
 
+    // Use custom swipe right action if provided, otherwise use default quick action
+    const leftSwipeAction = swipeRightAction || quickAction;
+
     return (
         <SwipeableCard
             rightAction={editAction}
-            leftAction={quickAction}
+            leftAction={leftSwipeAction}
             className="mb-4"
         >
             <div

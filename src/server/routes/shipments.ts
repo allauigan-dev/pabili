@@ -555,11 +555,12 @@ app.delete('/:id', async (c) => {
     }
 
     try {
-        // Remove orders from shipment first
+        // Remove orders from shipment and revert status to 'packed'
         await db
             .update(orders)
             .set({
                 shipmentId: null,
+                orderStatus: 'packed',
                 updatedAt: new Date().toISOString(),
             })
             .where(and(

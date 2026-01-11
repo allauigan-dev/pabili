@@ -10,6 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- 2026-01-11 -->
 
 ### Added
+- **Swipe-to-Ship**: Added a cyan "Ship" swipe-right gesture on order cards in the `ShipmentCustomerPage`, allowing quick shipment creation for individual orders through a confirmation bottom sheet.
+
+### Changed
+- **Shipment Deletion Logic**: Deleting a shipment now automatically reverts associated orders back to `packed` status, allowing them to be re-assigned to new shipments.
+- **OrderCard Extensibility**: Enhanced `OrderCard` with a `swipeRightAction` prop to allow parent components to override the default quick status swipe behavior.
+- **SwipeableCard API**: Exported `SwipeAction` interface to support custom swipe configurations in parent components.
 - **Shipments Module**: Created a comprehensive shipment management system. Added `ShipmentsPage` for initiating shipments from packed orders and `ShippedOrdersPage` for tracking active shipments.
 - **Shipment Details**: Implemented `ShipmentDetails` view to track shipping specifics, tracking numbers, and individual orders within a shipment.
 - **Shipments API & Schema**: Added `shipments` table to the database and implemented backend routes for shipment management, including bundling multiple orders into a single shipment.
