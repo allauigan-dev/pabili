@@ -15,14 +15,28 @@ vi.mock('../middleware/organization', () => ({
     })
 }))
 
-import ordersApp from './orders'
+import shipmentsApp from './shipments'
 
 // Mock the database module
 vi.mock('../db', () => ({
     createDb: vi.fn(() => mockDb),
-    orders: { id: 'id', deletedAt: 'deletedAt', createdAt: 'createdAt', customerId: 'customerId', storeId: 'storeId', organizationId: 'organizationId' },
-    stores: { id: 'id', storeName: 'storeName' },
+    shipments: {
+        id: 'id',
+        deletedAt: 'deletedAt',
+        createdAt: 'createdAt',
+        customerId: 'customerId',
+        organizationId: 'organizationId',
+        shipmentStatus: 'shipmentStatus',
+    },
+    orders: {
+        id: 'id',
+        deletedAt: 'deletedAt',
+        shipmentId: 'shipmentId',
+        organizationId: 'organizationId',
+        customerId: 'customerId',
+    },
     customers: { id: 'id', customerName: 'customerName' },
+    organization: { id: 'id', slug: 'slug', name: 'name' },
 }))
 
 // Mock database instance
@@ -31,6 +45,9 @@ const mockDb = {
     from: vi.fn().mockReturnThis(),
     where: vi.fn().mockReturnThis(),
     orderBy: vi.fn().mockResolvedValue([]),
+    leftJoin: vi.fn().mockReturnThis(),
+    limit: vi.fn().mockReturnThis(),
+    offset: vi.fn().mockResolvedValue([]),
     insert: vi.fn().mockReturnThis(),
     values: vi.fn().mockReturnThis(),
     update: vi.fn().mockReturnThis(),
@@ -38,13 +55,16 @@ const mockDb = {
     returning: vi.fn().mockResolvedValue([]),
 }
 
-describe('Orders API', () => {
+describe('Shipments API', () => {
     beforeEach(() => {
         vi.clearAllMocks()
         mockDb.select.mockReturnThis()
         mockDb.from.mockReturnThis()
         mockDb.where.mockReturnThis()
         mockDb.orderBy.mockResolvedValue([])
+        mockDb.leftJoin.mockReturnThis()
+        mockDb.limit.mockReturnThis()
+        mockDb.offset.mockResolvedValue([])
         mockDb.insert.mockReturnThis()
         mockDb.values.mockReturnThis()
         mockDb.update.mockReturnThis()
@@ -53,62 +73,76 @@ describe('Orders API', () => {
     })
 
     describe('Route definitions', () => {
-        it('should have the orders app defined', () => {
-            expect(ordersApp).toBeDefined()
+        it('should have the shipments app defined', () => {
+            expect(shipmentsApp).toBeDefined()
         })
 
         it('should have routes defined', () => {
-            expect(ordersApp.routes).toBeDefined()
-            expect(ordersApp.routes.length).toBeGreaterThan(0)
+            expect(shipmentsApp.routes).toBeDefined()
+            expect(shipmentsApp.routes.length).toBeGreaterThan(0)
         })
 
-        it('should have GET / route for listing orders', () => {
-            const getRoute = ordersApp.routes.find(
+        it('should have GET / route for listing shipments', () => {
+            const getRoute = shipmentsApp.routes.find(
                 (r) => r.method === 'GET' && r.path === '/'
             )
             expect(getRoute).toBeDefined()
         })
 
-        it('should have GET /:id route for single order', () => {
-            const getByIdRoute = ordersApp.routes.find(
+        it('should have GET /counts route for shipment counts', () => {
+            const countsRoute = shipmentsApp.routes.find(
+                (r) => r.method === 'GET' && r.path === '/counts'
+            )
+            expect(countsRoute).toBeDefined()
+        })
+
+        it('should have GET /:id route for single shipment', () => {
+            const getByIdRoute = shipmentsApp.routes.find(
                 (r) => r.method === 'GET' && r.path === '/:id'
             )
             expect(getByIdRoute).toBeDefined()
         })
 
-        it('should have POST / route for creating order', () => {
-            const postRoute = ordersApp.routes.find(
+        it('should have POST / route for creating shipment', () => {
+            const postRoute = shipmentsApp.routes.find(
                 (r) => r.method === 'POST' && r.path === '/'
             )
             expect(postRoute).toBeDefined()
         })
 
-        it('should have PUT /:id route for updating order', () => {
-            const putRoute = ordersApp.routes.find(
+        it('should have PUT /:id route for updating shipment', () => {
+            const putRoute = shipmentsApp.routes.find(
                 (r) => r.method === 'PUT' && r.path === '/:id'
             )
             expect(putRoute).toBeDefined()
         })
 
         it('should have PATCH /:id/status route for status update', () => {
-            const patchRoute = ordersApp.routes.find(
+            const patchRoute = shipmentsApp.routes.find(
                 (r) => r.method === 'PATCH' && r.path === '/:id/status'
             )
             expect(patchRoute).toBeDefined()
         })
 
+        it('should have POST /:id/orders route for adding orders', () => {
+            const addOrdersRoute = shipmentsApp.routes.find(
+                (r) => r.method === 'POST' && r.path === '/:id/orders'
+            )
+            expect(addOrdersRoute).toBeDefined()
+        })
+
+        it('should have DELETE /:id/orders/:orderId route for removing orders', () => {
+            const removeOrderRoute = shipmentsApp.routes.find(
+                (r) => r.method === 'DELETE' && r.path === '/:id/orders/:orderId'
+            )
+            expect(removeOrderRoute).toBeDefined()
+        })
+
         it('should have DELETE /:id route for soft delete', () => {
-            const deleteRoute = ordersApp.routes.find(
+            const deleteRoute = shipmentsApp.routes.find(
                 (r) => r.method === 'DELETE' && r.path === '/:id'
             )
             expect(deleteRoute).toBeDefined()
-        })
-
-        it('should have GET /buy-list route for grouped pending orders', () => {
-            const buyListRoute = ordersApp.routes.find(
-                (r) => r.method === 'GET' && r.path === '/buy-list'
-            )
-            expect(buyListRoute).toBeDefined()
         })
     })
 
@@ -120,54 +154,31 @@ describe('Orders API', () => {
                 body: JSON.stringify({}),
             })
 
-            const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
+            const res = await shipmentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
 
-        it('should accept valid order data', async () => {
-            mockDb.returning.mockResolvedValueOnce([{
-                id: 1,
-                orderNumber: 'ORD-123-ABC',
-                orderName: 'Test Order',
-                orderQuantity: 2,
-                orderPrice: 100,
-                orderFee: 10,
-                orderCustomerPrice: 120,
-                orderTotal: 220,
-                orderCustomerTotal: 240,
-                storeId: 1,
-                customerId: 1,
-                createdAt: new Date().toISOString(),
-            }])
-
+        it('should require at least one order for creating shipment', async () => {
             const req = new Request('http://localhost/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    orderName: 'Test Order',
-                    orderQuantity: 2,
-                    orderPrice: 100,
-                    orderFee: 10,
-                    orderCustomerPrice: 120,
-                    storeId: 1,
                     customerId: 1,
+                    orderIds: [], // Empty array should fail
                 }),
             })
 
-            const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
-            expect(res.status).toBe(201)
-
-            const data = await res.json()
-            expect(data.success).toBe(true)
+            const res = await shipmentsApp.fetch(req, { DB: {} } as unknown as any)
+            expect(res.status).toBe(400)
         })
     })
 
     describe('Status updates', () => {
         it('should accept valid status values', async () => {
-            const validStatuses = ['pending', 'bought', 'packed', 'shipped', 'delivered', 'cancelled', 'no_stock']
+            const validStatuses = ['preparing', 'ready', 'in_transit', 'delivered', 'cancelled']
 
             for (const status of validStatuses) {
-                mockDb.returning.mockResolvedValueOnce([{ id: 1, orderStatus: status }])
+                mockDb.returning.mockResolvedValueOnce([{ id: 1, shipmentStatus: status }])
 
                 const req = new Request('http://localhost/1/status', {
                     method: 'PATCH',
@@ -175,7 +186,7 @@ describe('Orders API', () => {
                     body: JSON.stringify({ status }),
                 })
 
-                const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
+                const res = await shipmentsApp.fetch(req, { DB: {} } as unknown as any)
                 expect(res.status).toBe(200)
             }
         })
@@ -187,38 +198,23 @@ describe('Orders API', () => {
                 body: JSON.stringify({ status: 'invalid_status' }),
             })
 
-            const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
+            const res = await shipmentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
         })
     })
 
     describe('Error handling', () => {
-        it('should return 400 for invalid order ID on GET /:id', async () => {
+        it('should return 400 for invalid shipment ID on GET /:id', async () => {
             const req = new Request('http://localhost/invalid', {
                 method: 'GET',
             })
 
-            const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
+            const res = await shipmentsApp.fetch(req, { DB: {} } as unknown as any)
             expect(res.status).toBe(400)
 
             const data = await res.json()
             expect(data.success).toBe(false)
-            expect(data.error).toBe('Invalid order ID')
-        })
-
-        it('should return 404 for non-existent order', async () => {
-            mockDb.where.mockResolvedValueOnce([])
-
-            const req = new Request('http://localhost/999', {
-                method: 'GET',
-            })
-
-            const res = await ordersApp.fetch(req, { DB: {} } as unknown as any)
-            expect(res.status).toBe(404)
-
-            const data = await res.json()
-            expect(data.success).toBe(false)
-            expect(data.error).toBe('Order not found')
+            expect(data.error).toBe('Invalid shipment ID')
         })
     })
 })

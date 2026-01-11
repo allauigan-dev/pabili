@@ -20,6 +20,10 @@ import { PaymentDetails } from './client/pages/payments/PaymentDetails';
 import { InvoicesPage } from './client/pages/invoices/InvoicesPage';
 import { InvoiceForm } from './client/pages/invoices/InvoiceForm';
 import { InvoiceDetails } from './client/pages/invoices/InvoiceDetails';
+import { ShipmentsPage } from './client/pages/shipments/ShipmentsPage';
+import { ShipmentDetails } from './client/pages/shipments/ShipmentDetails';
+import { ShipmentCustomerPage } from './client/pages/shipments/ShipmentCustomerPage';
+import { ShippedOrdersPage } from './client/pages/shipments/ShippedOrdersPage';
 import { SettingsPage } from './client/pages/settings/SettingsPage';
 import { ProtectedRoute } from './client/components/ProtectedRoute';
 import { OrgGuard } from './client/components/OrgGuard';
@@ -71,6 +75,10 @@ function App() {
               <Route path="/invoices/new" element={<InvoiceForm />} />
               <Route path="/invoices/:id" element={<InvoiceDetails />} />
               <Route path="/invoices/:id/edit" element={<InvoiceForm />} />
+              <Route path="/shipments" element={<ShipmentsPage />} />
+              <Route path="/shipments/customer/:customerId" element={<ShipmentCustomerPage />} />
+              <Route path="/shipments/:id" element={<ShipmentDetails />} />
+              <Route path="/tracking" element={<ShippedOrdersPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="*" element={<Dashboard />} />
             </Route>

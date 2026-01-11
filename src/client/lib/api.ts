@@ -234,6 +234,7 @@ export const ordersApi = {
     getCounts: () => fetchApi<Record<string, number>>('/api/orders/counts'),
     getBuyList: () => fetchApi<import('./types').BuyListStoreGroup[]>('/api/orders/buy-list'),
     getPackagingList: () => fetchApi<import('./types').PackagingListGroup[]>('/api/orders/packaging-list'),
+    getShippingList: () => fetchApi<import('./types').ShippingListGroup[]>('/api/orders/shipping-list'),
 };
 
 /**
@@ -343,6 +344,42 @@ export const invoicesApi = {
         method: 'DELETE',
     }),
     getCounts: () => fetchApi<Record<string, number>>('/api/invoices/counts'),
+};
+
+/**
+ * Shipments API
+ */
+export const shipmentsApi = {
+    list: () => fetchApi<import('./types').Shipment[]>('/api/shipments'),
+    listPaginated: (page: number = 1, limit: number = 20, status?: string) => {
+        const params = new URLSearchParams({ page: String(page), limit: String(limit) });
+        if (status && status !== 'all') params.append('status', status);
+        return fetchApi<import('./types').Shipment[]>(`/api/shipments?${params.toString()}`);
+    },
+    get: (id: number) => fetchApi<import('./types').ShipmentWithOrders>(`/api/shipments/${id}`),
+    create: (data: import('./types').CreateShipmentDto) => fetchApi<import('./types').Shipment>('/api/shipments', {
+        method: 'POST',
+        body: JSON.stringify(data),
+    }),
+    update: (id: number, data: Partial<import('./types').CreateShipmentDto>) => fetchApi<import('./types').Shipment>(`/api/shipments/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(data),
+    }),
+    updateStatus: (id: number, status: string) => fetchApi<import('./types').Shipment>(`/api/shipments/${id}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status }),
+    }),
+    addOrders: (id: number, orderIds: number[]) => fetchApi<void>(`/api/shipments/${id}/orders`, {
+        method: 'POST',
+        body: JSON.stringify({ orderIds }),
+    }),
+    removeOrder: (shipmentId: number, orderId: number) => fetchApi<void>(`/api/shipments/${shipmentId}/orders/${orderId}`, {
+        method: 'DELETE',
+    }),
+    delete: (id: number) => fetchApi<void>(`/api/shipments/${id}`, {
+        method: 'DELETE',
+    }),
+    getCounts: () => fetchApi<Record<string, number>>('/api/shipments/counts'),
 };
 
 /**

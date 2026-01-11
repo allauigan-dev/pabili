@@ -38,7 +38,7 @@ const createOrderSchema = z.object({
 const updateOrderSchema = createOrderSchema.partial();
 
 const updateStatusSchema = z.object({
-    status: z.enum(['pending', 'bought', 'packed', 'delivered', 'cancelled', 'no_stock']),
+    status: z.enum(['pending', 'bought', 'packed', 'shipped', 'delivered', 'cancelled', 'no_stock']),
 });
 
 // Generate order number
@@ -164,7 +164,7 @@ app.get('/counts', async (c) => {
     const db = createDb(c.env.DB);
     const organizationId = c.get('organizationId');
 
-    const statusList = ['pending', 'bought', 'packed', 'delivered', 'cancelled', 'no_stock'] as const;
+    const statusList = ['pending', 'bought', 'packed', 'shipped', 'delivered', 'cancelled', 'no_stock'] as const;
 
     try {
         // Get total count (all non-deleted orders)
@@ -365,6 +365,92 @@ app.get('/packaging-list', async (c) => {
     } catch (error) {
         console.error('Error fetching packaging list:', error);
         return c.json({ success: false, error: 'Failed to fetch packaging list' }, 500);
+    }
+});
+
+// GET /api/orders/shipping-list - Get packed orders (not yet shipped) grouped by customer
+app.get('/shipping-list', async (c) => {
+    const db = createDb(c.env.DB);
+    const organizationId = c.get('organizationId');
+
+    try {
+        // Fetch all packed orders that are NOT already in a shipment
+        const packedOrders = await db
+            .select({
+                id: orders.id,
+                orderNumber: orders.orderNumber,
+                orderName: orders.orderName,
+                orderDescription: orders.orderDescription,
+                orderQuantity: orders.orderQuantity,
+                orderImage: orders.orderImage,
+                orderImages: orders.orderImages,
+                orderPrice: orders.orderPrice,
+                orderFee: orders.orderFee,
+                orderCustomerPrice: orders.orderCustomerPrice,
+                orderTotal: orders.orderTotal,
+                orderCustomerTotal: orders.orderCustomerTotal,
+                orderStatus: orders.orderStatus,
+                orderDate: orders.orderDate,
+                storeId: orders.storeId,
+                customerId: orders.customerId,
+                createdAt: orders.createdAt,
+                storeName: stores.storeName,
+                customerName: customers.customerName,
+                customerAddress: customers.customerAddress,
+                customerPhone: customers.customerPhone,
+                customerPhoto: customers.customerPhoto,
+            })
+            .from(orders)
+            .leftJoin(stores, eq(orders.storeId, stores.id))
+            .leftJoin(customers, eq(orders.customerId, customers.id))
+            .where(and(
+                eq(orders.organizationId, organizationId),
+                eq(orders.orderStatus, 'packed'),
+                isNull(orders.shipmentId), // Not yet assigned to a shipment
+                isNull(orders.deletedAt)
+            ))
+            .orderBy(customers.customerName, desc(orders.createdAt), desc(orders.id));
+
+        // Group orders by customer
+        const customerGroups = new Map<number, {
+            customer: { id: number; customerName: string; customerAddress: string | null; customerPhone: string | null; customerPhoto: string | null };
+            orders: typeof packedOrders;
+            orderCount: number;
+            totalItems: number;
+        }>();
+
+        for (const order of packedOrders) {
+            const customerId = order.customerId;
+            if (!customerGroups.has(customerId)) {
+                customerGroups.set(customerId, {
+                    customer: {
+                        id: customerId,
+                        customerName: order.customerName || 'Unknown Customer',
+                        customerAddress: order.customerAddress,
+                        customerPhone: order.customerPhone,
+                        customerPhoto: order.customerPhoto,
+                    },
+                    orders: [],
+                    orderCount: 0,
+                    totalItems: 0,
+                });
+            }
+
+            const group = customerGroups.get(customerId)!;
+            group.orders.push({
+                ...order,
+                orderImages: order.orderImages ? JSON.parse(order.orderImages as string) : [],
+            } as typeof order);
+            group.orderCount++;
+            group.totalItems += order.orderQuantity;
+        }
+
+        const shippingList = Array.from(customerGroups.values());
+
+        return c.json({ success: true, data: shippingList });
+    } catch (error) {
+        console.error('Error fetching shipping list:', error);
+        return c.json({ success: false, error: 'Failed to fetch shipping list' }, 500);
     }
 });
 

@@ -14,7 +14,9 @@ import {
     Sun,
     PanelLeftClose,
     PanelLeftOpen,
-    PackageCheck
+    PackageCheck,
+    Truck,
+    MapPinned
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { OrganizationSwitcher } from '../OrganizationSwitcher';
@@ -30,6 +32,8 @@ const navItems = [
     { label: 'Orders', to: '/orders', icon: ShoppingBag },
     { label: 'Buy List', to: '/buy-list', icon: ShoppingBasket },
     { label: 'Packaging', to: '/packaging', icon: PackageCheck },
+    { label: 'Shipments', to: '/shipments', icon: Truck },
+    { label: 'Tracking', to: '/tracking', icon: MapPinned },
     { label: 'Stores', to: '/stores', icon: Store },
     { label: 'Payments', to: '/payments', icon: CreditCard },
     { label: 'Customers', to: '/customers', icon: Users },

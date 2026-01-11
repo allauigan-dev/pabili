@@ -33,6 +33,8 @@ interface OrderCardProps {
     selectable?: boolean;
     selected?: boolean;
     onSelect?: () => void;
+    /** Limit which status options are shown. If not provided, uses default flow logic. */
+    allowedStatuses?: OrderStatus[];
 }
 
 export const OrderCard: React.FC<OrderCardProps> = ({
@@ -45,7 +47,8 @@ export const OrderCard: React.FC<OrderCardProps> = ({
     showQuantity = false,
     selectable = false,
     selected = false,
-    onSelect
+    onSelect,
+    allowedStatuses
 }) => {
     const navigate = useNavigate();
 
@@ -64,6 +67,11 @@ export const OrderCard: React.FC<OrderCardProps> = ({
             bar: 'bg-blue-500',
             badge: 'bg-blue-100 text-blue-800',
             label: 'PACKED'
+        },
+        shipped: {
+            bar: 'bg-cyan-500',
+            badge: 'bg-cyan-100 text-cyan-800',
+            label: 'SHIPPED'
         },
         delivered: {
             bar: 'bg-emerald-500',
@@ -96,19 +104,21 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
 
     // Filter valid next statuses based on current status
-    const getValidNextStatuses = (currentStatus: string) => {
+    const getValidNextStatuses = (currentStatus: string): string[] => {
         const flow: Record<string, string[]> = {
             pending: ['bought', 'cancelled', 'no_stock'],
             bought: ['packed', 'cancelled'],
-            packed: ['delivered'],
+            packed: ['shipped'],
+            shipped: ['delivered'],
             delivered: [], // Terminal state
             cancelled: [], // Terminal state
-            no_stock: ['pending'] // Can retry if stock comes back? Or logic says terminal. Let's allow pending correction.
+            no_stock: ['pending'] // Can retry if stock comes back
         };
         return flow[currentStatus] || [];
     };
 
-    const validStatuses = getValidNextStatuses(order.orderStatus);
+    // Get valid statuses - either from prop or from flow logic
+    const validStatuses = allowedStatuses || getValidNextStatuses(order.orderStatus);
 
     const handleStatusSelect = (newStatus: string) => {
         onStatusChange(order.id, newStatus as OrderStatus);
@@ -117,11 +127,12 @@ export const OrderCard: React.FC<OrderCardProps> = ({
 
     // Quick action: advance to next logical status
     const getQuickStatusAction = useCallback(() => {
-        // Quick status progression: pending -> bought -> packed -> delivered
+        // Quick status progression: pending -> bought -> packed -> shipped -> delivered
         const quickFlow: Record<string, OrderStatus> = {
             pending: 'bought',
             bought: 'packed',
-            packed: 'delivered',
+            packed: 'shipped',
+            shipped: 'delivered',
         };
         return quickFlow[order.orderStatus] || null;
     }, [order.orderStatus]);

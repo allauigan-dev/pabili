@@ -415,6 +415,7 @@ export const OrderForm: React.FC = () => {
                                                     { value: 'pending', color: 'bg-amber-500', label: 'Pending' },
                                                     { value: 'bought', color: 'bg-purple-500', label: 'Bought' },
                                                     { value: 'packed', color: 'bg-blue-500', label: 'Packed' },
+                                                    { value: 'shipped', color: 'bg-indigo-500', label: 'Shipped' },
                                                     { value: 'delivered', color: 'bg-emerald-500', label: 'Delivered' },
                                                     { value: 'cancelled', color: 'bg-red-500', label: 'Cancelled' },
                                                     { value: 'no_stock', color: 'bg-gray-500', label: 'No Stock' },

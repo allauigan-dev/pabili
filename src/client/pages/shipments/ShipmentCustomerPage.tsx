@@ -5,11 +5,12 @@ import {
     User,
     Search,
     MapPin,
+    Phone,
     Loader2,
     CheckSquare,
-    PackageCheck,
+    Truck,
     X,
-    Camera
+    Package
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
@@ -21,16 +22,14 @@ import {
 } from '@/components/ui/BottomSheet';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
 import { EmptyState } from '@/components/EmptyState';
-import { ordersApi } from '@/lib/api';
-import { useOrderMutations } from '@/hooks/useOrders';
-import type { PackagingListGroup, BuyListOrder, Order, OrderStatus } from '@/lib/types';
-import { OrderCard } from './OrderCard';
-// import { toast } from 'sonner';
+import { ordersApi, shipmentsApi } from '@/lib/api';
+import type { ShippingListGroup, BuyListOrder, Order } from '@/lib/types';
+import { OrderCard } from '../orders/OrderCard';
 
-export const PackagingCustomerPage: React.FC = () => {
+export const ShipmentCustomerPage: React.FC = () => {
     const { customerId } = useParams<{ customerId: string }>();
     const navigate = useNavigate();
-    const [customerGroup, setCustomerGroup] = useState<PackagingListGroup | null>(null);
+    const [customerGroup, setCustomerGroup] = useState<ShippingListGroup | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -38,8 +37,8 @@ export const PackagingCustomerPage: React.FC = () => {
     // Selection state
     const [isSelectionMode, setIsSelectionMode] = useState(false);
     const [selectedOrders, setSelectedOrders] = useState<Set<number>>(new Set());
-
-    const { updateStatusAction } = useOrderMutations();
+    const [isShipSheetOpen, setIsShipSheetOpen] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
 
     const fetchCustomerData = useCallback(async () => {
         if (!customerId) return;
@@ -47,22 +46,13 @@ export const PackagingCustomerPage: React.FC = () => {
         setIsLoading(true);
         setError(null);
         try {
-            // Fetch packaging list and find the group
-            const response = await ordersApi.getPackagingList();
+            const response = await ordersApi.getShippingList();
             if (response.success && response.data) {
                 const group = response.data.find(g => g.customer.id === parseInt(customerId));
                 if (group) {
                     setCustomerGroup(group);
                 } else {
-                    // If not found, it might be partial navigation or no orders left
-                    // You could check if there are no orders and redirect, but let's show empty state or error
-                    // Actually if user just packed everything, this group disappears.
-                    if (response.data.length > 0) {
-                        setError('Customer not found in packaging list (maybe all packed?)');
-                    } else {
-                        // Redirect if list is empty? Or just show empty.
-                        setCustomerGroup(null);
-                    }
+                    setCustomerGroup(null);
                 }
             } else {
                 setError(response.error || 'Failed to load data');
@@ -74,16 +64,9 @@ export const PackagingCustomerPage: React.FC = () => {
         }
     }, [customerId]);
 
-    const [isPackSheetOpen, setIsPackSheetOpen] = useState(false);
-
     useEffect(() => {
         fetchCustomerData();
     }, [fetchCustomerData]);
-
-    const handleStatusChange = async (orderId: number, status: OrderStatus) => {
-        await updateStatusAction({ id: orderId, status });
-        fetchCustomerData(); // Refresh list
-    };
 
     const handleSelect = (orderId: number) => {
         if (!isSelectionMode) {
@@ -104,34 +87,34 @@ export const PackagingCustomerPage: React.FC = () => {
         setSelectedOrders(newSelected);
     };
 
-    const handleBulkPackClick = () => {
+    const handleCreateShipmentClick = () => {
         if (selectedOrders.size === 0) return;
-        setIsPackSheetOpen(true);
+        setIsShipSheetOpen(true);
     };
 
-    const handleConfirmPack = async () => {
-        setIsPackSheetOpen(false);
+    const handleConfirmShipment = async () => {
+        if (!customerGroup || selectedOrders.size === 0) return;
 
-        let successCount = 0;
-        const promises = Array.from(selectedOrders).map(async (id) => {
-            try {
-                const result = await ordersApi.updateStatus(id, 'packed');
-                if (result.success) successCount++;
-            } catch (e) {
-                console.error(`Failed to pack order ${id}`, e);
+        setIsCreating(true);
+        try {
+            const result = await shipmentsApi.create({
+                customerId: customerGroup.customer.id,
+                orderIds: Array.from(selectedOrders),
+            });
+
+            if (result.success && result.data) {
+                // Navigate to the new shipment details
+                navigate(`/shipments/${result.data.id}`);
+            } else {
+                setError(result.error || 'Failed to create shipment');
             }
-        });
-
-        await Promise.all(promises);
-
-        // toast.success(`Packed ${successCount} orders`);
-        // Use alert for now since sonner is not installed
-        if (successCount > 0) {
-            // alert(`Successfully packed ${successCount} orders`);
+        } catch (e) {
+            console.error('Failed to create shipment', e);
+            setError('Failed to create shipment');
+        } finally {
+            setIsCreating(false);
+            setIsShipSheetOpen(false);
         }
-        setSelectedOrders(new Set());
-        setIsSelectionMode(false);
-        fetchCustomerData();
     };
 
     const toggleSelectionMode = () => {
@@ -162,8 +145,6 @@ export const PackagingCustomerPage: React.FC = () => {
             storeName: buyListOrder.storeName || '',
             customerName: buyListOrder.customerName || '',
             orderCustomerTotal: buyListOrder.orderTotal || 0,
-
-            // Allow OrderCard to handle missing fields cleanly if needed
             id: buyListOrder.id,
             orderNumber: buyListOrder.orderNumber,
             orderName: buyListOrder.orderName,
@@ -198,15 +179,15 @@ export const PackagingCustomerPage: React.FC = () => {
                 <Button
                     variant="ghost"
                     className="mb-4"
-                    onClick={() => navigate('/packaging')}
+                    onClick={() => navigate('/shipments')}
                 >
                     <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Packaging List
+                    Back to Shipments
                 </Button>
                 <EmptyState
                     icon={<User className="h-10 w-10 text-muted-foreground" />}
                     title="No orders found"
-                    description={error || "All orders have been packed for this customer."}
+                    description={error || "All packed orders have been shipped for this customer."}
                 />
             </div>
         );
@@ -252,7 +233,7 @@ export const PackagingCustomerPage: React.FC = () => {
                                 <Button
                                     variant="ghost"
                                     size="icon"
-                                    onClick={() => navigate('/packaging')}
+                                    onClick={() => navigate('/shipments')}
                                     className="rounded-full hover:bg-secondary"
                                 >
                                     <ArrowLeft className="h-5 w-5 text-muted-foreground" />
@@ -263,7 +244,7 @@ export const PackagingCustomerPage: React.FC = () => {
                 }
             />
 
-            {/* Customer Header Info (Hide if selection mode maybe? No keep it) */}
+            {/* Customer Header Info */}
             {!isSelectionMode && (
                 <div className="px-4 mb-4">
                     <div className="bg-surface-light dark:bg-surface-dark p-4 rounded-xl shadow-sm border border-border/50">
@@ -284,14 +265,21 @@ export const PackagingCustomerPage: React.FC = () => {
                                     {customerGroup.customer.customerName}
                                 </h1>
                                 {customerGroup.customer.customerAddress && (
-                                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
+                                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-1">
                                         <MapPin className="h-3.5 w-3.5 flex-shrink-0" />
                                         <span className="truncate">{customerGroup.customer.customerAddress}</span>
                                     </div>
                                 )}
+                                {customerGroup.customer.customerPhone && (
+                                    <div className="flex items-center gap-1.5 text-sm text-muted-foreground mb-2">
+                                        <Phone className="h-3.5 w-3.5 flex-shrink-0" />
+                                        <span>{customerGroup.customer.customerPhone}</span>
+                                    </div>
+                                )}
                                 <div className="flex items-center gap-3 text-sm">
-                                    <span className="text-primary font-medium">
-                                        {customerGroup.orderCount} Pending Pack
+                                    <span className="inline-flex items-center gap-1 text-primary font-medium">
+                                        <Package className="h-3.5 w-3.5" />
+                                        {customerGroup.orderCount} Ready to Ship
                                     </span>
                                 </div>
                             </div>
@@ -307,8 +295,8 @@ export const PackagingCustomerPage: React.FC = () => {
                         <OrderCard
                             key={order.id}
                             order={adaptToOrder(order)}
-                            onDelete={() => { }} // Disable delete here
-                            onStatusChange={handleStatusChange}
+                            onDelete={() => { }}
+                            onStatusChange={() => { }}
                             showStore={true}
                             hideCustomer={true}
                             hidePrice={true}
@@ -316,7 +304,7 @@ export const PackagingCustomerPage: React.FC = () => {
                             selectable={isSelectionMode}
                             selected={selectedOrders.has(order.id)}
                             onSelect={() => handleSelect(order.id)}
-                            allowedStatuses={['packed', 'cancelled']}
+                            allowedStatuses={[]} // No status changes - orders auto-transition to shipped
                         />
                     ))
                 ) : (
@@ -324,7 +312,7 @@ export const PackagingCustomerPage: React.FC = () => {
                         <EmptyState
                             icon={<Search className="h-10 w-10" />}
                             title="No orders found"
-                            description={searchQuery ? `No orders match "${searchQuery}"` : "This customer has no orders to pack."}
+                            description={searchQuery ? `No orders match "${searchQuery}"` : "This customer has no packed orders to ship."}
                         />
                     </div>
                 )}
@@ -338,43 +326,64 @@ export const PackagingCustomerPage: React.FC = () => {
                             {selectedOrders.size} selected
                         </span>
                         <Button
-                            onClick={handleBulkPackClick}
+                            onClick={handleCreateShipmentClick}
                             className="rounded-full bg-primary hover:bg-primary/90 text-primary-foreground px-6"
                         >
-                            <PackageCheck className="h-4 w-4 mr-2" />
-                            Mark Packed
+                            <Truck className="h-4 w-4 mr-2" />
+                            Create Shipment
                         </Button>
                     </div>
                 </div>
             )}
 
-            <BottomSheet open={isPackSheetOpen} onOpenChange={setIsPackSheetOpen}>
+            <BottomSheet open={isShipSheetOpen} onOpenChange={setIsShipSheetOpen}>
                 <BottomSheetHeader>
-                    <BottomSheetTitle>Confirm Packing</BottomSheetTitle>
+                    <BottomSheetTitle>Create Shipment</BottomSheetTitle>
                     <BottomSheetDescription>
-                        You are about to mark {selectedOrders.size} orders as packed.
+                        You are about to create a shipment with {selectedOrders.size} order(s) for {customerGroup.customer.customerName}.
                     </BottomSheetDescription>
                 </BottomSheetHeader>
 
-                <div className="py-6 flex flex-col items-center justify-center gap-4">
-                    <div className="h-24 w-full bg-secondary/30 rounded-xl border-2 border-dashed border-border flex flex-col items-center justify-center text-muted-foreground cursor-pointer hover:bg-secondary/50 transition-colors">
-                        <Camera className="h-8 w-8 mb-2 opacity-50" />
-                        <span className="text-xs font-medium">Upload packing photo (Optional)</span>
+                <div className="py-4">
+                    <div className="bg-secondary/30 rounded-xl p-4 space-y-2">
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Customer</span>
+                            <span className="font-medium">{customerGroup.customer.customerName}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Orders</span>
+                            <span className="font-medium">{selectedOrders.size}</span>
+                        </div>
+                        <div className="flex justify-between text-sm">
+                            <span className="text-muted-foreground">Carrier</span>
+                            <span className="font-medium">Self Delivery (default)</span>
+                        </div>
                     </div>
                 </div>
 
                 <BottomSheetFooter>
                     <Button
                         size="lg"
-                        onClick={handleConfirmPack}
+                        onClick={handleConfirmShipment}
+                        disabled={isCreating}
                         className="w-full font-bold text-lg h-12 rounded-xl"
                     >
-                        Confirm & Mark Packed
+                        {isCreating ? (
+                            <>
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                Creating...
+                            </>
+                        ) : (
+                            <>
+                                <Truck className="h-4 w-4 mr-2" />
+                                Create Shipment
+                            </>
+                        )}
                     </Button>
                     <Button
                         variant="ghost"
                         size="lg"
-                        onClick={() => setIsPackSheetOpen(false)}
+                        onClick={() => setIsShipSheetOpen(false)}
                         className="w-full text-muted-foreground h-12 rounded-xl"
                     >
                         Cancel

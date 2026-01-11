@@ -10,9 +10,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 <!-- 2026-01-11 -->
 
 ### Added
+- **Shipments Module**: Created a comprehensive shipment management system. Added `ShipmentsPage` for initiating shipments from packed orders and `ShippedOrdersPage` for tracking active shipments.
+- **Shipment Details**: Implemented `ShipmentDetails` view to track shipping specifics, tracking numbers, and individual orders within a shipment.
+- **Shipments API & Schema**: Added `shipments` table to the database and implemented backend routes for shipment management, including bundling multiple orders into a single shipment.
 - **Packaging Feature**: Implemented a comprehensive packaging workflow, including grouping orders by customer, bulk selection, and a "Mark as Packed" action with photo upload confirmation.
 - **Packaging UI**: Added `PackagingPage` for customer overview and `PackagingCustomerPage` for detailed packing operations.
-- **Navigation**: Integrated "Packaging" into the Sidebar and made it a default item in the mobile Bottom Navigation.
+- **Navigation**: Integrated "Shipments" and "Packaging" into the Sidebar and made them configurable items in the navigation system.
 
 ### Changed
 - **Bulk Action UI**: Refactored the bulk selection floating bar to match the design system (Card style).

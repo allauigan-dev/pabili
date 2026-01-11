@@ -2,7 +2,7 @@
  * Pabili Frontend Type Definitions
  */
 
-export type OrderStatus = 'pending' | 'bought' | 'packed' | 'delivered' | 'cancelled' | 'no_stock';
+export type OrderStatus = 'pending' | 'bought' | 'packed' | 'shipped' | 'delivered' | 'cancelled' | 'no_stock';
 export type StoreStatus = 'active' | 'inactive';
 export type CustomerStatus = 'active' | 'inactive';
 export type PaymentMethod = 'cash' | 'gcash' | 'paymaya' | 'bank_transfer' | 'other';
@@ -224,3 +224,65 @@ export interface PackagingListGroup {
     orderCount: number;
     totalItems: number;
 }
+
+export interface ShippingListGroup {
+    customer: {
+        id: number;
+        customerName: string;
+        customerAddress: string | null;
+        customerPhone: string | null;
+        customerPhoto: string | null;
+    };
+    orders: BuyListOrder[];
+    orderCount: number;
+    totalItems: number;
+}
+
+/**
+ * Shipment Types
+ */
+export type ShipmentStatus = 'preparing' | 'ready' | 'in_transit' | 'delivered' | 'cancelled';
+export type ShipmentCarrier = 'lbc' | 'jt' | 'grab' | 'lalamove' | 'self' | 'other';
+
+export interface Shipment {
+    id: number;
+    shipmentNumber: string;
+    trackingNumber: string;
+    carrier: ShipmentCarrier;
+    carrierReference?: string | null;
+    shipmentStatus: ShipmentStatus;
+    shippingFee: number;
+    shipmentPhoto?: string | null;
+    notes?: string | null;
+    customerId: number;
+    customerName?: string;
+    customerAddress?: string | null;
+    customerPhone?: string | null;
+    orderCount?: number;
+    createdAt: string;
+    updatedAt: string;
+    deletedAt?: string | null;
+}
+
+export interface ShipmentWithOrders extends Shipment {
+    orders: {
+        id: number;
+        orderNumber: string;
+        orderName: string;
+        orderQuantity: number;
+        orderCustomerTotal: number | null;
+        orderStatus: OrderStatus;
+        orderImage?: string | null;
+    }[];
+}
+
+export interface CreateShipmentDto {
+    customerId: number;
+    orderIds: number[];
+    carrier?: ShipmentCarrier;
+    carrierReference?: string;
+    shippingFee?: number;
+    notes?: string;
+    shipmentPhoto?: string;
+}
+

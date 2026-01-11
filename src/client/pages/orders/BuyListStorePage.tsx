@@ -198,6 +198,7 @@ export const BuyListStorePage: React.FC = () => {
                             onDelete={handleDelete}
                             onStatusChange={handleStatusChange}
                             showStore={false}
+                            allowedStatuses={['bought', 'no_stock', 'cancelled']}
                         />
                     ))
                 ) : (

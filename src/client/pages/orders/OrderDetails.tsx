@@ -27,6 +27,7 @@ export const OrderDetails: React.FC = () => {
         pending: { color: 'bg-amber-500', label: 'Pending' },
         bought: { color: 'bg-purple-500', label: 'Bought' },
         packed: { color: 'bg-blue-500', label: 'Packed' },
+        shipped: { color: 'bg-indigo-500', label: 'Shipped' },
         delivered: { color: 'bg-emerald-500', label: 'Delivered' },
         cancelled: { color: 'bg-red-500', label: 'Cancelled' },
         no_stock: { color: 'bg-gray-500', label: 'No Stock' },

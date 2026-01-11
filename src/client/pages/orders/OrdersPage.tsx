@@ -53,7 +53,7 @@ export const OrdersPage: React.FC = () => {
     });
     const { deleteAction, updateStatusAction } = useOrderMutations();
 
-    const statusList = ['all', 'pending', 'bought', 'packed', 'delivered', 'cancelled', 'no_stock'];
+    const statusList = ['all', 'pending', 'bought', 'packed', 'shipped', 'delivered', 'cancelled', 'no_stock'];
 
     // Use server-side counts for filter pills
     const { counts } = useStatusCounts({

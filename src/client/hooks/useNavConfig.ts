@@ -9,6 +9,8 @@ import {
     Users,
     FileText,
     PackageCheck,
+    Truck,
+    MapPinned,
     type LucideIcon
 } from 'lucide-react';
 
@@ -26,6 +28,8 @@ export const allNavItemsMap: Record<string, NavItem> = {
     orders: { id: 'orders', label: 'Orders', to: '/orders', icon: ShoppingBag },
     buyList: { id: 'buyList', label: 'Buy List', to: '/buy-list', icon: ShoppingBasket },
     packaging: { id: 'packaging', label: 'Packaging', to: '/packaging', icon: PackageCheck },
+    shipments: { id: 'shipments', label: 'Shipments', to: '/shipments', icon: Truck },
+    tracking: { id: 'tracking', label: 'Tracking', to: '/tracking', icon: MapPinned },
     stores: { id: 'stores', label: 'Stores', to: '/stores', icon: Store },
     payments: { id: 'payments', label: 'Payments', to: '/payments', icon: CreditCard },
     customers: { id: 'customers', label: 'Customers', to: '/customers', icon: Users },
@@ -38,6 +42,8 @@ export const allNavItems: NavItem[] = [
     allNavItemsMap.orders,
     allNavItemsMap.buyList,
     allNavItemsMap.packaging,
+    allNavItemsMap.shipments,
+    allNavItemsMap.tracking,
     allNavItemsMap.stores,
     allNavItemsMap.payments,
     allNavItemsMap.customers,

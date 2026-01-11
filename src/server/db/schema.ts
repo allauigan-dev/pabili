@@ -206,7 +206,7 @@ export const orders = sqliteTable('orders', {
 
     // Status
     orderStatus: text('order_status', {
-        enum: ['pending', 'bought', 'packed', 'delivered', 'cancelled', 'no_stock']
+        enum: ['pending', 'bought', 'packed', 'shipped', 'delivered', 'cancelled', 'no_stock']
     }).notNull().default('pending'),
     orderDate: text('order_date').default(sql`CURRENT_TIMESTAMP`),
 
@@ -214,6 +214,7 @@ export const orders = sqliteTable('orders', {
     storeId: integer('store_id').notNull().references(() => stores.id),
     customerId: integer('customer_id').notNull().references(() => customers.id),
     invoiceId: integer('invoice_id').references(() => invoices.id),
+    shipmentId: integer('shipment_id'), // Forward reference, added after shipments table
 
     // Timestamps
     createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
@@ -225,6 +226,51 @@ export const orders = sqliteTable('orders', {
     index('idx_orders_store').on(table.storeId),
     index('idx_orders_date').on(table.orderDate),
     index('idx_orders_org').on(table.organizationId),
+]);
+
+// ============================================
+// SHIPMENTS TABLE
+// ============================================
+export const shipments = sqliteTable('shipments', {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    organizationId: text('organization_id').references(() => organization.id),
+
+    // Shipment Info
+    shipmentNumber: text('shipment_number').notNull().unique(),
+    trackingNumber: text('tracking_number').notNull().unique(),
+
+    // Carrier/Delivery
+    carrier: text('carrier', {
+        enum: ['lbc', 'jt', 'grab', 'lalamove', 'self', 'other']
+    }).notNull().default('self'),
+    carrierReference: text('carrier_reference'), // External tracking from courier
+
+    // Status
+    shipmentStatus: text('shipment_status', {
+        enum: ['preparing', 'ready', 'in_transit', 'delivered', 'cancelled']
+    }).notNull().default('preparing'),
+
+    // Costs
+    shippingFee: real('shipping_fee').default(0),
+
+    // Media
+    shipmentPhoto: text('shipment_photo'), // Photo of packed box
+
+    // Notes
+    notes: text('notes'),
+
+    // Relations
+    customerId: integer('customer_id').notNull().references(() => customers.id),
+
+    // Timestamps
+    createdAt: text('created_at').default(sql`CURRENT_TIMESTAMP`),
+    updatedAt: text('updated_at').default(sql`CURRENT_TIMESTAMP`),
+    deletedAt: text('deleted_at'),
+}, (table) => [
+    index('idx_shipments_status').on(table.shipmentStatus),
+    index('idx_shipments_customer').on(table.customerId),
+    index('idx_shipments_tracking').on(table.trackingNumber),
+    index('idx_shipments_org').on(table.organizationId),
 ]);
 
 // ============================================
@@ -354,6 +400,9 @@ export type NewOrder = typeof orders.$inferInsert;
 
 export type Payment = typeof payments.$inferSelect;
 export type NewPayment = typeof payments.$inferInsert;
+
+export type Shipment = typeof shipments.$inferSelect;
+export type NewShipment = typeof shipments.$inferInsert;
 
 export type Image = typeof images.$inferSelect;
 export type NewImage = typeof images.$inferInsert;
