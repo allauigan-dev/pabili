@@ -362,7 +362,7 @@ export const activities = sqliteTable('activities', {
 
     // Activity Info
     type: text('type', {
-        enum: ['order', 'store', 'customer', 'payment', 'invoice']
+        enum: ['order', 'store', 'customer', 'payment', 'invoice', 'shipment']
     }).notNull(),
     action: text('action', {
         enum: ['created', 'updated', 'deleted', 'status_changed']

@@ -335,7 +335,7 @@ app.post('/', zValidator('json', createShipmentSchema), async (c) => {
         await logActivity({
             db,
             organizationId,
-            type: 'order', // Using 'order' since there's no 'shipment' type yet
+            type: 'shipment',
             action: 'created',
             entityId: newShipment.id,
             title: `Shipment ${newShipment.trackingNumber}`,
@@ -433,7 +433,7 @@ app.patch('/:id/status', zValidator('json', updateStatusSchema), async (c) => {
         await logActivity({
             db,
             organizationId,
-            type: 'order',
+            type: 'shipment',
             action: 'status_changed',
             entityId: updatedShipment.id,
             title: `Shipment ${updatedShipment.trackingNumber}`,
@@ -586,7 +586,7 @@ app.delete('/:id', async (c) => {
         await logActivity({
             db,
             organizationId,
-            type: 'order',
+            type: 'shipment',
             action: 'deleted',
             entityId: deletedShipment.id,
             title: `Shipment ${deletedShipment.trackingNumber}`,

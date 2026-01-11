@@ -6,7 +6,7 @@ import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { z } from 'zod';
 import { eq, desc, and, isNull, count, or, sql } from 'drizzle-orm';
-import { createDb, orders, stores, customers } from '../db';
+import { createDb, orders, stores, customers, shipments } from '../db';
 
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
@@ -490,10 +490,13 @@ app.get('/:id', async (c) => {
                 deletedAt: orders.deletedAt,
                 storeName: stores.storeName,
                 customerName: customers.customerName,
+                shipmentId: shipments.id,
+                trackingNumber: shipments.trackingNumber,
             })
             .from(orders)
             .leftJoin(stores, eq(orders.storeId, stores.id))
             .leftJoin(customers, eq(orders.customerId, customers.id))
+            .leftJoin(shipments, eq(orders.shipmentId, shipments.id))
             .where(and(
                 eq(orders.id, id),
                 eq(orders.organizationId, organizationId),

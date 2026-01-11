@@ -1,7 +1,7 @@
 import { activities } from '../db/schema';
 import type { Database } from '../db';
 
-export type ActivityType = 'order' | 'store' | 'customer' | 'payment' | 'invoice';
+export type ActivityType = 'order' | 'store' | 'customer' | 'payment' | 'invoice' | 'shipment';
 export type ActivityAction = 'created' | 'updated' | 'deleted' | 'status_changed';
 
 interface LogActivityParams {

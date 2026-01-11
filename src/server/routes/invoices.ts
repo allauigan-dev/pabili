@@ -11,6 +11,7 @@ import { createDb, invoices, customers } from '../db';
 import type { AppEnv } from '../types';
 import { requireAuth } from '../middleware/auth';
 import { requireOrganization } from '../middleware/organization';
+import { logActivity } from '../lib/activity-logger';
 
 const app = new Hono<AppEnv>();
 
@@ -230,6 +231,18 @@ app.post('/', zValidator('json', createInvoiceSchema), async (c) => {
             })
             .returning();
 
+        // Log activity
+        await logActivity({
+            db,
+            organizationId,
+            type: 'invoice',
+            action: 'created',
+            entityId: newInvoice.id,
+            title: newInvoice.invoiceNumber,
+            description: `New invoice created`,
+            status: newInvoice.invoiceStatus,
+        });
+
         return c.json({ success: true, data: newInvoice }, 201);
     } catch (error) {
         console.error('Error creating invoice:', error);
@@ -258,6 +271,20 @@ app.put('/:id', zValidator('json', updateInvoiceSchema), async (c) => {
                 isNull(invoices.deletedAt)
             ))
             .returning();
+
+        if (updatedInvoice) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'invoice',
+                action: 'updated',
+                entityId: updatedInvoice.id,
+                title: updatedInvoice.invoiceNumber,
+                description: `Invoice details updated`,
+                status: updatedInvoice.invoiceStatus,
+            });
+        }
 
         if (!updatedInvoice) {
             return c.json({ success: false, error: 'Invoice not found' }, 404);
@@ -292,6 +319,20 @@ app.patch('/:id/status', zValidator('json', updateStatusSchema), async (c) => {
             ))
             .returning();
 
+        if (updatedInvoice) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'invoice',
+                action: 'status_changed',
+                entityId: updatedInvoice.id,
+                title: updatedInvoice.invoiceNumber,
+                description: `Invoice status changed to ${status}`,
+                status: status,
+            });
+        }
+
         if (!updatedInvoice) {
             return c.json({ success: false, error: 'Invoice not found' }, 404);
         }
@@ -323,6 +364,20 @@ app.delete('/:id', async (c) => {
                 isNull(invoices.deletedAt)
             ))
             .returning();
+
+        if (deletedInvoice) {
+            // Log activity
+            await logActivity({
+                db,
+                organizationId,
+                type: 'invoice',
+                action: 'deleted',
+                entityId: deletedInvoice.id,
+                title: deletedInvoice.invoiceNumber,
+                description: `Invoice deleted`,
+                status: deletedInvoice.invoiceStatus,
+            });
+        }
 
         if (!deletedInvoice) {
             return c.json({ success: false, error: 'Invoice not found' }, 404);

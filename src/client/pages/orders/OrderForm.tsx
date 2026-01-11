@@ -10,7 +10,8 @@ import {
     Loader2,
     Trash2,
     Minus,
-    Plus
+    Plus,
+    Truck
 } from 'lucide-react';
 import { useOrder, useOrderMutations } from '@/hooks/useOrders';
 import { useStores } from '@/hooks/useStores';
@@ -18,7 +19,6 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { uploadApi } from '@/lib/api';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Combobox } from '@/components/ui/combobox';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { HeaderContent } from '@/components/layout/HeaderProvider';
 import { FormActions } from '@/components/ui/FormActions';
 import type { CreateOrderDto, OrderStatus } from '@/lib/types';
@@ -401,35 +401,56 @@ export const OrderForm: React.FC = () => {
                                     </div>
 
                                     {/* Status - Full width with color-coded options */}
-                                    <div>
-                                        <label htmlFor="orderStatus" className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Status</label>
-                                        <Select
-                                            value={formData.orderStatus}
-                                            onValueChange={(value) => setFormData(prev => ({ ...prev, orderStatus: value as OrderStatus }))}
-                                        >
-                                            <SelectTrigger id="orderStatus" className="w-full rounded-2xl border-2 border-border/60 bg-secondary/30 text-foreground h-16 px-5 focus:ring-2 focus:ring-primary/20 focus:border-primary font-bold outline-none transition-all">
-                                                <SelectValue placeholder="Select status" className="text-lg" />
-                                            </SelectTrigger>
-                                            <SelectContent className="rounded-2xl border-border/50 shadow-xl overflow-hidden">
-                                                {[
-                                                    { value: 'pending', color: 'bg-amber-500', label: 'Pending' },
-                                                    { value: 'bought', color: 'bg-purple-500', label: 'Bought' },
-                                                    { value: 'packed', color: 'bg-blue-500', label: 'Packed' },
-                                                    { value: 'shipped', color: 'bg-indigo-500', label: 'Shipped' },
-                                                    { value: 'delivered', color: 'bg-emerald-500', label: 'Delivered' },
-                                                    { value: 'cancelled', color: 'bg-red-500', label: 'Cancelled' },
-                                                    { value: 'no_stock', color: 'bg-gray-500', label: 'No Stock' },
-                                                ].map((opt) => (
-                                                    <SelectItem key={opt.value} value={opt.value} className="font-bold py-4 pr-8 text-base">
+                                    {/* Status - Read Only Display */}
+                                    {isEdit && formData.orderStatus === 'delivered' ? (
+                                        <div className="bg-emerald-500/10 rounded-2xl p-5 border border-emerald-500/20">
+                                            <label className="block text-xs font-bold text-emerald-600 uppercase tracking-widest mb-2 px-1">Tracking Number</label>
+                                            <div className="flex items-center gap-3">
+                                                <div className="p-2 bg-emerald-500 rounded-lg">
+                                                    <Truck className="h-5 w-5 text-white" />
+                                                </div>
+                                                <div className="flex-1">
+                                                    <p className="text-xl font-black text-emerald-900 font-mono tracking-tight">
+                                                        {order?.trackingNumber || 'No tracking info'}
+                                                    </p>
+                                                    <p className="text-[10px] font-bold text-emerald-600/70 uppercase tracking-widest mt-0.5">
+                                                        Delivered via Shipment #{order?.shipmentId}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <label className="block text-xs font-bold text-muted-foreground uppercase tracking-widest mb-3 px-1">Status</label>
+                                            <div className="w-full rounded-2xl border-2 border-border/60 bg-secondary/30 h-16 px-5 flex items-center">
+                                                {(() => {
+                                                    const statusConfig: Record<string, { color: string, label: string }> = {
+                                                        pending: { color: 'bg-amber-500', label: 'Pending' },
+                                                        bought: { color: 'bg-purple-500', label: 'Bought' },
+                                                        packed: { color: 'bg-blue-500', label: 'Packed' },
+                                                        shipped: { color: 'bg-indigo-500', label: 'Shipped' },
+                                                        delivered: { color: 'bg-emerald-500', label: 'Delivered' },
+                                                        cancelled: { color: 'bg-red-500', label: 'Cancelled' },
+                                                        no_stock: { color: 'bg-gray-500', label: 'No Stock' },
+                                                    };
+                                                    const config = statusConfig[formData.orderStatus || 'pending'] || statusConfig.pending;
+
+                                                    return (
                                                         <div className="flex items-center gap-3">
-                                                            <div className={`w-3 h-3 rounded-full ${opt.color}`} />
-                                                            <span>{opt.label}</span>
+                                                            <div className={`w-3 h-3 rounded-full ${config.color}`} />
+                                                            <span className="text-lg font-bold text-foreground">{config.label}</span>
                                                         </div>
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
+                                                    );
+                                                })()}
+                                            </div>
+                                            <p className="mt-2 text-[10px] text-muted-foreground px-1 uppercase tracking-widest font-black opacity-40">
+                                                {isEdit
+                                                    ? 'Status can only be updated via workflow actions'
+                                                    : 'New orders start as Pending'
+                                                }
+                                            </p>
+                                        </div>
+                                    )}
                                 </div>
 
                                 <Separator className="my-6 opacity-30" />

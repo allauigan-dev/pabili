@@ -36,6 +36,8 @@ export interface Order {
     // Joined fields frequently returned by API
     storeName: string;
     customerName: string;
+    shipmentId?: number | null;
+    trackingNumber?: string | null;
 }
 
 export interface Store {

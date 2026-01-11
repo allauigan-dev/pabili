@@ -47,7 +47,7 @@ import {
 } from '@dnd-kit/sortable';
 import { restrictToParentElement } from '@dnd-kit/modifiers';
 
-type ActivityType = 'order' | 'customer' | 'store' | 'payment';
+type ActivityType = 'order' | 'customer' | 'store' | 'payment' | 'invoice' | 'shipment';
 
 interface Activity {
     id: number;
@@ -106,6 +106,25 @@ export const Dashboard: React.FC = () => {
             return 'Payment was recorded';
         }
 
+        if (type === 'invoice') {
+            if (action === 'created') return `Invoice ${title} was generated`;
+            if (action === 'status_changed') return `Invoice ${title} is now ${status}`;
+            if (action === 'updated') return `Invoice ${title} was updated`;
+        }
+
+        if (type === 'shipment') {
+            if (action === 'created') return `Shipment for ${title} was created`;
+            if (action === 'status_changed') {
+                if (status === 'preparing') return `${title} is being prepared`;
+                if (status === 'ready') return `${title} is ready for pickup`;
+                if (status === 'in_transit') return `${title} is in transit`;
+                if (status === 'delivered') return `${title} was delivered`;
+                if (status === 'cancelled') return `${title} was cancelled`;
+                return `${title} status updated to ${status}`;
+            }
+            if (action === 'updated') return `${title} details were updated`;
+        }
+
         // Fallback
         if (action === 'deleted') return `${title} was deleted`;
         return `${title} - ${description || ''}`;
@@ -119,7 +138,16 @@ export const Dashboard: React.FC = () => {
             const type = act.type as ActivityType;
             let navigatePath = `/${type}s`;
             if (act.entityId) {
-                navigatePath = `/${type}s/${act.entityId}/edit`;
+                // Point to detail pages instead of edit pages for the activity feed
+                if (type === 'shipment') {
+                    navigatePath = `/shipments/${act.entityId}`;
+                } else if (type === 'payment') {
+                    navigatePath = `/payments/${act.entityId}`;
+                } else if (type === 'invoice') {
+                    navigatePath = `/invoices/${act.entityId}`;
+                } else {
+                    navigatePath = `/${type}s/${act.entityId}`;
+                }
             }
 
             return {
@@ -142,6 +170,8 @@ export const Dashboard: React.FC = () => {
             case 'customer': return Users;
             case 'store': return StoreIcon;
             case 'payment': return CreditCard;
+            case 'invoice': return History;
+            case 'shipment': return Package;
         }
     };
 
@@ -152,6 +182,8 @@ export const Dashboard: React.FC = () => {
             case 'customer': return 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-400';
             case 'store': return 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/40 dark:text-emerald-400';
             case 'payment': return 'bg-rose-100 text-rose-600 dark:bg-rose-900/40 dark:text-rose-400';
+            case 'invoice': return 'bg-amber-100 text-amber-600 dark:bg-amber-900/40 dark:text-amber-400';
+            case 'shipment': return 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/40 dark:text-indigo-400';
         }
     };
 

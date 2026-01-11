@@ -18,7 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Navigation**: Integrated "Shipments" and "Packaging" into the Sidebar and made them configurable items in the navigation system.
 
 ### Changed
-- **Bulk Action UI**: Refactored the bulk selection floating bar to match the design system (Card style).
+- **Order Status Workflow**: Made order status read-only on the "Edit Order" page to enforce workflow discipline. New orders default to "Pending".
+- **Order Tracking UI**: "Delivered" orders now display the Shipment Tracking Number and ID on the edit page instead of the status dropdown.
+- **Backend Order Details**: Updated `GET /api/orders/:id` to include shipment tracking information.
 - **Order Cards**: Enhanced `OrderCard` to support a "Packaging Mode" that hides pricing/customer details and emphasizes quantity.
 
 ### Added (Previous)
